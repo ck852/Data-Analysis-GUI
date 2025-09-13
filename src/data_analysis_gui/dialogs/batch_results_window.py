@@ -168,9 +168,7 @@ class BatchResultsWindow(QMainWindow):
         self.setWindowTitle("Batch Analysis Results")
         screen = self.screen() or QApplication.primaryScreen()
         avail = screen.availableGeometry()
-        w = max(900, min(int(avail.width() * 0.90), 1200))
-        h = max(600, min(int(avail.height() * 0.90), 700))
-        self.resize(w, h)
+        self.resize(int(avail.width() * 0.9), int(avail.height() * 0.9))
         fg = self.frameGeometry()
         fg.moveCenter(avail.center())
         self.move(fg.topLeft())
@@ -301,17 +299,15 @@ class BatchResultsWindow(QMainWindow):
     
     def _get_x_label(self):
         """Get X-axis label using PlotFormatter logic."""
-        data, label = self.plot_formatter._extract_axis_data(
-            [], self.batch_result.parameters.x_axis, 1
+        return self.plot_formatter.get_axis_label(
+            self.batch_result.parameters.x_axis
         )
-        return label
-    
+
     def _get_y_label(self):
         """Get Y-axis label using PlotFormatter logic."""
-        data, label = self.plot_formatter._extract_axis_data(
-            [], self.batch_result.parameters.y_axis, 1
+        return self.plot_formatter.get_axis_label(
+            self.batch_result.parameters.y_axis
         )
-        return label
     
     def _add_export_controls(self, layout):
         """Add export controls."""

@@ -296,12 +296,13 @@ def format_batch_plot(ax, x_label: str, y_label: str):
     ax.set_facecolor('#FFFFFF')
     
     # Ensure legend is well-positioned
-    ax.legend(
-        loc='best',
-        frameon=True,
-        fancybox=False,
-        shadow=False,
-        framealpha=0.95,
-        edgecolor='#D0D0D0',
-        fontsize=8
-    )
+    if ax.get_lines():  # Check if there are any lines plotted
+        ax.legend(
+            loc='best',
+            frameon=True,
+            fancybox=False,
+            shadow=False,
+            framealpha=0.95,
+            edgecolor='#D0D0D0',
+            fontsize=8
+        )

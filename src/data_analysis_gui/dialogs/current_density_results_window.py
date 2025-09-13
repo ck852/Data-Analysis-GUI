@@ -49,8 +49,8 @@ class CurrentDensityResultsWindow(QMainWindow):
     """Window for displaying current density results with interactive features."""
 
     def __init__(self, parent, batch_result: BatchAnalysisResult,
-                 cslow_mapping: Dict[str, float], data_service,
-                 batch_service=None): 
+                cslow_mapping: Dict[str, float], data_service,
+                batch_service=None): 
         super().__init__(parent)
         
         # Store original and create working copy
@@ -74,17 +74,14 @@ class CurrentDensityResultsWindow(QMainWindow):
 
         self.y_unit = "pA/pF"
 
-        # Count only selected files
-        num_files = len([r for r in self.active_batch_result.successful_results 
-                        if r.base_name in self.selection_state.get_selected_files()])
+        # Count total files, not just selected ones
+        num_files = len(self.active_batch_result.successful_results)
         self.setWindowTitle(f"Current Density Results ({num_files} files)")
         
         # Window sizing
         screen = self.screen() or QApplication.primaryScreen()
         avail = screen.availableGeometry()
-        w = max(900, min(int(avail.width() * 0.90), 1300))
-        h = max(600, min(int(avail.height() * 0.90), 800))
-        self.resize(w, h)
+        self.resize(int(avail.width() * 0.9), int(avail.height() * 0.9))
         fg = self.frameGeometry()
         fg.moveCenter(avail.center())
         self.move(fg.topLeft())
@@ -181,16 +178,17 @@ class CurrentDensityResultsWindow(QMainWindow):
         """Fill the file list with data from the batch result."""
         sorted_results = self._sort_results(self.active_batch_result.successful_results)
         
-        # Generate color mapping
+        # Generate color mapping for ALL results
         color_mapping = self.plot_widget._generate_color_mapping(sorted_results)
         
         self.file_list.setRowCount(0)
         for result in sorted_results:
-            # Only add files that are in the selection state (inherited from parent)
-            if result.base_name in self.selection_state.get_selected_files():
-                color = color_mapping[result.base_name]
-                cslow = self.cslow_mapping.get(result.base_name, 0.0)
-                self.file_list.add_file(result.base_name, color, cslow)
+            # Add ALL files to the list, not just selected ones
+            # The BatchFileListWidget will handle the checked/unchecked state
+            # based on the selection_state
+            color = color_mapping[result.base_name]
+            cslow = self.cslow_mapping.get(result.base_name, 0.0)
+            self.file_list.add_file(result.base_name, color, cslow)
         
         self._update_summary()
 
@@ -278,8 +276,8 @@ class CurrentDensityResultsWindow(QMainWindow):
     def _update_summary(self):
         """Update the summary label text."""
         selected = len(self.selection_state.get_selected_files())
-        total = len([r for r in self.active_batch_result.successful_results
-                    if r.base_name in self.original_batch_result.selected_files])
+        # Count total files from the successful results, not from selected_files
+        total = len(self.active_batch_result.successful_results)
         self.summary_label.setText(f"{selected} of {total} files selected")
 
     def _validate_all_cslow_values(self) -> bool:

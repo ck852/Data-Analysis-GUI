@@ -98,10 +98,9 @@ class CurrentDensityDialog(QDialog):
             key=lambda r: self._extract_number(r.base_name)
         )
         
-        # Filter to only show selected files if selection state exists
-        if hasattr(self.batch_result, 'selected_files') and self.batch_result.selected_files:
-            results = [r for r in results if r.base_name in self.batch_result.selected_files]
-
+        # Don't filter - show ALL files, not just selected ones
+        # The dialog needs to show all files so users can enter Cslow values for any of them
+        
         self.table.setRowCount(len(results))
         
         for row, result in enumerate(results):
@@ -166,6 +165,8 @@ class CurrentDensityDialog(QDialog):
             )
             return
         
+        # Set the value for ALL files in the table
+        # This includes both checked and unchecked files
         for cslow_input in self.cslow_inputs.values():
             cslow_input.setText(default_value)
     
@@ -173,16 +174,23 @@ class CurrentDensityDialog(QDialog):
         """Validate all inputs before accepting."""
         missing_files = []
         
+        # Only require Cslow values for files that are selected (will be checked in the results window)
+        selected_files = self.batch_result.selected_files if hasattr(self.batch_result, 'selected_files') else set()
+        
         for filename, cslow_input in self.cslow_inputs.items():
             text = cslow_input.text().strip()
-            if not text or not self._is_valid_number(text):
-                missing_files.append(filename)
+            
+            # Only validate if this file is selected (will be checked)
+            # Allow empty/invalid values for unchecked files
+            if filename in selected_files:
+                if not text or not self._is_valid_number(text):
+                    missing_files.append(filename)
         
         if missing_files:
             QMessageBox.warning(
                 self,
                 "Missing Values",
-                f"Please enter valid Cslow values for all files.\n"
+                f"Please enter valid Cslow values for selected files.\n"
                 f"Missing: {len(missing_files)} file(s)"
             )
             return
@@ -198,6 +206,8 @@ class CurrentDensityDialog(QDialog):
         """
         mapping = {}
         
+        # Return Cslow values for ALL files that have valid entries
+        # Not just selected files - let the results window handle filtering
         for filename, cslow_input in self.cslow_inputs.items():
             text = cslow_input.text().strip()
             if text and self._is_valid_number(text):

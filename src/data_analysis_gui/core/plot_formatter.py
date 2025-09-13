@@ -306,3 +306,38 @@ class PlotFormatter:
             data = np.column_stack([x_data, y_data, y_data2])
         
         return {'headers': headers, 'data': data, 'format_spec': '%.6f'}
+    
+    def get_axis_label(self, axis_config: AxisConfig) -> str:
+        """
+        Generate axis label without extracting data.
+        
+        Args:
+            axis_config: Axis configuration
+            
+        Returns:
+            Formatted axis label string
+        """
+        if axis_config.measure == "Time":
+            return "Time (s)"
+        
+        # Determine channel and unit
+        unit = "mV" if axis_config.channel == "Voltage" else "pA"
+        
+        if axis_config.measure == "Average":
+            return f"Average {axis_config.channel} ({unit})"
+        
+        elif axis_config.measure == "Peak":
+            # Create descriptive label based on peak type
+            peak_labels = {
+                "Absolute": "Peak",
+                "Positive": "Peak (+)",
+                "Negative": "Peak (-)",
+                "Peak-Peak": "Peak-Peak"
+            }
+            peak_type = axis_config.peak_type or "Absolute"
+            peak_label = peak_labels.get(peak_type, "Peak")
+            return f"{peak_label} {axis_config.channel} ({unit})"
+        
+        else:
+            # Fallback
+            return f"{axis_config.measure} {axis_config.channel} ({unit})"
