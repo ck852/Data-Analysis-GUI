@@ -1,7 +1,7 @@
 """
 Formats analysis data for plots and exports.
 PHASE 5: Pure transformation logic with no side effects.
-FIXED: Added validation and logging for peak mode handling.
+FIXED: Corrected dual range export when X-axis is Time
 """
 
 from typing import Dict, List, Any, Tuple, Optional
@@ -49,13 +49,21 @@ class PlotFormatter:
         }
         
         if params.use_dual_range:
-            x_data2, _ = self._extract_axis_data(metrics, params.x_axis, 2)
-            y_data2, _ = self._extract_axis_data(metrics, params.y_axis, 2)
+            # For dual range, x_data2 should only be different if X-axis measures
+            # something that can vary between ranges (Voltage or Current)
+            if params.x_axis.measure == "Time":
+                # Time is the same for both ranges
+                result['x_data2'] = result['x_data']  # Use same time data
+            else:
+                # Extract separate x-data for range 2 (voltage or current can differ)
+                x_data2, _ = self._extract_axis_data(metrics, params.x_axis, 2)
+                result['x_data2'] = np.array(x_data2)
             
-            result['x_data2'] = np.array(x_data2)
+            # Y-data is always extracted separately for range 2
+            y_data2, _ = self._extract_axis_data(metrics, params.y_axis, 2)
             result['y_data2'] = np.array(y_data2)
             
-            # Add voltage labels
+            # Add voltage labels for Y-axis labels
             avg_v1 = np.nanmean([m.voltage_mean_r1 for m in metrics])
             avg_v2 = np.nanmean([m.voltage_mean_r2 for m in metrics 
                                 if m.voltage_mean_r2 is not None])
@@ -78,7 +86,7 @@ class PlotFormatter:
             return {'headers': [], 'data': np.array([[]]), 'format_spec': '%.6f'}
         
         if params.use_dual_range and len(plot_data.get('y_data2', [])) > 0:
-            return self._format_dual_range_export(plot_data)
+            return self._format_dual_range_export(plot_data, params)
         else:
             return self._format_single_range_export(plot_data)
     
@@ -253,12 +261,23 @@ class PlotFormatter:
         data = np.column_stack([plot_data['x_data'], plot_data['y_data']])
         return {'headers': headers, 'data': data, 'format_spec': '%.6f'}
     
-    def _format_dual_range_export(self, plot_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Format dual range for export."""
+    def _format_dual_range_export(self, plot_data: Dict[str, Any], 
+                                  params: AnalysisParameters) -> Dict[str, Any]:
+        """
+        Format dual range for export.
+        
+        FIXED: Correctly handle Time axis for dual range exports.
+        When X-axis is Time, use a single time column for both ranges.
+        """
         # Get labels
         x_label = plot_data.get('x_label', 'X')
-        y_label_r1 = plot_data.get('y_label_r1', plot_data.get('y_label', 'Y Range 1'))
-        y_label_r2 = plot_data.get('y_label_r2', plot_data.get('y_label', 'Y Range 2'))
+        
+        # Get the base y_label without voltage annotation for cleaner export
+        y_label = plot_data.get('y_label', 'Y')
+        
+        # For dual range, we can include the voltage in the label if desired
+        y_label_r1 = plot_data.get('y_label_r1', f"{y_label} Range 1")
+        y_label_r2 = plot_data.get('y_label_r2', f"{y_label} Range 2")
         
         # Get data arrays
         x_data = plot_data.get('x_data', np.array([]))
@@ -266,44 +285,63 @@ class PlotFormatter:
         x_data2 = plot_data.get('x_data2', np.array([]))
         y_data2 = plot_data.get('y_data2', np.array([]))
         
-        # Check if we have separate x-data for range 2
-        if len(x_data2) > 0 and not np.array_equal(x_data, x_data2):
-            # Different x values for each range - need separate columns
-            headers = [
-                f"{x_label} (Range 1)",
-                y_label_r1,
-                f"{x_label} (Range 2)",
-                y_label_r2
-            ]
-            
-            # Pad arrays to same length if needed
-            max_len = max(len(x_data), len(x_data2))
-            
-            # Pad range 1 data if needed
-            if len(x_data) < max_len:
-                x_data = np.pad(x_data, (0, max_len - len(x_data)), constant_values=np.nan)
-                y_data = np.pad(y_data, (0, max_len - len(y_data)), constant_values=np.nan)
-            
-            # Pad range 2 data if needed
-            if len(x_data2) < max_len:
-                x_data2 = np.pad(x_data2, (0, max_len - len(x_data2)), constant_values=np.nan)
-                y_data2 = np.pad(y_data2, (0, max_len - len(y_data2)), constant_values=np.nan)
-            
-            # Create data array
-            data = np.column_stack([x_data, y_data, x_data2, y_data2])
-        else:
-            # Same x values for both ranges - single x column
+        # Check if X-axis is Time
+        if params.x_axis.measure == "Time":
+            # Time is always the same for both ranges - use single column
             headers = [x_label, y_label_r1, y_label_r2]
             
             # Ensure all arrays are same length
-            if len(y_data2) != len(x_data):
-                # This shouldn't happen, but handle gracefully
-                min_len = min(len(x_data), len(y_data), len(y_data2))
+            min_len = min(len(x_data), len(y_data), len(y_data2))
+            if min_len != len(x_data) or min_len != len(y_data) or min_len != len(y_data2):
+                logger.warning(f"Array length mismatch in dual range export: "
+                              f"x={len(x_data)}, y1={len(y_data)}, y2={len(y_data2)}")
                 x_data = x_data[:min_len]
                 y_data = y_data[:min_len]
                 y_data2 = y_data2[:min_len]
             
             data = np.column_stack([x_data, y_data, y_data2])
+            
+        else:
+            # X-axis is Voltage or Current, which can differ between ranges
+            # Check if we have different x-values for each range
+            if len(x_data2) > 0 and not np.array_equal(x_data, x_data2):
+                # Different x values for each range - need separate columns
+                headers = [
+                    f"{x_label} (Range 1)",
+                    y_label_r1,
+                    f"{x_label} (Range 2)",
+                    y_label_r2
+                ]
+                
+                # Pad arrays to same length if needed
+                max_len = max(len(x_data), len(x_data2))
+                
+                # Pad range 1 data if needed
+                if len(x_data) < max_len:
+                    x_data = np.pad(x_data, (0, max_len - len(x_data)), constant_values=np.nan)
+                    y_data = np.pad(y_data, (0, max_len - len(y_data)), constant_values=np.nan)
+                
+                # Pad range 2 data if needed  
+                if len(x_data2) < max_len:
+                    x_data2 = np.pad(x_data2, (0, max_len - len(x_data2)), constant_values=np.nan)
+                    y_data2 = np.pad(y_data2, (0, max_len - len(y_data2)), constant_values=np.nan)
+                
+                # Create data array with separate x columns
+                data = np.column_stack([x_data, y_data, x_data2, y_data2])
+            else:
+                # Same x values for both ranges - single x column
+                headers = [x_label, y_label_r1, y_label_r2]
+                
+                # Ensure all arrays are same length
+                min_len = min(len(x_data), len(y_data), len(y_data2))
+                if min_len != len(x_data) or min_len != len(y_data) or min_len != len(y_data2):
+                    logger.warning(f"Array length mismatch: x={len(x_data)}, "
+                                  f"y1={len(y_data)}, y2={len(y_data2)}")
+                    x_data = x_data[:min_len]
+                    y_data = y_data[:min_len]
+                    y_data2 = y_data2[:min_len]
+                
+                data = np.column_stack([x_data, y_data, y_data2])
         
         return {'headers': headers, 'data': data, 'format_spec': '%.6f'}
     

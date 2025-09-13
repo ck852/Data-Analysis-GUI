@@ -1,4 +1,4 @@
-Time (s),Average Current (pA),Range2
+Time (s),Average Current (pA) (-8mV),Average Current (pA) (-116mV)
 0.000000,-0.607116,-0.537765
 1.000000,-0.454476,-0.577590
 2.000000,-0.355156,-0.636360

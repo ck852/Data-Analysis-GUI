@@ -267,6 +267,11 @@ class MainWindow(QMainWindow):
         # Enable UI elements
         self.swap_action.setEnabled(True)
         self.swap_channels_btn.setEnabled(True)
+
+            # Initialize swap button state
+        if hasattr(self.channel_definitions, 'is_swapped'):
+            self._update_swap_button_state(self.channel_definitions.is_swapped())
+
         self.center_cursor_btn.setEnabled(True)
         self.prev_btn.setEnabled(True)
         self.next_btn.setEnabled(True)
@@ -405,7 +410,7 @@ class MainWindow(QMainWindow):
         
         if result['success']:
             # Update UI
-            self.update_swap_button_state(result['is_swapped'])
+            self._update_swap_button_state(result['is_swapped'])
             
             # Update current plot
             self._update_plot()
@@ -421,13 +426,27 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Cannot Swap", result['reason'])
 
     def _update_swap_button_state(self, is_swapped: bool):
-        """Update the swap channels button appearance in the toolbar."""
+        """Update the swap channels button appearance based on swap state."""
         if is_swapped:
-            self.swap_channels_btn.setStyleSheet("QPushButton { background-color: #ffcc99; }")
+            # Visual indication that channels are swapped
+            self.swap_channels_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #ffcc99;
+                    border: 1px solid #ff9966;
+                    padding: 4px 8px;
+                    border-radius: 3px;
+                }
+                QPushButton:hover {
+                    background-color: #ffaa77;
+                }
+            """)
             self.swap_channels_btn.setText("Channels Swapped ⇄")
+            self.swap_channels_btn.setToolTip("Click to restore default channel assignments (Ctrl+Shift+S)")
         else:
+            # Default appearance
             self.swap_channels_btn.setStyleSheet("")
             self.swap_channels_btn.setText("Swap Channels")
+            self.swap_channels_btn.setToolTip("Swap voltage and current channel assignments (Ctrl+Shift+S)")
 
     def _batch_analyze(self):
         """Open batch analysis dialog"""
