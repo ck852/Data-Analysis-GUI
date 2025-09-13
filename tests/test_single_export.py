@@ -272,6 +272,138 @@ class TestExportWorkflow:
                 err_msg="Exported Y data doesn't match analysis result"
             )
 
+    def test_export_workflow_dual_analysis(self, controller, test_data_path, golden_data_path):
+        """
+        Test the export workflow with dual analysis enabled.
+        
+        This test validates:
+        1. Loading a MAT file with many sweeps
+        2. Setting dual range analysis parameters
+        3. Using Time for X-axis and Average Current for Y-axis
+        4. Exporting dual range data correctly
+        5. Comparing output with golden reference for dual range analysis
+        """
+        # ========== STEP 1: Load MAT File ==========
+        # Load the multi-sweep MAT file for dual range analysis
+        input_file = test_data_path.parent.parent / "DR" / "250202_007[1-234].mat"
+        
+        # Verify input file exists
+        assert input_file.exists(), f"Input file not found: {input_file}"
+        
+        # Load file through controller
+        load_result = controller.load_file(str(input_file))
+        assert load_result.success, f"Failed to load file: {input_file}, Error: {load_result.error_message}"
+        
+        # Verify file was loaded correctly
+        assert controller.has_data(), "No data loaded in controller"
+        assert controller.current_dataset is not None, "Dataset is None"
+        assert controller.current_dataset.sweep_count() == 234, \
+            f"Expected 234 sweeps, got {controller.current_dataset.sweep_count()}"
+        
+        # ========== STEP 2: Set Dual Analysis Parameters ==========
+        # Configure dual range analysis with Time vs Average Current
+        gui_state = {
+            # Range 1 settings
+            'range1_start': 50.45,
+            'range1_end': 249.80,
+            
+            # Enable dual range and set Range 2
+            'use_dual_range': True,
+            'range2_start': 250.45,
+            'range2_end': 449.50,
+            
+            # Plot Settings
+            'x_measure': 'Time',      # X-Axis: Time
+            'x_channel': None,         # Time doesn't need a channel
+            'y_measure': 'Average',    # Y-Axis: Average
+            'y_channel': 'Current',    # Y-Axis: Current
+            
+            # Stimulus period
+            'stimulus_period': 1000.0,
+            
+            # No peak types needed
+            'x_peak_type': None,
+            'y_peak_type': None,
+        }
+        
+        # Create parameters from GUI state
+        params = self.create_parameters_from_gui_state(controller, gui_state)
+        
+        # Validate parameters were set correctly
+        assert params.range1_start == 50.45, f"range1_start mismatch: {params.range1_start}"
+        assert params.range1_end == 249.80, f"range1_end mismatch: {params.range1_end}"
+        assert params.use_dual_range == True, "use_dual_range should be True"
+        assert params.range2_start == 250.45, f"range2_start mismatch: {params.range2_start}"
+        assert params.range2_end == 449.50, f"range2_end mismatch: {params.range2_end}"
+        assert params.x_axis.measure == "Time", f"X measure mismatch: {params.x_axis.measure}"
+        assert params.x_axis.channel is None, f"X channel should be None for Time: {params.x_axis.channel}"
+        assert params.y_axis.measure == "Average", f"Y measure mismatch: {params.y_axis.measure}"
+        assert params.y_axis.channel == "Current", f"Y channel mismatch: {params.y_axis.channel}"
+        
+        # ========== STEP 3: Perform Analysis to Verify Dual Range ==========
+        # Run analysis to verify dual range data is generated
+        analysis_result = controller.perform_analysis(params)
+        assert analysis_result.success, f"Analysis failed: {analysis_result.error_message}"
+        assert analysis_result.data is not None, "Analysis data is None"
+        
+        # Verify dual range structure
+        assert analysis_result.data.use_dual_range == True, "Analysis result should have dual range enabled"
+        assert len(analysis_result.data.x_data) == 234, f"Expected 234 x-values for range 1, got {len(analysis_result.data.x_data)}"
+        assert len(analysis_result.data.y_data) == 234, f"Expected 234 y-values for range 1, got {len(analysis_result.data.y_data)}"
+        
+        # For dual range with same X-axis measure, x_data2 might be the same as x_data or None
+        # Y-data for range 2 should exist
+        assert analysis_result.data.y_data2 is not None, "y_data2 should exist for dual range"
+        assert len(analysis_result.data.y_data2) == 234, f"Expected 234 y-values for range 2, got {len(analysis_result.data.y_data2)}"
+        
+        # Verify labels
+        assert analysis_result.data.x_label == "Time (s)", f"X label mismatch: {analysis_result.data.x_label}"
+        # Y labels should indicate the different voltage ranges
+        assert "Current" in analysis_result.data.y_label, f"Y label should contain 'Current': {analysis_result.data.y_label}"
+        
+        # ========== STEP 4: Export Dual Range Data ==========
+        # Create temporary directory for output
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Generate output filename
+            suggested_filename = controller.get_suggested_export_filename(params)
+            output_path = os.path.join(temp_dir, suggested_filename)
+            
+            # Export analysis data
+            result = controller.export_analysis_data(params, output_path)
+            
+            # Verify export was successful
+            assert result.success, f"Export failed: {result.error_message}"
+            assert os.path.exists(output_path), f"Output file not created: {output_path}"
+            assert result.records_exported > 0, "No records were exported"
+            
+            # ========== STEP 5: Validate Against Golden Reference ==========
+            reference_file = golden_data_path.parent / "golden_mat_DR" / "250202_007.csv"
+            assert reference_file.exists(), f"Golden reference file not found: {reference_file}"
+            
+            # Compare output with golden reference
+            self.compare_csv_files(output_path, str(reference_file))
+            
+            # Additional validation for dual range export
+            exported_data = np.genfromtxt(output_path, delimiter=',', skip_header=1)
+            
+            # For dual range export with Time as X-axis, we expect 3 columns:
+            # Column 0: Time (s)
+            # Column 1: Average Current for Range 1
+            # Column 2: Average Current for Range 2
+            assert exported_data.shape[0] == 234, f"Expected 234 rows (sweeps), got {exported_data.shape[0]}"
+            assert exported_data.shape[1] == 3, f"Expected 3 columns (Time, Y_Range1, Y_Range2), got {exported_data.shape[1]}"
+            
+            # Verify that Range 1 and Range 2 have different values (they should be from different time windows)
+            range1_values = exported_data[:, 1]
+            range2_values = exported_data[:, 2]
+            
+            # Check that the values are indeed different (not all equal)
+            assert not np.allclose(range1_values, range2_values, rtol=1e-10), \
+                "Range 1 and Range 2 values should be different (different time windows)"
+            
+            # Verify the time column is monotonically increasing
+            time_values = exported_data[:, 0]
+            assert np.all(np.diff(time_values) > 0), "Time values should be monotonically increasing"
 
 if __name__ == "__main__":
     # Run the test directly if executed as a script
