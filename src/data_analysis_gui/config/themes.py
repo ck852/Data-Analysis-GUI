@@ -60,9 +60,9 @@ MODERN_COLORS = {
 # Typography settings
 TYPOGRAPHY = {
     'font_family': 'Segoe UI, -apple-system, BlinkMacSystemFont, Arial, sans-serif',
-    'font_size_base': '19px',
-    'font_size_small': '18px',
-    'font_size_large': '21px',
+    'font_size_base': '20px',
+    'font_size_small': '20px',
+    'font_size_large': '23px',
     'font_weight_normal': '400',
     'font_weight_medium': '500',
     'font_weight_bold': '600',

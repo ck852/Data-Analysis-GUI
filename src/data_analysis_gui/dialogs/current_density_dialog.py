@@ -6,7 +6,7 @@ License: MIT
 """
 
 from typing import Dict, Optional
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidget, QTableWidgetItem, QLabel, 
                              QDialogButtonBox, QMessageBox, QHeaderView,
                              QLineEdit)
@@ -31,8 +31,9 @@ class CurrentDensityDialog(QDialog):
         
         self.setWindowTitle("Current Density Analysis - Enter Cslow Values")
         self.setModal(True)
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.setMinimumWidth(int(screen.width() * 0.45))
+        self.setMinimumHeight(int(screen.height() * 0.65))
         
         self.init_ui()
 

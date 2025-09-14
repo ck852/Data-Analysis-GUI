@@ -5,7 +5,7 @@ Phase 3: Updated to use stateless AnalysisPlotter methods.
 """
 
 import os
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                               QFileDialog, QMessageBox)
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -55,7 +55,13 @@ class AnalysisPlotDialog(QDialog):
         # self.plotter = AnalysisPlotter(self.plot_data_obj, x_label, y_label, title)
         
         self.setWindowTitle("Analysis Plot")
-        self.setGeometry(200, 200, 800, 600)
+        screen = QApplication.primaryScreen().availableGeometry()
+        self.setGeometry(200, 200, int(screen.width() * 0.6), int(screen.height() * 0.7))
+        avail = screen.availableGeometry()
+        self.resize(int(avail.width() * 0.9), int(avail.height() * 0.9))
+        fg = self.frameGeometry()
+        fg.moveCenter(avail.center())
+        self.move(fg.topLeft())
         self.init_ui()
 
         # Apply modern theme

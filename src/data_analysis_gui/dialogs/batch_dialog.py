@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult
 from data_analysis_gui.config.logging import get_logger
+from data_analysis_gui.config.themes import apply_modern_style, style_button
 
 logger = get_logger(__name__)
 
@@ -76,9 +77,12 @@ class BatchAnalysisDialog(QDialog):
         
         self.setWindowTitle("Batch Analysis")
         self.setModal(False)  # Non-modal to allow interaction
-        self.setMinimumWidth(600)
-        self.setMinimumHeight(450)
+        self.setMinimumWidth(900)
+        self.setMinimumHeight(650)
         self.init_ui()
+        
+        # Apply modern theme
+        apply_modern_style(self)
     
     def init_ui(self):
         """Initialize the UI."""
@@ -99,6 +103,12 @@ class BatchAnalysisDialog(QDialog):
         self.add_files_btn = QPushButton("Add Files...")
         self.remove_selected_btn = QPushButton("Remove Selected")
         self.clear_all_btn = QPushButton("Clear All")
+        
+        # Apply secondary styling to file management buttons
+        style_button(self.add_files_btn, "secondary")
+        style_button(self.remove_selected_btn, "secondary")
+        style_button(self.clear_all_btn, "secondary")
+        
         file_button_layout.addWidget(self.add_files_btn)
         file_button_layout.addWidget(self.remove_selected_btn)
         file_button_layout.addWidget(self.clear_all_btn)
@@ -122,7 +132,8 @@ class BatchAnalysisDialog(QDialog):
         layout.addWidget(self.status_label)
         
         # Buttons
-        button_box = QDialogButtonBox()
+        button_layout = QHBoxLayout()
+        
         self.analyze_btn = QPushButton("Start Analysis")
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setEnabled(False)
@@ -130,11 +141,19 @@ class BatchAnalysisDialog(QDialog):
         self.view_results_btn.setEnabled(False)
         self.close_btn = QPushButton("Close")
         
-        button_box.addButton(self.analyze_btn, QDialogButtonBox.AcceptRole)
-        button_box.addButton(self.cancel_btn, QDialogButtonBox.RejectRole)
-        button_box.addButton(self.view_results_btn, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.close_btn, QDialogButtonBox.RejectRole)
-        layout.addWidget(button_box)
+        # Apply appropriate styling to action buttons
+        style_button(self.analyze_btn, "primary")  # Main action
+        style_button(self.cancel_btn, "secondary")
+        style_button(self.view_results_btn, "secondary")
+        style_button(self.close_btn, "secondary")
+        
+        button_layout.addWidget(self.analyze_btn)
+        button_layout.addWidget(self.cancel_btn)
+        button_layout.addWidget(self.view_results_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(self.close_btn)
+        
+        layout.addLayout(button_layout)
         
         # Connect signals
         self.add_files_btn.clicked.connect(self.add_files)
@@ -270,7 +289,7 @@ class BatchAnalysisDialog(QDialog):
     
     def on_file_complete(self, result: FileAnalysisResult):
         """Handle completion of individual file."""
-        status = "✓" if result.success else "✗"
+        status = "✔" if result.success else "✗"
         logger.debug(f"{status} Completed: {result.base_name}")
     
     def on_analysis_finished(self, result: BatchAnalysisResult):

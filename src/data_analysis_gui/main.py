@@ -43,27 +43,15 @@ def main():
     screen = app.primaryScreen()
     avail = screen.availableGeometry() if screen else None
 
-    # Sensible minimums
-    min_w, min_h = 600, 400
-    window.setMinimumSize(min_w, min_h)
+    screen = app.primaryScreen().availableGeometry()
+    scale = 0.9   # use 0.9 for 90%
+    w, h = int(screen.width() * scale), int(screen.height() * scale)
+    window.resize(w, h)
 
-    if avail:
-        # Target at most 90% of available screen
-        target_w = int(avail.width())
-        target_h = int(avail.height())
-
-        # Respect sizeHint but clamp to [min, target]
-        w = max(min_w, min(window.sizeHint().width(), target_w))
-        h = max(min_h, min(window.sizeHint().height(), target_h))
-        window.resize(w, h)
-
-        # Center on the available geometry
-        frame = window.frameGeometry()
-        frame.moveCenter(avail.center())
-        window.move(frame.topLeft())
-    else:
-        # Fallback: a reasonable default if screen info isn't available
-        window.resize(900, 600)
+    # center
+    frame = window.frameGeometry()
+    frame.moveCenter(screen.center())
+    window.move(frame.topLeft())
 
     window.show()
     sys.exit(app.exec())
