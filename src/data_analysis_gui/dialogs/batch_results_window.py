@@ -20,6 +20,8 @@ from data_analysis_gui.widgets.shared_widgets import (
     DynamicBatchPlotWidget, BatchFileListWidget, FileSelectionState
 )
 
+from data_analysis_gui.config.themes import apply_modern_style, style_button
+
 logger = get_logger(__name__)
 
 
@@ -49,6 +51,9 @@ class FileListWidget(QTableWidget):
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QTableWidget.SelectRows)
         self.verticalHeader().setVisible(False)
+
+        # Apply modern theme
+        apply_modern_style(self)
     
     def add_file(self, file_name: str, color: tuple, checked: bool = True):
         """Add a file to the list with color indicator and checkbox."""
@@ -315,17 +320,21 @@ class BatchResultsWindow(QMainWindow):
         
         # Create buttons
         export_csvs_btn = QPushButton("Export Individual CSVs...")
+        style_button(export_csvs_btn, "secondary")
+        
         export_plot_btn = QPushButton("Export Plot...")
+        style_button(export_plot_btn, "secondary")
         
         # IV-specific exports if applicable
         if self._is_iv_analysis():
             export_iv_summary_btn = QPushButton("Export IV Summary...")
+            style_button(export_iv_summary_btn, "secondary")
             button_layout.addWidget(export_iv_summary_btn)
             export_iv_summary_btn.clicked.connect(self._export_iv_summary)
             
             # Add Current Density Analysis button
             current_density_btn = QPushButton("Current Density Analysis...")
-            current_density_btn.setStyleSheet("QPushButton { background-color: #4682b4; }")
+            style_button(current_density_btn, "primary")  # Make this primary/accent
             button_layout.addWidget(current_density_btn)
             current_density_btn.clicked.connect(self._open_current_density_analysis)
         

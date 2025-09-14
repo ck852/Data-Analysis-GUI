@@ -17,6 +17,7 @@ from data_analysis_gui.core.analysis_plot import AnalysisPlotter, AnalysisPlotDa
 from data_analysis_gui.core.models import AnalysisPlotData as ModelAnalysisPlotData
 from data_analysis_gui.gui_services import FileDialogService
 
+from data_analysis_gui.config.themes import apply_modern_style, style_button
 
 class AnalysisPlotDialog(QDialog):
     """
@@ -56,6 +57,9 @@ class AnalysisPlotDialog(QDialog):
         self.setWindowTitle("Analysis Plot")
         self.setGeometry(200, 200, 800, 600)
         self.init_ui()
+
+        # Apply modern theme
+        apply_modern_style(self)
     
     def init_ui(self):
         """Initialize the user interface"""
@@ -89,6 +93,7 @@ class AnalysisPlotDialog(QDialog):
         # button_layout.addWidget(export_img_btn)
         
         export_data_btn = QPushButton("Export Data")
+        style_button(export_data_btn, "primary")
         export_data_btn.clicked.connect(self.export_data)
         button_layout.addWidget(export_data_btn)
         

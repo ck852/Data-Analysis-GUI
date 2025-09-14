@@ -43,6 +43,8 @@ from data_analysis_gui.widgets.shared_widgets import (
 
 from data_analysis_gui.widgets.custom_inputs import SelectAllLineEdit as CslowLineEdit
 
+from data_analysis_gui.config.themes import apply_modern_style, style_button
+
 logger = get_logger(__name__)
 
 class CurrentDensityResultsWindow(QMainWindow):
@@ -87,6 +89,8 @@ class CurrentDensityResultsWindow(QMainWindow):
         self.move(fg.topLeft())
         
         self.init_ui()
+
+        apply_modern_style(self)
 
     def init_ui(self):
         """Initialize the UI with file list, plot, and controls."""
@@ -153,10 +157,14 @@ class CurrentDensityResultsWindow(QMainWindow):
         button_layout = QHBoxLayout()
         
         export_individual_btn = QPushButton("Export Individual CSVs...")
+        style_button(export_individual_btn, "secondary")
         export_individual_btn.clicked.connect(self._export_individual_csvs)
         
         export_summary_btn = QPushButton("Export Summary CSV...")
+        style_button(export_summary_btn, "primary")  # Make summary primary
+        
         export_plot_btn = QPushButton("Export Plot...")
+        style_button(export_plot_btn, "secondary")
 
         export_summary_btn.clicked.connect(self._export_summary)
         export_plot_btn.clicked.connect(self._export_plot)

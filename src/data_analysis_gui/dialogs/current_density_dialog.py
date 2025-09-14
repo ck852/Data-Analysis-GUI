@@ -16,6 +16,8 @@ from PyQt5.QtGui import QDoubleValidator
 from data_analysis_gui.core.models import BatchAnalysisResult
 from data_analysis_gui.config.logging import get_logger
 
+from data_analysis_gui.config.themes import apply_modern_style, style_button, apply_compact_layout
+
 logger = get_logger(__name__)
 
 
@@ -33,6 +35,9 @@ class CurrentDensityDialog(QDialog):
         self.setMinimumHeight(400)
         
         self.init_ui()
+
+        apply_modern_style(self)
+        apply_compact_layout(self)
     
     def init_ui(self):
         """Initialize the UI."""
@@ -69,6 +74,7 @@ class CurrentDensityDialog(QDialog):
         
         # Default value button
         set_all_btn = QPushButton("Set All to:")
+        style_button(set_all_btn, "secondary")
         self.default_input = QLineEdit("18.0")
         self.default_input.setMaximumWidth(80)
         self.default_input.setValidator(QDoubleValidator(0.01, 10000.0, 2))

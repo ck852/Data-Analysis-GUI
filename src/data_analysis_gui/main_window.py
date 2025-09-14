@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QKeySequence
 
+from data_analysis_gui.config.themes import apply_modern_style, style_button
+
 # Core imports
 from data_analysis_gui.core.app_controller import ApplicationController
 from data_analysis_gui.core.models import FileInfo
@@ -74,10 +76,13 @@ class MainWindow(QMainWindow):
         
         # Build UI
         self._init_ui()
-        
+
         # Configure window
         self.setWindowTitle("Electrophysiology Data Analysis")
         self.setGeometry(100, 100, 1400, 800)
+
+        # Apply modern theme
+        apply_modern_style(self)
 
     def _init_ui(self):
         """Initialize the complete UI"""

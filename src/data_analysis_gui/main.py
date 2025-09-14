@@ -5,14 +5,19 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from data_analysis_gui.main_window import MainWindow
 
+from data_analysis_gui.config.themes import apply_theme_to_application
+
 def main():
     # Enable high DPI scaling BEFORE creating QApplication
-    if hasattr(Qt, 'AA_EnableHighDpiScaling'):
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+   # if hasattr(Qt, 'AA_EnableHighDpiScaling'):
+       # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    # if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
+    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
+
+    # Apply modern theme globally
+    apply_theme_to_application(app)
 
     # Set application properties
     app.setApplicationName("Electrophysiology File Sweep Analyzer")

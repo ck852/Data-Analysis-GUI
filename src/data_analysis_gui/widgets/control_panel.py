@@ -13,6 +13,7 @@ from data_analysis_gui.widgets import SelectAllSpinBox
 from data_analysis_gui.config import DEFAULT_SETTINGS
 from data_analysis_gui.core.params import AnalysisParameters
 
+from data_analysis_gui.config.themes import style_button
 
 class ControlPanel(QWidget):
     """
@@ -84,6 +85,7 @@ class ControlPanel(QWidget):
 
         # Export Plot Data button
         self.export_plot_btn = QPushButton("Export Analysis Data")
+        style_button(self.export_plot_btn, "secondary")
         self.export_plot_btn.clicked.connect(self.export_requested.emit)
         self.export_plot_btn.setEnabled(False)
         layout.addWidget(self.export_plot_btn)
@@ -191,6 +193,7 @@ class ControlPanel(QWidget):
 
         # Update plot button
         self.update_plot_btn = QPushButton("Generate Analysis Plot")
+        style_button(self.update_plot_btn, "primary")  # Make it stand out
         self.update_plot_btn.clicked.connect(self.analysis_requested.emit)
         self.update_plot_btn.setEnabled(False)
         plot_layout.addWidget(self.update_plot_btn, 2, 0, 1, 3)
