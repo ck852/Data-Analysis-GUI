@@ -22,6 +22,8 @@ from data_analysis_gui.core.plot_formatter import PlotFormatter
 from data_analysis_gui.core.exceptions import ValidationError, DataError, ProcessingError
 from data_analysis_gui.config.logging import get_logger, log_performance, log_analysis_request
 
+from data_analysis_gui.core.peak_snapper import PeakSnapper
+
 logger = get_logger(__name__)
 
 
@@ -64,7 +66,8 @@ class AnalysisEngine:
         self,
         data_extractor: DataExtractor,
         metrics_calculator: MetricsCalculator,
-        plot_formatter: PlotFormatter
+        plot_formatter: PlotFormatter,
+        channel_definitions=None
     ):
         """
         Initialize engine with injected dependencies.
@@ -91,8 +94,12 @@ class AnalysisEngine:
         self.data_extractor = data_extractor
         self.metrics_calculator = metrics_calculator
         self.plot_formatter = plot_formatter
+        self.channel_definitions = channel_definitions  # Store channel definitions
+        self.boundary_adjustments = {}  # Track adjustments for reporting
         
         logger.debug("AnalysisEngine initialized successfully")
+
+        self.boundary_adjustments = {}  # Track adjustments for reporting
     
     def analyze_dataset(
         self,
@@ -126,18 +133,43 @@ class AnalysisEngine:
         if dataset.is_empty():
             raise DataError("Dataset is empty, no sweeps to analyze")
         
+        # Apply peak snapping if enabled and channel_definitions available
+        if self.channel_definitions and any([
+            params.snap_range1_start,
+            params.snap_range1_end,
+            params.snap_range2_start,
+            params.snap_range2_end
+        ]):
+            adjusted_params, adjustments = PeakSnapper.adjust_boundaries(
+                dataset, params, self.channel_definitions
+            )
+            # Store adjustments for potential reporting
+            self.boundary_adjustments = adjustments
+        else:
+            adjusted_params = params
+            self.boundary_adjustments = {}
+        
         # Log the analysis request
         dataset_info = {
             'sweep_count': dataset.sweep_count(),
             'identifier': f"{dataset.source_file if hasattr(dataset, 'source_file') else 'unknown'}"
         }
-        log_analysis_request(logger, params.to_export_dict(), dataset_info)
+        log_analysis_request(logger, adjusted_params.to_export_dict(), dataset_info)
         
-        # Perform analysis directly (no caching)
+        # Perform analysis with adjusted parameters
         with log_performance(logger, f"analyze {dataset.sweep_count()} sweeps"):
-            metrics = self._compute_all_metrics(dataset, params)
+            metrics = self._compute_all_metrics(dataset, adjusted_params)
         
         return metrics
+    
+    def get_boundary_adjustments(self) -> dict:
+        """
+        Get the most recent boundary adjustments from peak snapping.
+        
+        Returns:
+            Dictionary of adjustments made in the last analysis
+        """
+        return self.boundary_adjustments.copy()
     
     def get_plot_data(
         self,
@@ -269,7 +301,7 @@ class AnalysisEngine:
     def _compute_all_metrics(
         self,
         dataset: ElectrophysiologyDataset,
-        params: AnalysisParameters
+        adjusted_params: AnalysisParameters
     ) -> List[SweepMetrics]:
         """
         Compute metrics for all sweeps in the dataset.
@@ -308,11 +340,11 @@ class AnalysisEngine:
                     current=sweep_data['current'],
                     sweep_index=sweep_index,
                     sweep_number=sweep_number,
-                    range1_start=params.range1_start,
-                    range1_end=params.range1_end,
-                    stimulus_period=params.stimulus_period,
-                    range2_start=params.range2_start if params.use_dual_range else None,
-                    range2_end=params.range2_end if params.use_dual_range else None
+                    range1_start=adjusted_params.range1_start,
+                    range1_end=adjusted_params.range1_end,
+                    stimulus_period=adjusted_params.stimulus_period,
+                    range2_start=adjusted_params.range2_start if adjusted_params.use_dual_range else None,
+                    range2_end=adjusted_params.range2_end if adjusted_params.use_dual_range else None
                 )
                 
                 metrics.append(metric)
@@ -377,5 +409,6 @@ def create_analysis_engine(channel_definitions) -> AnalysisEngine:
     return AnalysisEngine(
         data_extractor=data_extractor,
         metrics_calculator=metrics_calculator,
-        plot_formatter=plot_formatter
+        plot_formatter=plot_formatter,
+        channel_definitions=channel_definitions
     )

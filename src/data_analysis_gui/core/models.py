@@ -278,6 +278,11 @@ class FileAnalysisResult:
     export_table: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
     processing_time: float = 0.0
+
+    actual_range1_start: Optional[float] = None
+    actual_range1_end: Optional[float] = None
+    actual_range2_start: Optional[float] = None
+    actual_range2_end: Optional[float] = None
     
     def __post_init__(self):
         # Validation logic...

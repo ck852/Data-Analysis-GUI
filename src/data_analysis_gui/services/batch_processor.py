@@ -25,6 +25,8 @@ from data_analysis_gui.config.logging import get_logger
 from data_analysis_gui.services.data_manager import DataManager
 from data_analysis_gui.services.analysis_manager import AnalysisManager
 
+from data_analysis_gui.core.peak_snapper import PeakSnapper
+
 logger = get_logger(__name__)
 
 
@@ -165,17 +167,27 @@ class BatchProcessor:
             # Load dataset
             dataset = self.data_manager.load_dataset(file_path, self.channel_definitions)
             
+            # Apply peak snapping if enabled
+            adjusted_params = params
+            
+            if any([params.snap_range1_start, params.snap_range1_end,
+                   params.snap_range2_start, params.snap_range2_end]):
+                adjusted_params, _ = PeakSnapper.adjust_boundaries(
+                    dataset, params, self.channel_definitions
+                )
+            
             # Create analysis manager for this file
             analysis_manager = AnalysisManager(self.channel_definitions)
             
-            # Perform analysis
-            analysis_result = analysis_manager.analyze(dataset, params)
+            # Perform analysis with adjusted parameters
+            analysis_result = analysis_manager.analyze(dataset, adjusted_params)
             
             # Get export table
-            export_table = analysis_manager.get_export_table(dataset, params)
+            export_table = analysis_manager.get_export_table(dataset, adjusted_params)
             
             processing_time = time.time() - start_time
             
+            # Create result with actual boundary values
             return FileAnalysisResult(
                 file_path=file_path,
                 base_name=base_name,
@@ -185,7 +197,12 @@ class BatchProcessor:
                 x_data2=analysis_result.x_data2 if params.use_dual_range else None,
                 y_data2=analysis_result.y_data2 if params.use_dual_range else None,
                 export_table=export_table,
-                processing_time=processing_time
+                processing_time=processing_time,
+                # Store actual boundaries used
+                actual_range1_start=adjusted_params.range1_start,
+                actual_range1_end=adjusted_params.range1_end,
+                actual_range2_start=adjusted_params.range2_start if params.use_dual_range else None,
+                actual_range2_end=adjusted_params.range2_end if params.use_dual_range else None
             )
             
         except Exception as e:
@@ -197,6 +214,63 @@ class BatchProcessor:
                 error_message=str(e),
                 processing_time=time.time() - start_time
             )
+
+        
+    def export_boundary_adjustments(self,
+                                   batch_result: BatchAnalysisResult,
+                                   output_path: str) -> bool:
+        """
+        Export actual boundaries used after peak snapping adjustments.
+        
+        Args:
+            batch_result: Batch analysis results
+            output_path: Path for the CSV file
+            
+        Returns:
+            True if export successful, False otherwise
+        """
+        try:
+            # Prepare data for export
+            rows = []
+            
+            for result in batch_result.successful_results:
+                if result.actual_range1_start is not None:
+                    row = {
+                        'File': result.base_name,
+                        'Range1_Start': f"{result.actual_range1_start:.3f}",
+                        'Range1_End': f"{result.actual_range1_end:.3f}"
+                    }
+                    
+                    if result.actual_range2_start is not None:
+                        row['Range2_Start'] = f"{result.actual_range2_start:.3f}"
+                        row['Range2_End'] = f"{result.actual_range2_end:.3f}"
+                    
+                    rows.append(row)
+            
+            if not rows:
+                logger.info("No boundary information to export")
+                return False
+            
+            # Write CSV
+            import csv
+            
+            # Determine headers based on whether dual range was used
+            if batch_result.parameters.use_dual_range:
+                headers = ['File', 'Range1_Start', 'Range1_End', 'Range2_Start', 'Range2_End']
+            else:
+                headers = ['File', 'Range1_Start', 'Range1_End']
+            
+            with open(output_path, 'w', newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=headers)
+                writer.writeheader()
+                writer.writerows(rows)
+            
+            logger.info(f"Exported boundary information for {len(rows)} files to {output_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to export boundary adjustments: {e}")
+            return False
     
     def export_results(self,
                       batch_result: BatchAnalysisResult,
@@ -227,6 +301,14 @@ class BatchProcessor:
                 export_results.append(export_result)
                 if export_result.success:
                     total_records += export_result.records_exported
+
+        # Check if peak snapping was used
+        params = batch_result.parameters
+        if any([params.snap_range1_start, params.snap_range1_end,
+               params.snap_range2_start, params.snap_range2_end]):
+            # Export boundary adjustments
+            boundaries_path = Path(output_dir) / "analysis_boundaries.csv"
+            self.export_boundary_adjustments(batch_result, str(boundaries_path))
         
         logger.info(f"Exported {len(export_results)} files, {total_records} total records")
         

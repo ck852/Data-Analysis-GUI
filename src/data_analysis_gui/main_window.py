@@ -226,9 +226,19 @@ class MainWindow(QMainWindow):
         self.control_panel.export_requested.connect(self._export_data)
         self.control_panel.dual_range_toggled.connect(self._toggle_dual_range)
         self.control_panel.range_values_changed.connect(self._sync_cursors_to_plot)
+
+        self.control_panel.snap_checkbox_changed.connect(self._apply_peak_snapping)
         
         # Plot manager
         self.plot_manager.line_state_changed.connect(self._on_cursor_moved)
+
+    def _apply_peak_snapping(self):
+        """Apply peak snapping when snap checkboxes are toggled."""
+        if self.controller.has_data():
+            self.control_panel.apply_peak_snapping(
+                self.controller.current_dataset,
+                self.channel_definitions
+            )
 
     def _open_file(self):
         """Open file using controller"""
@@ -268,7 +278,7 @@ class MainWindow(QMainWindow):
         self.swap_action.setEnabled(True)
         self.swap_channels_btn.setEnabled(True)
 
-            # Initialize swap button state
+        # Initialize swap button state
         if hasattr(self.channel_definitions, 'is_swapped'):
             self._update_swap_button_state(self.channel_definitions.is_swapped())
 
@@ -289,6 +299,13 @@ class MainWindow(QMainWindow):
         # Show first sweep
         if file_info.sweep_names:
             self.sweep_combo.setCurrentIndex(0)
+        
+        # Apply peak snapping if any snap checkboxes are already checked
+        # This provides immediate visual feedback when loading a new file
+        self.control_panel.apply_peak_snapping(
+            self.controller.current_dataset,
+            self.channel_definitions
+        )
 
     def _on_sweep_changed(self):
         """Update plot when sweep selection changes"""
@@ -331,7 +348,13 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Data", "Please load a data file first.")
             return
         
-        # Get parameters from control panel
+        # Apply peak snapping if enabled (this updates the UI)
+        self.control_panel.apply_peak_snapping(
+            self.controller.current_dataset,
+            self.channel_definitions
+        )
+        
+        # Get parameters from control panel (now with snapped values)
         params = self.control_panel.get_parameters()
         
         # Perform analysis using controller

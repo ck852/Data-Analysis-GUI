@@ -24,6 +24,8 @@ from data_analysis_gui.config.logging import get_logger
 # Direct import of DataManager
 from data_analysis_gui.services.data_manager import DataManager
 
+from data_analysis_gui.core.peak_snapper import PeakSnapper
+
 logger = get_logger(__name__)
 
 
@@ -68,6 +70,20 @@ class AnalysisManager:
             raise DataError("Cannot analyze empty dataset")
         
         logger.debug(f"Analyzing {dataset.sweep_count()} sweeps")
+        
+        # Apply peak snapping if enabled
+        adjusted_params = params
+        if any([params.snap_range1_start, params.snap_range1_end,
+               params.snap_range2_start, params.snap_range2_end]):
+            adjusted_params, _ = PeakSnapper.adjust_boundaries(
+                dataset, params, self.channel_definitions
+            )
+        
+        # Get plot data from engine with adjusted parameters
+        plot_data = self.engine.get_plot_data(dataset, adjusted_params)
+        
+        if not plot_data or 'x_data' not in plot_data:
+            raise DataError("Analysis produced no results")
         
         # Get plot data from engine
         plot_data = self.engine.get_plot_data(dataset, params)

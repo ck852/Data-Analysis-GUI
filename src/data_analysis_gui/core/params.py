@@ -35,36 +35,29 @@ class AnalysisParameters:
     
     This class encapsulates all parameters needed for an analysis operation,
     with validation at construction time to ensure data integrity.
-    
-    Example:
-        >>> params = AnalysisParameters(
-        ...     range1_start=150.0,
-        ...     range1_end=500.0,
-        ...     use_dual_range=False,
-        ...     range2_start=None,
-        ...     range2_end=None,
-        ...     stimulus_period=1000.0,
-        ...     x_axis=AxisConfig(measure="Average", channel="Voltage"),
-        ...     y_axis=AxisConfig(measure="Peak", channel="Current", peak_type="Absolute"),
-        ...     channel_config={'voltage': 0, 'current': 1}
-        ... )
     """
-    # Range configuration
+    # Range configuration (REQUIRED - no defaults)
     range1_start: float  # Start time in ms for Range 1
     range1_end: float    # End time in ms for Range 1
     use_dual_range: bool # Whether to use dual range analysis
     range2_start: Optional[float]  # Start time in ms for Range 2 (if dual range)
     range2_end: Optional[float]    # End time in ms for Range 2 (if dual range)
     
-    # Timing
+    # Timing (REQUIRED - no default)
     stimulus_period: float  # Period between stimuli in ms
     
-    # Axis configurations
+    # Axis configurations (REQUIRED - no defaults)
     x_axis: AxisConfig  # Configuration for X-axis
     y_axis: AxisConfig  # Configuration for Y-axis
     
-    # Channel mapping
+    # Channel mapping (HAS DEFAULT - must come after required fields)
     channel_config: Dict[str, Any] = field(default_factory=dict)
+    
+    # Peak snapping configuration (HAS DEFAULTS - must be last)
+    snap_range1_start: bool = False  # Snap Range 1 start to nearest peak
+    snap_range1_end: bool = False    # Snap Range 1 end to nearest peak
+    snap_range2_start: bool = False  # Snap Range 2 start to nearest peak
+    snap_range2_end: bool = False    # Snap Range 2 end to nearest peak
     
     def __post_init__(self):
         """

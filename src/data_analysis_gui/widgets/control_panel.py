@@ -24,6 +24,7 @@ class ControlPanel(QWidget):
     """
 
     # Define signals for communication with main window
+    snap_checkbox_changed = pyqtSignal()  # Emitted when any snap checkbox changes
     analysis_requested = pyqtSignal()  # User wants to generate analysis plot
     export_requested = pyqtSignal()  # User wants to export data
 
@@ -123,7 +124,8 @@ class ControlPanel(QWidget):
         return analysis_group
 
     def _add_range1_settings(self, layout):
-        """Add Range 1 settings to layout"""
+        """Add Range 1 settings to layout with snap checkboxes"""
+        # Start row
         layout.addWidget(QLabel("Range 1 Start (ms):"), 0, 0)
         self.start_spin = SelectAllSpinBox()
         self.start_spin.setRange(0, 100000)
@@ -131,7 +133,14 @@ class ControlPanel(QWidget):
         self.start_spin.setSingleStep(0.05)
         self.start_spin.setDecimals(2)
         layout.addWidget(self.start_spin, 0, 1)
+        
+        # Add snap checkbox for start
+        self.snap_start1_cb = QCheckBox("📍")
+        self.snap_start1_cb.setToolTip("Snap to nearest peak within ±0.2 ms")
+        self.snap_start1_cb.setMaximumWidth(30)
+        layout.addWidget(self.snap_start1_cb, 0, 2)
 
+        # End row
         layout.addWidget(QLabel("Range 1 End (ms):"), 1, 0)
         self.end_spin = SelectAllSpinBox()
         self.end_spin.setRange(0, 100000)
@@ -139,9 +148,16 @@ class ControlPanel(QWidget):
         self.end_spin.setSingleStep(0.05)
         self.end_spin.setDecimals(2)
         layout.addWidget(self.end_spin, 1, 1)
+        
+        # Add snap checkbox for end
+        self.snap_end1_cb = QCheckBox("📍")
+        self.snap_end1_cb.setToolTip("Snap to nearest peak within ±0.2 ms")
+        self.snap_end1_cb.setMaximumWidth(30)
+        layout.addWidget(self.snap_end1_cb, 1, 2)
 
     def _add_range2_settings(self, layout):
-        """Add Range 2 settings to layout"""
+        """Add Range 2 settings to layout with snap checkboxes"""
+        # Start row
         layout.addWidget(QLabel("Range 2 Start (ms):"), 3, 0)
         self.start_spin2 = SelectAllSpinBox()
         self.start_spin2.setRange(0, 100000)
@@ -150,7 +166,15 @@ class ControlPanel(QWidget):
         self.start_spin2.setDecimals(2)
         self.start_spin2.setEnabled(False)
         layout.addWidget(self.start_spin2, 3, 1)
+        
+        # Add snap checkbox for start
+        self.snap_start2_cb = QCheckBox("📍")
+        self.snap_start2_cb.setToolTip("Snap to nearest peak within ±0.2 ms")
+        self.snap_start2_cb.setMaximumWidth(30)
+        self.snap_start2_cb.setEnabled(False)
+        layout.addWidget(self.snap_start2_cb, 3, 2)
 
+        # End row
         layout.addWidget(QLabel("Range 2 End (ms):"), 4, 0)
         self.end_spin2 = SelectAllSpinBox()
         self.end_spin2.setRange(0, 100000)
@@ -159,6 +183,13 @@ class ControlPanel(QWidget):
         self.end_spin2.setDecimals(2)
         self.end_spin2.setEnabled(False)
         layout.addWidget(self.end_spin2, 4, 1)
+        
+        # Add snap checkbox for end
+        self.snap_end2_cb = QCheckBox("📍")
+        self.snap_end2_cb.setToolTip("Snap to nearest peak within ±0.2 ms")
+        self.snap_end2_cb.setMaximumWidth(30)
+        self.snap_end2_cb.setEnabled(False)
+        layout.addWidget(self.snap_end2_cb, 4, 2)
 
     def _create_plot_settings_group(self):
         """Create the plot settings group"""
@@ -223,6 +254,12 @@ class ControlPanel(QWidget):
         self.end_spin2.valueChanged.connect(self._validate_and_update)
         # Also re-validate when the dual range checkbox is toggled
         self.dual_range_cb.stateChanged.connect(self._validate_and_update)
+        
+        # Add connections for snap checkboxes to emit signal
+        self.snap_start1_cb.stateChanged.connect(lambda: self.snap_checkbox_changed.emit())
+        self.snap_end1_cb.stateChanged.connect(lambda: self.snap_checkbox_changed.emit())
+        self.snap_start2_cb.stateChanged.connect(lambda: self.snap_checkbox_changed.emit())
+        self.snap_end2_cb.stateChanged.connect(lambda: self.snap_checkbox_changed.emit())
 
     def _validate_and_update(self):
         """
@@ -303,6 +340,8 @@ class ControlPanel(QWidget):
         enabled = self.dual_range_cb.isChecked()
         self.start_spin2.setEnabled(enabled)
         self.end_spin2.setEnabled(enabled)
+        self.snap_start2_cb.setEnabled(enabled)
+        self.snap_end2_cb.setEnabled(enabled)
         self.dual_range_toggled.emit(enabled)
         # The validation is handled by the connected signal
 
@@ -353,7 +392,7 @@ class ControlPanel(QWidget):
             peak_type=peak_mode if y_measure == "Peak" else None
         )
         
-        # Return clean parameters object
+        # Return clean parameters object with snap settings
         return AnalysisParameters(
             range1_start=self.start_spin.value(),
             range1_end=self.end_spin.value(),
@@ -363,10 +402,83 @@ class ControlPanel(QWidget):
             stimulus_period=self.period_spin.value(),
             x_axis=x_axis,
             y_axis=y_axis,
-            channel_config={'channels_swapped': self._is_swapped}
+            channel_config={'channels_swapped': self._is_swapped},
+            # Add snap settings
+            snap_range1_start=self.snap_start1_cb.isChecked(),
+            snap_range1_end=self.snap_end1_cb.isChecked(),
+            snap_range2_start=self.snap_start2_cb.isChecked() if self.dual_range_cb.isChecked() else False,
+            snap_range2_end=self.snap_end2_cb.isChecked() if self.dual_range_cb.isChecked() else False
         )
 
     # --- Public methods for data access and updates ---
+
+    def apply_peak_snapping(self, dataset, channel_definitions):
+        """
+        Apply peak snapping and update UI with snapped values.
+        Called when analysis is requested or when snap checkboxes are toggled.
+        
+        Args:
+            dataset: The current dataset
+            channel_definitions: Channel configuration
+        """
+        if not dataset:
+            return
+        
+        # Prevent recursive calls when we update spinbox values
+        if hasattr(self, '_applying_snap') and self._applying_snap:
+            return
+        
+        self._applying_snap = True
+        
+        try:
+            # Get current parameters
+            params = self.get_parameters()
+            
+            # Only proceed if any snapping is enabled
+            if not any([params.snap_range1_start, params.snap_range1_end,
+                       params.snap_range2_start, params.snap_range2_end]):
+                return
+            
+            # Import here to avoid circular dependency
+            from data_analysis_gui.core.peak_snapper import PeakSnapper
+            
+            # Apply peak snapping
+            adjusted_params, adjustments = PeakSnapper.adjust_boundaries(
+                dataset, params, channel_definitions
+            )
+            
+            # Temporarily disconnect signals to prevent loops
+            self.start_spin.blockSignals(True)
+            self.end_spin.blockSignals(True)
+            self.start_spin2.blockSignals(True)
+            self.end_spin2.blockSignals(True)
+            
+            try:
+                # Update spinboxes with snapped values
+                if 'range1_start_adjusted' in adjustments:
+                    self.start_spin.setValue(adjustments['range1_start_adjusted'])
+                
+                if 'range1_end_adjusted' in adjustments:
+                    self.end_spin.setValue(adjustments['range1_end_adjusted'])
+                
+                if params.use_dual_range:
+                    if 'range2_start_adjusted' in adjustments:
+                        self.start_spin2.setValue(adjustments['range2_start_adjusted'])
+                    
+                    if 'range2_end_adjusted' in adjustments:
+                        self.end_spin2.setValue(adjustments['range2_end_adjusted'])
+            finally:
+                # Re-enable signals
+                self.start_spin.blockSignals(False)
+                self.end_spin.blockSignals(False)
+                self.start_spin2.blockSignals(False)
+                self.end_spin2.blockSignals(False)
+            
+            # Manually trigger update to sync cursors
+            self.range_values_changed.emit()
+            
+        finally:
+            self._applying_snap = False
 
     def set_controls_enabled(self, enabled: bool):
         """Enable or disable analysis controls"""
