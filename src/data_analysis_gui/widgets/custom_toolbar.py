@@ -30,14 +30,17 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         # Store the canvas reference before calling parent init
         self._canvas = canvas
         
+        # Initialize current mode early
+        self.current_mode = 'none'
+        
+        # Initialize mode_label as None first
+        self.mode_label = None
+        
         # Call parent constructor
         super().__init__(canvas, parent)
         
         # Apply custom styling
         self._apply_styling()
-        
-        # Track current mode
-        self.current_mode = 'none'
     
     def _init_toolbar(self):
         """
@@ -226,34 +229,67 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
     def pan(self, *args):
         """Override pan to update mode indicator."""
         super().pan(*args)
-        if self._actions['pan'].isChecked():
-            self.current_mode = 'pan'
-            self.mode_label.setText("Pan Mode")
-            self.zoom_action.setChecked(False)
+        
+        # Check if mode_label exists before using it
+        if hasattr(self, 'mode_label') and self.mode_label:
+            if self._actions['pan'].isChecked():
+                self.current_mode = 'pan'
+                self.mode_label.setText("Pan Mode")
+                # Uncheck zoom action if it's checked
+                if hasattr(self, 'zoom_action'):
+                    self.zoom_action.setChecked(False)
+            else:
+                self.current_mode = 'none'
+                self.mode_label.setText("")
         else:
-            self.current_mode = 'none'
-            self.mode_label.setText("")
+            # Just update the mode without touching the label
+            if self._actions['pan'].isChecked():
+                self.current_mode = 'pan'
+            else:
+                self.current_mode = 'none'
+        
         self.mode_changed.emit(self.current_mode)
     
     def zoom(self, *args):
         """Override zoom to update mode indicator."""
         super().zoom(*args)
-        if self._actions['zoom'].isChecked():
-            self.current_mode = 'zoom'
-            self.mode_label.setText("Zoom Mode")
-            self.pan_action.setChecked(False)
+        
+        # Check if mode_label exists before using it
+        if hasattr(self, 'mode_label') and self.mode_label:
+            if self._actions['zoom'].isChecked():
+                self.current_mode = 'zoom'
+                self.mode_label.setText("Zoom Mode")
+                # Uncheck pan action if it's checked
+                if hasattr(self, 'pan_action'):
+                    self.pan_action.setChecked(False)
+            else:
+                self.current_mode = 'none'
+                self.mode_label.setText("")
         else:
-            self.current_mode = 'none'
-            self.mode_label.setText("")
+            # Just update the mode without touching the label
+            if self._actions['zoom'].isChecked():
+                self.current_mode = 'zoom'
+            else:
+                self.current_mode = 'none'
+        
         self.mode_changed.emit(self.current_mode)
     
     def home(self, *args):
         """Override home to clear mode."""
         super().home(*args)
-        self.pan_action.setChecked(False)
-        self.zoom_action.setChecked(False)
+        
+        # Uncheck both actions
+        if hasattr(self, 'pan_action'):
+            self.pan_action.setChecked(False)
+        if hasattr(self, 'zoom_action'):
+            self.zoom_action.setChecked(False)
+        
         self.current_mode = 'none'
-        self.mode_label.setText("")
+        
+        # Update label if it exists
+        if hasattr(self, 'mode_label') and self.mode_label:
+            self.mode_label.setText("")
+        
         self.mode_changed.emit(self.current_mode)
 
 
