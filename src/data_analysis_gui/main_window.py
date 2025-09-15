@@ -1,5 +1,6 @@
 """
-Main Window - Fixed to use shared services from controller
+Main Window - Fully Theme-Integrated Version
+Uses themes.py functions throughout for consistent modern styling.
 """
 
 import os
@@ -12,7 +13,12 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QKeySequence
 
-from data_analysis_gui.config.themes import apply_modern_style, style_button
+# Import comprehensive theme functions
+from data_analysis_gui.config.themes import (
+    style_main_window, style_button, create_styled_button, 
+    style_combo_box, style_label, style_toolbar, 
+    apply_compact_layout, WIDGET_SIZES
+)
 
 # Core imports
 from data_analysis_gui.core.app_controller import ApplicationController
@@ -36,8 +42,8 @@ logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     """
-    Main application window using shared services from controller.
-    No duplicate service instantiation.
+    Main application window with full theme integration.
+    All styling is handled by themes.py functions.
     """
     
     # Application events
@@ -80,18 +86,22 @@ class MainWindow(QMainWindow):
         # Configure window
         self.setWindowTitle("Electrophysiology Data Analysis")
         
-        # Apply modern theme
-        apply_modern_style(self)
+        # Apply comprehensive theme styling (handles everything)
+        style_main_window(self)
 
     def _init_ui(self):
-        """Initialize the complete UI"""
+        """Initialize the complete UI with full theme integration"""
         # Central widget
         central = QWidget()
         self.setCentralWidget(central)
         
+        # Main layout with theme spacing
+        main_layout = QHBoxLayout(central)
+        apply_compact_layout(central, spacing=0, margin=0)
+        
         # Main splitter
         splitter = QSplitter(Qt.Horizontal)
-        QHBoxLayout(central).addWidget(splitter)
+        main_layout.addWidget(splitter)
         
         # Control panel (left)
         self.control_panel = ControlPanel()
@@ -116,7 +126,7 @@ class MainWindow(QMainWindow):
         self._connect_signals()
 
     def _create_menus(self):
-        """Create application menus"""
+        """Create application menus (styling handled by style_main_window)"""
         menubar = self.menuBar()
         
         # File menu
@@ -149,155 +159,87 @@ class MainWindow(QMainWindow):
         self.batch_action.setEnabled(True)
         analysis_menu.addAction(self.batch_action)
         
-        # Apply menu styling
-        self._apply_menu_styling()
+        # Note: Menu styling is handled by style_main_window()
 
     def _create_toolbar(self):
-        """Create toolbar with navigation"""
+        """Create toolbar with proper theme styling"""
         toolbar = QToolBar("Main")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
         
-        # File operations - create proper QAction instead of just text
+        # File operations
         open_action = toolbar.addAction("Open", self._open_file)
         toolbar.addSeparator()
         
-        # Navigation
-        self.prev_btn = QPushButton("◀")
+        # Navigation buttons using themed button creation
+        self.prev_btn = create_styled_button("◀", "secondary")
         self.prev_btn.setMaximumWidth(40)
         self.prev_btn.setEnabled(False)
         self.prev_btn.pressed.connect(lambda: self._start_navigation(self._prev_sweep))
         self.prev_btn.released.connect(self._stop_navigation)
-        style_button(self.prev_btn, "secondary")
         toolbar.addWidget(self.prev_btn)
         
+        # Sweep combo with theme styling
         self.sweep_combo = QComboBox()
         self.sweep_combo.setMinimumWidth(120)
         self.sweep_combo.setEnabled(False)
         self.sweep_combo.currentTextChanged.connect(self._on_sweep_changed)
+        style_combo_box(self.sweep_combo)
         toolbar.addWidget(self.sweep_combo)
         
-        self.next_btn = QPushButton("▶")
+        self.next_btn = create_styled_button("▶", "secondary")
         self.next_btn.setMaximumWidth(40)
         self.next_btn.setEnabled(False)
         self.next_btn.pressed.connect(lambda: self._start_navigation(self._next_sweep))
         self.next_btn.released.connect(self._stop_navigation)
-        style_button(self.next_btn, "secondary")
         toolbar.addWidget(self.next_btn)
         
         toolbar.addSeparator()
         
-        # Channel selection
-        toolbar.addWidget(QLabel("Channel:"))
+        # Channel selection with themed widgets
+        channel_label = QLabel("Channel:")
+        style_label(channel_label, 'normal')
+        toolbar.addWidget(channel_label)
+        
         self.channel_combo = QComboBox()
         self.channel_combo.addItems(["Voltage", "Current"])
         self.channel_combo.setEnabled(False)
         self.channel_combo.currentTextChanged.connect(self._on_channel_changed)
+        style_combo_box(self.channel_combo)
         toolbar.addWidget(self.channel_combo)
         
         toolbar.addSeparator()
 
-        # File Information Labels
+        # File Information Labels with theme styling
         self.file_label = QLabel("No file loaded")
-        self.file_label.setStyleSheet("QLabel { margin-left: 5px; }")
+        style_label(self.file_label, 'muted')
         toolbar.addWidget(self.file_label)
         
         self.sweep_count_label = QLabel("")
-        self.sweep_count_label.setStyleSheet("QLabel { margin-left: 5px; }")
+        style_label(self.sweep_count_label, 'muted')
         toolbar.addWidget(self.sweep_count_label)
 
         toolbar.addSeparator()
 
-        # Swap Channels Button
-        self.swap_channels_btn = QPushButton("Swap Channels")
+        # Swap Channels Button with theme styling
+        self.swap_channels_btn = create_styled_button("Swap Channels", "secondary")
         self.swap_channels_btn.setToolTip("Swap voltage and current channel assignments (Ctrl+Shift+S)")
         self.swap_channels_btn.setEnabled(False)
         self.swap_channels_btn.clicked.connect(self._swap_channels)
-        style_button(self.swap_channels_btn, "secondary")
         toolbar.addWidget(self.swap_channels_btn)
         
-        # Center Cursor Button
-        center_cursor_btn = QPushButton("Center Nearest Cursor")
-        center_cursor_btn.setToolTip("Moves the nearest cursor to the center of the view")
-        center_cursor_btn.clicked.connect(
+        # Center Cursor Button with theme styling
+        self.center_cursor_btn = create_styled_button("Center Nearest Cursor", "secondary")
+        self.center_cursor_btn.setToolTip("Moves the nearest cursor to the center of the view")
+        self.center_cursor_btn.clicked.connect(
             lambda: self._sync_cursor_to_control(*self.plot_manager.center_nearest_cursor())
         )
-        center_cursor_btn.setEnabled(False)
-        style_button(center_cursor_btn, "secondary")
-        self.center_cursor_btn = center_cursor_btn
+        self.center_cursor_btn.setEnabled(False)
         toolbar.addWidget(self.center_cursor_btn)
 
         toolbar.addSeparator()
         
-        # Apply toolbar styling after all elements are added
-        self._apply_menu_styling()
-
-    def _apply_menu_styling(self):
-        """Apply consistent font styling to menus"""
-        from data_analysis_gui.config.themes import TYPOGRAPHY, MODERN_COLORS
-        
-        menu_style = f"""
-            QMenuBar {{
-                background-color: {MODERN_COLORS['background']};
-                color: {MODERN_COLORS['text']};
-                font-family: {TYPOGRAPHY['font_family']};
-                font-size: {TYPOGRAPHY['font_size_base']};
-                font-weight: {TYPOGRAPHY['font_weight_normal']};
-                border-bottom: 1px solid {MODERN_COLORS['border']};
-                padding: 4px;
-            }}
-            
-            QMenuBar::item {{
-                background-color: transparent;
-                padding: 6px 12px;
-                margin: 2px;
-                border-radius: 3px;
-            }}
-            
-            QMenuBar::item:selected {{
-                background-color: {MODERN_COLORS['list_hover']};
-                color: {MODERN_COLORS['text']};
-            }}
-            
-            QMenuBar::item:pressed {{
-                background-color: {MODERN_COLORS['list_selected']};
-                color: {MODERN_COLORS['list_selected_text']};
-            }}
-            
-            QMenu {{
-                background-color: {MODERN_COLORS['background']};
-                color: {MODERN_COLORS['text']};
-                font-family: {TYPOGRAPHY['font_family']};
-                font-size: {TYPOGRAPHY['font_size_base']};
-                border: 1px solid {MODERN_COLORS['border']};
-                border-radius: 4px;
-                padding: 4px;
-            }}
-            
-            QMenu::item {{
-                padding: 8px 24px 8px 32px;
-                background-color: transparent;
-                border-radius: 3px;
-            }}
-            
-            QMenu::item:selected {{
-                background-color: {MODERN_COLORS['list_selected']};
-                color: {MODERN_COLORS['list_selected_text']};
-            }}
-            
-            QMenu::separator {{
-                height: 1px;
-                background-color: {MODERN_COLORS['border']};
-                margin: 4px 8px;
-            }}
-            
-            QMenu::indicator {{
-                width: 16px;
-                height: 16px;
-            }}
-        """
-        
-        self.menuBar().setStyleSheet(menu_style)
+        # Note: Toolbar styling is handled by style_main_window()
 
     def _connect_signals(self):
         """Connect all signals"""
@@ -336,9 +278,13 @@ class MainWindow(QMainWindow):
 
     def _on_file_loaded(self, file_info: FileInfo):
         """Handle successful file load"""
-        # Update control panel
+        # Update file labels with proper theme styling
         self.file_label.setText(f"File: {file_info.name}")
+        style_label(self.file_label, 'normal')  # Switch from muted to normal
+        
         self.sweep_count_label.setText(f"Sweeps: {file_info.sweep_count}")
+        style_label(self.sweep_count_label, 'normal')  # Switch from muted to normal
+        
         self.control_panel.set_controls_enabled(True)
         
         if file_info.max_sweep_time:
@@ -348,7 +294,7 @@ class MainWindow(QMainWindow):
         self.swap_action.setEnabled(True)
         self.swap_channels_btn.setEnabled(True)
 
-            # Initialize swap button state
+        # Initialize swap button state
         if hasattr(self.channel_definitions, 'is_swapped'):
             self._update_swap_button_state(self.channel_definitions.is_swapped())
 
@@ -508,35 +454,12 @@ class MainWindow(QMainWindow):
     def _update_swap_button_state(self, is_swapped: bool):
         """Update the swap channels button appearance based on swap state."""
         if is_swapped:
-            # When swapped, use a custom warning-like style while maintaining theme consistency
-            self.swap_channels_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: #FFC107;
-                    color: #212529;
-                    border: 1px solid #FFB300;
-                    border-radius: 3px;
-                    padding: 6px 16px;
-                    font-size: 11px;
-                    font-weight: 500;
-                    font-family: Segoe UI, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-                }}
-                QPushButton:hover {{
-                    background-color: #E0A800;
-                    border-color: #D39E00;
-                }}
-                QPushButton:pressed {{
-                    background-color: #D39E00;
-                }}
-                QPushButton:disabled {{
-                    background-color: #CCCCCC;
-                    color: #888888;
-                    border-color: #CCCCCC;
-                }}
-            """)
+            # Use theme's warning button style when swapped
+            style_button(self.swap_channels_btn, "warning")
             self.swap_channels_btn.setText("Channels Swapped ⇄")
             self.swap_channels_btn.setToolTip("Click to restore default channel assignments (Ctrl+Shift+S)")
         else:
-            # When not swapped, use standard secondary styling
+            # Use standard secondary style when not swapped
             style_button(self.swap_channels_btn, "secondary")
             self.swap_channels_btn.setText("Swap Channels")
             self.swap_channels_btn.setToolTip("Swap voltage and current channel assignments (Ctrl+Shift+S)")

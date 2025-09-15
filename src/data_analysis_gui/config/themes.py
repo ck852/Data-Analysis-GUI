@@ -907,3 +907,179 @@ __all__ = [
     # Backward compatibility
     'get_theme_stylesheet',
 ]
+
+def style_spinbox_with_arrows(widget: QWidget) -> None:
+    """
+    Apply styling to spinboxes with clearly visible arrows.
+    Simplified approach for better visibility.
+    """
+    widget.setStyleSheet(f"""
+        QSpinBox, QDoubleSpinBox {{
+            border: 1px solid {MODERN_COLORS['border']};
+            border-radius: {SPACING['border_radius']};
+            padding: 4px 8px;
+            padding-right: 20px; /* Make room for arrows */
+            background-color: {MODERN_COLORS['background']};
+            font-size: {TYPOGRAPHY['font_size_base']};
+            font-family: {TYPOGRAPHY['font_family']};
+            min-height: {WIDGET_SIZES['input_height']}px;
+            color: {MODERN_COLORS['text']};
+        }}
+        
+        QSpinBox:hover, QDoubleSpinBox:hover {{
+            border-color: {MODERN_COLORS['secondary_hover_border']};
+        }}
+        
+        QSpinBox:focus, QDoubleSpinBox:focus {{
+            border-color: {MODERN_COLORS['border_focus']};
+            outline: none;
+        }}
+        
+        QSpinBox:disabled, QDoubleSpinBox:disabled {{
+            background-color: {MODERN_COLORS['disabled_bg']};
+            color: {MODERN_COLORS['disabled_text']};
+            border-color: {MODERN_COLORS['border']};
+        }}
+        
+        /* Up button styling */
+        QSpinBox::up-button, QDoubleSpinBox::up-button {{
+            subcontrol-origin: border;
+            subcontrol-position: top right;
+            width: 16px;
+            border-left: 1px solid {MODERN_COLORS['border']};
+            border-bottom: 1px solid {MODERN_COLORS['border']};
+            background: {MODERN_COLORS['surface']};
+        }}
+        
+        QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {{
+            background: {MODERN_COLORS['secondary_hover']};
+        }}
+        
+        QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {{
+            background: {MODERN_COLORS['secondary_pressed']};
+        }}
+        
+        /* Down button styling */
+        QSpinBox::down-button, QDoubleSpinBox::down-button {{
+            subcontrol-origin: border;
+            subcontrol-position: bottom right;
+            width: 16px;
+            border-left: 1px solid {MODERN_COLORS['border']};
+            border-top: 1px solid {MODERN_COLORS['border']};
+            background: {MODERN_COLORS['surface']};
+        }}
+        
+        QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {{
+            background: {MODERN_COLORS['secondary_hover']};
+        }}
+        
+        QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {{
+            background: {MODERN_COLORS['secondary_pressed']};
+        }}
+        
+        /* Up arrow */
+        QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {{
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 5px solid {MODERN_COLORS['text']};
+        }}
+        
+        QSpinBox::up-arrow:disabled, QDoubleSpinBox::up-arrow:disabled {{
+            border-bottom-color: {MODERN_COLORS['disabled_text']};
+        }}
+        
+        /* Down arrow */
+        QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {{
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid {MODERN_COLORS['text']};
+        }}
+        
+        QSpinBox::down-arrow:disabled, QDoubleSpinBox::down-arrow:disabled {{
+            border-top-color: {MODERN_COLORS['disabled_text']};
+        }}
+    """)
+
+
+def style_combo_simple(widget: QComboBox) -> None:
+    """
+    Apply simplified styling to a QComboBox without gray box artifacts.
+    Clean, minimal approach for better appearance.
+    """
+    widget.setStyleSheet(f"""
+        QComboBox {{
+            border: 1px solid {MODERN_COLORS['border']};
+            border-radius: {SPACING['border_radius']};
+            padding: 4px 8px;
+            padding-right: 25px; /* Space for dropdown arrow */
+            background-color: {MODERN_COLORS['background']};
+            font-size: {TYPOGRAPHY['font_size_base']};
+            font-family: {TYPOGRAPHY['font_family']};
+            min-height: {WIDGET_SIZES['input_height']}px;
+            color: {MODERN_COLORS['text']};
+        }}
+        
+        QComboBox:hover {{
+            border-color: {MODERN_COLORS['secondary_hover_border']};
+        }}
+        
+        QComboBox:focus {{
+            border-color: {MODERN_COLORS['border_focus']};
+        }}
+        
+        QComboBox:disabled {{
+            background-color: {MODERN_COLORS['disabled_bg']};
+            color: {MODERN_COLORS['disabled_text']};
+            border-color: {MODERN_COLORS['border']};
+        }}
+        
+        /* Drop-down button */
+        QComboBox::drop-down {{
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 20px;
+            border: none;
+            background: transparent;
+        }}
+        
+        /* Drop-down arrow - simple triangle */
+        QComboBox::down-arrow {{
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid {MODERN_COLORS['text']};
+        }}
+        
+        QComboBox::down-arrow:disabled {{
+            border-top-color: {MODERN_COLORS['disabled_text']};
+        }}
+        
+        /* Dropdown list */
+        QComboBox QAbstractItemView {{
+            border: 1px solid {MODERN_COLORS['border']};
+            background-color: {MODERN_COLORS['background']};
+            selection-background-color: {MODERN_COLORS['list_selected']};
+            selection-color: {MODERN_COLORS['list_selected_text']};
+            padding: 2px;
+            outline: none;
+        }}
+        
+        QComboBox QAbstractItemView::item {{
+            min-height: 25px;
+            padding: 3px 8px;
+        }}
+        
+        QComboBox QAbstractItemView::item:hover {{
+            background-color: {MODERN_COLORS['list_hover']};
+        }}
+        
+        QComboBox QAbstractItemView::item:selected {{
+            background-color: {MODERN_COLORS['list_selected']};
+            color: {MODERN_COLORS['list_selected_text']};
+        }}
+    """)
