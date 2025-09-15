@@ -23,7 +23,7 @@ from data_analysis_gui.widgets.shared_widgets import (
 
 from data_analysis_gui.config.themes import (
     style_main_window, create_styled_button, style_group_box, 
-    get_selection_summary_color, style_label
+    get_selection_summary_color, style_label, style_splitter
 )
 
 logger = get_logger(__name__)
@@ -82,10 +82,13 @@ class BatchResultsWindow(QMainWindow):
         
         # Right panel: Plot
         self.plot_widget = DynamicBatchPlotWidget()
+        plot_labels = self.plot_formatter.get_plot_titles_and_labels(
+            'batch', params=self.batch_result.parameters
+        )
         self.plot_widget.initialize_plot(
-            x_label=self._get_x_label(),
-            y_label=self._get_y_label(),
-            title=""
+            x_label=plot_labels['x_label'],
+            y_label=plot_labels['y_label'],
+            title=plot_labels['title']
         )
         splitter.addWidget(self.plot_widget)
         
@@ -189,18 +192,6 @@ class BatchResultsWindow(QMainWindow):
         
         self.summary_label.setText(f"{selected} of {total} files selected")
         self.summary_label.setStyleSheet(f"color: {color}; font-weight: 500; font-style: normal;")
-    
-    def _get_x_label(self):
-        """Get X-axis label using PlotFormatter logic."""
-        return self.plot_formatter.get_axis_label(
-            self.batch_result.parameters.x_axis
-        )
-
-    def _get_y_label(self):
-        """Get Y-axis label using PlotFormatter logic."""
-        return self.plot_formatter.get_axis_label(
-            self.batch_result.parameters.y_axis
-        )
     
     def _add_export_controls(self, layout):
         """Add export controls."""

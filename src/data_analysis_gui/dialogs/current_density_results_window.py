@@ -29,11 +29,12 @@ from data_analysis_gui.config.themes import (style_button, style_label,
                                              style_main_window, style_splitter)
 from data_analysis_gui.core.models import BatchAnalysisResult
 from data_analysis_gui.gui_services import FileDialogService
-from data_analysis_gui.services.current_density_service import \
-    CurrentDensityService
+from data_analysis_gui.services.current_density_service import CurrentDensityService
 from data_analysis_gui.widgets.shared_widgets import (BatchFileListWidget,
                                                       DynamicBatchPlotWidget,
                                                       FileSelectionState)
+
+from data_analysis_gui.core.plot_formatter import PlotFormatter
 
 logger = get_logger(__name__)
 
@@ -52,6 +53,8 @@ class CurrentDensityResultsWindow(QMainWindow):
         selected = getattr(batch_result, 'selected_files',
                            {r.base_name for r in batch_result.successful_results})
         self.selection_state = FileSelectionState(selected)
+
+        self.plot_formatter = PlotFormatter()
 
         self.cslow_mapping = cslow_mapping
         self.data_service = data_service
@@ -91,10 +94,11 @@ class CurrentDensityResultsWindow(QMainWindow):
         splitter.addWidget(self._create_left_panel())
 
         self.plot_widget = DynamicBatchPlotWidget()
+        plot_labels = self.plot_formatter.get_plot_titles_and_labels('current_density')
         self.plot_widget.initialize_plot(
-            x_label="Voltage (mV)",
-            y_label=f"Current Density ({self.y_unit})",
-            title="Current Density vs. Voltage"
+            x_label=plot_labels['x_label'],
+            y_label=plot_labels['y_label'],
+            title=plot_labels['title']
         )
         splitter.addWidget(self.plot_widget)
 

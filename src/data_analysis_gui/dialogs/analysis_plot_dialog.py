@@ -2,45 +2,49 @@
 """
 GUI dialog for displaying analysis plots.
 Phase 3: Updated to use stateless AnalysisPlotter methods.
+FIXED: Window positioning bug and full theme integration.
 """
 
 import os
 from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                               QFileDialog, QMessageBox)
+from pathlib import Path
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 # Core imports - all data processing is delegated to these
 from data_analysis_gui.core.analysis_plot import AnalysisPlotter, AnalysisPlotData
-
-from data_analysis_gui.core.models import AnalysisPlotData as ModelAnalysisPlotData
+from data_analysis_gui.core.plot_formatter import PlotFormatter  # Import the formatter
 from data_analysis_gui.gui_services import FileDialogService
 
-from data_analysis_gui.config.themes import apply_modern_style, style_button
+from data_analysis_gui.config.themes import apply_modern_style, style_button, create_styled_button
+
 
 class AnalysisPlotDialog(QDialog):
     """
     Dialog for displaying analysis plot in a separate window.
-    
-    PHASE 3 UPDATE: Now uses stateless AnalysisPlotter methods instead of
-    instantiating a plotter object. This reduces memory usage and ensures
-    thread safety for future parallel processing.
     """
     
-    def __init__(self, parent, plot_data, x_label, y_label, title, 
-                 controller_or_manager=None, params=None, dataset=None):
+    def __init__(self, parent, plot_data, params, file_path, controller_or_manager=None):
         super().__init__(parent)
+        
+        # Initialize the formatter
+        self.plot_formatter = PlotFormatter()
 
-        # Store data and labels directly (no plotter instance)
-        self.x_label = x_label
-        self.y_label = y_label
-        self.plot_title = title
+        # Generate labels and title using the formatter
+        file_name = Path(file_path).stem if file_path else None
+        plot_labels = self.plot_formatter.get_plot_titles_and_labels(
+            'analysis', params=params, file_name=file_name
+        )
+        self.x_label = plot_labels['x_label']
+        self.y_label = plot_labels['y_label']
+        self.plot_title = plot_labels['title']
         
         # Store controller/manager and params for export
-        self.controller = controller_or_manager  # Can be ApplicationController or AnalysisManager
+        self.controller = controller_or_manager
         self.params = params
-        self.dataset = dataset  # Store dataset if passed directly
+        self.dataset = None  # Store dataset if passed directly
 
         # Initialize GUI service for file operations
         self.file_dialog_service = FileDialogService()
@@ -51,17 +55,9 @@ class AnalysisPlotDialog(QDialog):
         else:
             self.plot_data_obj = plot_data
         
-        # PHASE 3: No longer create plotter instance
-        # self.plotter = AnalysisPlotter(self.plot_data_obj, x_label, y_label, title)
-        
         self.setWindowTitle("Analysis Plot")
         screen = QApplication.primaryScreen().availableGeometry()
         self.setGeometry(200, 200, int(screen.width() * 0.6), int(screen.height() * 0.7))
-        avail = screen.availableGeometry()
-        self.resize(int(avail.width() * 0.9), int(avail.height() * 0.9))
-        fg = self.frameGeometry()
-        fg.moveCenter(avail.center())
-        self.move(fg.topLeft())
         self.init_ui()
 
         # Apply modern theme
@@ -71,7 +67,6 @@ class AnalysisPlotDialog(QDialog):
         """Initialize the user interface"""
         layout = QVBoxLayout(self)
         
-        # PHASE 3: Use static method to create plot
         self.figure, self.ax = AnalysisPlotter.create_figure(
             self.plot_data_obj,
             self.x_label, 
@@ -86,25 +81,41 @@ class AnalysisPlotDialog(QDialog):
         layout.addWidget(toolbar)
         layout.addWidget(self.canvas)
         
-        # Finalize the plot display
         self.figure.tight_layout()
         self.canvas.draw()
         
         # Add export buttons
         button_layout = QHBoxLayout()
-        
-        # Export plot image button (if needed in future)
-        # export_img_btn = QPushButton("Export Plot Image")
-        # export_img_btn.clicked.connect(self.export_plot_image)
-        # button_layout.addWidget(export_img_btn)
-        
         export_data_btn = QPushButton("Export Data")
         style_button(export_data_btn, "primary")
         export_data_btn.clicked.connect(self.export_data)
         button_layout.addWidget(export_data_btn)
-        
         button_layout.addStretch()
         layout.addLayout(button_layout)
+    
+    def _add_export_controls(self, parent_layout):
+        """Add export control buttons with full theme integration."""
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
+        
+        # Export data button - primary action
+        self.export_data_btn = create_styled_button("Export Data", "primary", self)
+        self.export_data_btn.clicked.connect(self.export_data)
+        button_layout.addWidget(self.export_data_btn)
+        
+        # Export image button - secondary action
+        self.export_img_btn = create_styled_button("Export Image", "secondary", self)
+        self.export_img_btn.clicked.connect(self.export_plot_image)
+        button_layout.addWidget(self.export_img_btn)
+        
+        # Close button - secondary action
+        self.close_btn = create_styled_button("Close", "secondary", self)
+        self.close_btn.clicked.connect(self.close)
+        
+        button_layout.addStretch()
+        button_layout.addWidget(self.close_btn)
+        
+        parent_layout.addLayout(button_layout)
     
     def export_plot_image(self):
         """
@@ -115,17 +126,24 @@ class AnalysisPlotDialog(QDialog):
         file_path = self.file_dialog_service.get_export_path(
             parent=self,
             suggested_name="analysis_plot.png",
-            file_types="PNG files (*.png);;All files (*.*)"
+            file_types="PNG files (*.png);;PDF files (*.pdf);;SVG files (*.svg);;All files (*.*)"
         )
         
         if file_path:
-            # Use static method to save
-            AnalysisPlotter.save_figure(self.figure, file_path, dpi=300)
-            QMessageBox.information(
-                self,
-                "Export Successful",
-                f"Plot saved to {os.path.basename(file_path)}"
-            )
+            try:
+                # Use static method to save
+                AnalysisPlotter.save_figure(self.figure, file_path, dpi=300)
+                QMessageBox.information(
+                    self,
+                    "Export Successful",
+                    f"Plot saved to {os.path.basename(file_path)}"
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Export Failed",
+                    f"Failed to save plot: {str(e)}"
+                )
     
     def export_data(self):
         """
@@ -181,7 +199,7 @@ class AnalysisPlotDialog(QDialog):
                     QMessageBox.information(
                         self, 
                         "Export Successful", 
-                        f"Exported {result.records_exported} records"
+                        f"Exported {result.records_exported} records to {os.path.basename(file_path)}"
                     )
                 else:
                     QMessageBox.warning(

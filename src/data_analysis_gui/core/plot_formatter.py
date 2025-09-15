@@ -379,3 +379,55 @@ class PlotFormatter:
         else:
             # Fallback
             return f"{axis_config.measure} {axis_config.channel} ({unit})"
+        
+    def get_plot_titles_and_labels(
+        self,
+        plot_type: str,
+        params: Optional[AnalysisParameters] = None,
+        file_name: Optional[str] = None,
+        sweep_info: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
+        """
+        Generates titles and labels for all plot types in the application.
+
+        Args:
+            plot_type: The type of plot ('analysis', 'batch', 'current_density', 'sweep').
+            params: An AnalysisParameters object, required for 'analysis' and 'batch' types.
+            file_name: The base name of the file, used in titles.
+            sweep_info: A dict with 'sweep_index' and 'channel_type', for 'sweep' plots.
+
+        Returns:
+            A dictionary with 'title', 'x_label', and 'y_label'.
+        """
+        if plot_type == 'analysis' and params:
+            return {
+                'title': f"Analysis - {file_name}" if file_name else "Analysis",
+                'x_label': self.get_axis_label(params.x_axis),
+                'y_label': self.get_axis_label(params.y_axis)
+            }
+        elif plot_type == 'batch' and params:
+            return {
+                'title': f"{self.get_axis_label(params.y_axis)} vs. {self.get_axis_label(params.x_axis)}",
+                'x_label': self.get_axis_label(params.x_axis),
+                'y_label': self.get_axis_label(params.y_axis)
+            }
+        elif plot_type == 'current_density':
+            return {
+                'title': "Current Density vs. Voltage",
+                'x_label': "Voltage (mV)",
+                'y_label': "Current Density (pA/pF)"
+            }
+        elif plot_type == 'sweep' and sweep_info:
+            channel_type = sweep_info.get('channel_type', 'Unknown')
+            unit = "mV" if channel_type == "Voltage" else "pA"
+            return {
+                'title': f"Sweep {sweep_info.get('sweep_index', 0)} - {channel_type}",
+                'x_label': "Time (ms)",
+                'y_label': f"{channel_type} ({unit})"
+            }
+        else:
+            return {
+                'title': "Plot",
+                'x_label': "X-Axis",
+                'y_label': "Y-Axis"
+            }

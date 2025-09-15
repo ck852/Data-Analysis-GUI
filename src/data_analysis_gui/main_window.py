@@ -357,10 +357,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Data", "Please load a data file first.")
             return
         
-        # Get parameters from control panel
         params = self.control_panel.get_parameters()
-        
-        # Perform analysis using controller
         result = self.controller.perform_analysis(params)
         
         if not result.success:
@@ -374,8 +371,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Results", 
                               "No data available for selected parameters.")
             return
-        
-        # Prepare plot data
+            
         plot_data = {
             'x_data': analysis_result.x_data,
             'y_data': analysis_result.y_data,
@@ -387,17 +383,13 @@ class MainWindow(QMainWindow):
             plot_data['y_data2'] = analysis_result.y_data2
             plot_data['y_label_r1'] = getattr(analysis_result, 'y_label_r1', analysis_result.y_label)
             plot_data['y_label_r2'] = getattr(analysis_result, 'y_label_r2', analysis_result.y_label)
-        
-        # Show dialog
+            
         if self.analysis_dialog:
             self.analysis_dialog.close()
         
-        title = f"Analysis - {Path(self.current_file_path).stem}" if self.current_file_path else "Analysis"
-        
-        # Pass controller for export functionality
+        # Pass the parameters and file path to the dialog
         self.analysis_dialog = AnalysisPlotDialog(
-            self, plot_data, analysis_result.x_label, analysis_result.y_label,
-            title, self.controller, params
+            self, plot_data, params, self.current_file_path, self.controller
         )
         self.analysis_dialog.show()
         self.analysis_completed.emit()
