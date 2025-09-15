@@ -5,7 +5,8 @@ import re
 from typing import Set
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QMessageBox, QTableWidget, QTableWidgetItem,
-                             QCheckBox, QLabel, QSplitter, QHeaderView, QApplication)
+                             QCheckBox, QLabel, QSplitter, QHeaderView, QApplication,
+                             QGroupBox)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPixmap, QPainter, QBrush
 
@@ -20,127 +21,12 @@ from data_analysis_gui.widgets.shared_widgets import (
     DynamicBatchPlotWidget, BatchFileListWidget, FileSelectionState
 )
 
-from data_analysis_gui.config.themes import apply_modern_style, style_button
+from data_analysis_gui.config.themes import (
+    style_main_window, create_styled_button, style_group_box, 
+    get_selection_summary_color, style_label
+)
 
 logger = get_logger(__name__)
-
-
-class FileListWidget(QTableWidget):
-    """Widget to display files with checkboxes and color indicators."""
-    
-    selection_changed = pyqtSignal()
-    
-    def __init__(self):
-        super().__init__()
-        self.file_colors = {}  # Map file names to colors
-        self.selected_files = set()  # Track selected file names
-        
-        # Configure table
-        self.setColumnCount(3)
-        self.setHorizontalHeaderLabels(["", "Color", "File"])
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        self.setColumnWidth(0, 30)  # Checkbox column
-        self.setColumnWidth(1, 40)  # Color column
-        
-        # Disable editing
-        self.setEditTriggers(QTableWidget.NoEditTriggers)
-        
-        # Style
-        self.setAlternatingRowColors(True)
-        self.setSelectionBehavior(QTableWidget.SelectRows)
-        self.verticalHeader().setVisible(False)
-
-        # Apply modern theme
-        apply_modern_style(self)
-    
-    def add_file(self, file_name: str, color: tuple, checked: bool = True):
-        """Add a file to the list with color indicator and checkbox."""
-        row = self.rowCount()
-        self.insertRow(row)
-        
-        # Checkbox
-        checkbox = QCheckBox()
-        checkbox.setChecked(checked)
-        checkbox.stateChanged.connect(self._on_checkbox_changed)
-        
-        # Center checkbox in cell
-        checkbox_widget = QWidget()
-        checkbox_layout = QHBoxLayout(checkbox_widget)
-        checkbox_layout.addWidget(checkbox)
-        checkbox_layout.setAlignment(Qt.AlignCenter)
-        checkbox_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.setCellWidget(row, 0, checkbox_widget)
-        
-        # Color indicator
-        color_widget = self._create_color_indicator(color)
-        self.setCellWidget(row, 1, color_widget)
-        
-        # File name
-        self.setItem(row, 2, QTableWidgetItem(file_name))
-        
-        # Store color and selection state
-        self.file_colors[file_name] = color
-        if checked:
-            self.selected_files.add(file_name)
-    
-    def _create_color_indicator(self, color: tuple) -> QWidget:
-        """Create a colored square widget."""
-        widget = QWidget()
-        layout = QHBoxLayout(widget)
-        
-        # Create colored pixmap
-        pixmap = QPixmap(20, 20)
-        pixmap.fill(Qt.transparent)
-        
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # Convert matplotlib color to Qt color
-        if len(color) == 3:
-            qcolor = QColor(int(color[0]*255), int(color[1]*255), int(color[2]*255))
-        else:
-            qcolor = QColor(int(color[0]*255), int(color[1]*255), int(color[2]*255), int(color[3]*255))
-        
-        painter.setBrush(QBrush(qcolor))
-        painter.setPen(Qt.black)
-        painter.drawRect(2, 2, 16, 16)
-        painter.end()
-        
-        label = QLabel()
-        label.setPixmap(pixmap)
-        layout.addWidget(label)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(0, 0, 0, 0)
-        
-        return widget
-    
-    def _on_checkbox_changed(self):
-        """Handle checkbox state changes."""
-        # Update selected files set
-        self.selected_files.clear()
-        for row in range(self.rowCount()):
-            checkbox_widget = self.cellWidget(row, 0)
-            checkbox = checkbox_widget.findChild(QCheckBox)
-            if checkbox and checkbox.isChecked():
-                file_name = self.item(row, 2).text()
-                self.selected_files.add(file_name)
-        
-        self.selection_changed.emit()
-    
-    def get_selected_files(self) -> Set[str]:
-        """Get the set of selected file names."""
-        return self.selected_files.copy()
-    
-    def set_all_checked(self, checked: bool):
-        """Check or uncheck all files."""
-        for row in range(self.rowCount()):
-            checkbox_widget = self.cellWidget(row, 0)
-            checkbox = checkbox_widget.findChild(QCheckBox)
-            if checkbox:
-                checkbox.setChecked(checked)
 
 
 class BatchResultsWindow(QMainWindow):
@@ -151,7 +37,6 @@ class BatchResultsWindow(QMainWindow):
         
         # Initialize selection state if not present
         if batch_result.selected_files is None:
-            # Create mutable copy of batch_result with selection state
             from dataclasses import replace
             batch_result = replace(
                 batch_result,
@@ -178,9 +63,12 @@ class BatchResultsWindow(QMainWindow):
         fg.moveCenter(avail.center())
         self.move(fg.topLeft())
         self.init_ui()
+        
+        # Apply theme from themes.py
+        style_main_window(self)
     
     def init_ui(self):
-        """Initialize the UI with file list and plot."""
+        """Initialize the UI."""
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
@@ -214,26 +102,28 @@ class BatchResultsWindow(QMainWindow):
         self._update_plot()
     
     def _create_file_list_panel(self) -> QWidget:
-        """Create the file list panel with controls."""
+        """Create the file list panel."""
         panel = QWidget()
         layout = QVBoxLayout(panel)
         
         # Title
         title = QLabel("Files:")
-        title.setStyleSheet("font-weight: bold;")
+        style_label(title, 'subheading')
         layout.addWidget(title)
         
-        # File list widget - use the new shared widget
+        # File list widget - use the shared widget
         self.file_list = BatchFileListWidget(self.selection_state, show_cslow=False)
         self.file_list.selection_changed.connect(self._on_selection_changed)
         layout.addWidget(self.file_list)
         
         # Selection controls
         controls_layout = QHBoxLayout()
-        select_all_btn = QPushButton("Select All")
-        select_none_btn = QPushButton("Select None")
+        select_all_btn = create_styled_button("Select All", "secondary", panel)
+        select_none_btn = create_styled_button("Select None", "secondary", panel)
+        
         select_all_btn.clicked.connect(lambda: self.file_list.set_all_checked(True))
         select_none_btn.clicked.connect(lambda: self.file_list.set_all_checked(False))
+        
         controls_layout.addWidget(select_all_btn)
         controls_layout.addWidget(select_none_btn)
         controls_layout.addStretch()
@@ -241,6 +131,7 @@ class BatchResultsWindow(QMainWindow):
         
         # Summary label
         self.summary_label = QLabel()
+        style_label(self.summary_label, 'caption')
         layout.addWidget(self.summary_label)
         
         return panel
@@ -248,7 +139,6 @@ class BatchResultsWindow(QMainWindow):
     def _sort_results(self, results):
         """Sort results numerically by file name."""
         def extract_number(file_name):
-            """Extract number from filename for sorting."""
             match = re.search(r'_(\d+)', file_name)
             if match:
                 return int(match.group(1))
@@ -275,32 +165,30 @@ class BatchResultsWindow(QMainWindow):
     
     def _update_plot(self):
         """Update the plot based on selected files."""
-        # Get all results sorted
         sorted_results = self._sort_results(self.batch_result.successful_results)
         
-        # Set data in plot widget
         self.plot_widget.set_data(
             sorted_results,
             use_dual_range=self.batch_result.parameters.use_dual_range
         )
         
-        # Update visibility based on selection
         self.plot_widget.update_visibility(self.selection_state.get_selected_files())
-        
-        # Update summary
         self._update_summary()
     
     def _on_selection_changed(self):
         """Handle file selection changes."""
-        # Update plot visibility
         self.plot_widget.update_visibility(self.selection_state.get_selected_files())
         self._update_summary()
     
     def _update_summary(self):
-        """Update the summary label."""
+        """Update the summary label using theme utilities."""
         selected = len(self.selection_state.get_selected_files())
         total = len(self.batch_result.successful_results)
+        
+        color = get_selection_summary_color(selected, total)
+        
         self.summary_label.setText(f"{selected} of {total} files selected")
+        self.summary_label.setStyleSheet(f"color: {color}; font-weight: 500; font-style: normal;")
     
     def _get_x_label(self):
         """Get X-axis label using PlotFormatter logic."""
@@ -316,34 +204,30 @@ class BatchResultsWindow(QMainWindow):
     
     def _add_export_controls(self, layout):
         """Add export controls."""
-        button_layout = QHBoxLayout()
+        export_group = QGroupBox("Export Options")
+        style_group_box(export_group)
+        
+        button_layout = QHBoxLayout(export_group)
         
         # Create buttons
-        export_csvs_btn = QPushButton("Export Individual CSVs...")
-        style_button(export_csvs_btn, "secondary")
-        
-        export_plot_btn = QPushButton("Export Plot...")
-        style_button(export_plot_btn, "secondary")
+        export_csvs_btn = create_styled_button("Export Individual CSVs...", "secondary", self)
+        export_plot_btn = create_styled_button("Export Plot...", "secondary", self)
         
         # IV-specific exports if applicable
         if self._is_iv_analysis():
-            export_iv_summary_btn = QPushButton("Export IV Summary...")
-            style_button(export_iv_summary_btn, "secondary")
+            export_iv_summary_btn = create_styled_button("Export IV Summary...", "accent", self)
             button_layout.addWidget(export_iv_summary_btn)
             export_iv_summary_btn.clicked.connect(self._export_iv_summary)
             
-            # Add Current Density Analysis button
-            current_density_btn = QPushButton("Current Density Analysis...")
-            style_button(current_density_btn, "primary")  # Make this primary/accent
+            current_density_btn = create_styled_button("Current Density Analysis...", "primary", self)
             button_layout.addWidget(current_density_btn)
             current_density_btn.clicked.connect(self._open_current_density_analysis)
         
         button_layout.addWidget(export_csvs_btn)
         button_layout.addWidget(export_plot_btn)
-        
         button_layout.addStretch()
         
-        layout.addLayout(button_layout)
+        layout.addWidget(export_group)
         
         # Connect signals
         export_csvs_btn.clicked.connect(self._export_individual_csvs)
@@ -371,14 +255,12 @@ class BatchResultsWindow(QMainWindow):
         """Export IV summary for selected files only."""
         from data_analysis_gui.core.iv_analysis import IVAnalysisService, IVSummaryExporter
         
-        # Get filtered results
         filtered_results = self._get_filtered_results()
         
         if not filtered_results:
             QMessageBox.warning(self, "No Data", "No files selected for export.")
             return
         
-        # Prepare IV data for selected files only
         batch_data = {
             r.base_name: {
                 'x_values': r.x_data.tolist(),
@@ -393,7 +275,6 @@ class BatchResultsWindow(QMainWindow):
             batch_data, self.batch_result.parameters
         )
         
-        # Get export path
         file_path = self.file_dialog_service.get_export_path(
             self, "IV_Summary.csv",
             file_types="CSV files (*.csv)"
@@ -401,7 +282,6 @@ class BatchResultsWindow(QMainWindow):
         
         if file_path:
             try:
-                # Prepare table for Range 1
                 selected_set = set(r.base_name for r in filtered_results)
                 table = IVSummaryExporter.prepare_summary_table(
                     iv_data_r1, mapping, selected_set
@@ -438,7 +318,6 @@ class BatchResultsWindow(QMainWindow):
                 from data_analysis_gui.core.models import BatchAnalysisResult
                 from dataclasses import replace
                 
-                # Create a BatchAnalysisResult with current selection state
                 filtered_batch = replace(
                     self.batch_result,
                     successful_results=filtered_results,
@@ -452,9 +331,9 @@ class BatchResultsWindow(QMainWindow):
                 
                 QMessageBox.information(
                     self, "Export Complete",
-                    f"Exported {success_count} files\n"
-                    f"Total: {result.total_records} records"
+                    f"Exported {success_count} files\nTotal: {result.total_records} records"
                 )
+                
             except Exception as e:
                 logger.error(f"Export failed: {e}", exc_info=True)
                 QMessageBox.critical(self, "Export Failed", str(e))
@@ -483,18 +362,15 @@ class BatchResultsWindow(QMainWindow):
     
     def _open_current_density_analysis(self):
         """Open current density analysis dialog."""
-        # Pass the batch_result with selection state
         from dataclasses import replace
         batch_with_selection = replace(
             self.batch_result,
             selected_files=self.selection_state.get_selected_files()
         )
         
-        # Create and show dialog
         dialog = CurrentDensityDialog(self, batch_with_selection)
         
         if dialog.exec_():
-            # Get Cslow values
             cslow_mapping = dialog.get_cslow_mapping()
             
             if not cslow_mapping:
@@ -505,10 +381,9 @@ class BatchResultsWindow(QMainWindow):
                 )
                 return
             
-            # Create and show current density window
             cd_window = CurrentDensityResultsWindow(
                 self,
-                batch_with_selection,  # Pass batch result with selection state
+                batch_with_selection,
                 cslow_mapping,
                 self.data_service,
                 self.batch_service

@@ -5,13 +5,17 @@ from typing import List, Optional
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QListWidget, QProgressBar, QLabel, QCheckBox,
                              QDialogButtonBox, QMessageBox,
-                             QAbstractItemView)
+                             QAbstractItemView, QGroupBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult
 from data_analysis_gui.config.logging import get_logger
-from data_analysis_gui.config.themes import apply_modern_style, style_button
+from data_analysis_gui.config.themes import (
+    style_dialog, apply_compact_layout, style_list_widget, 
+    style_progress_bar, style_group_box, style_checkbox, 
+    style_status_label, get_file_count_color, create_styled_button
+)
 
 logger = get_logger(__name__)
 
@@ -44,7 +48,7 @@ class BatchAnalysisWorker(QThread):
                 self.file_paths, 
                 self.params, 
                 self.parallel, 
-                DEFAULT_MAX_WORKERS  # Use hardcoded default
+                DEFAULT_MAX_WORKERS
             )
             
             # Ensure result has selection state initialized
@@ -75,39 +79,37 @@ class BatchAnalysisDialog(QDialog):
         # Initialize services
         self.file_dialog_service = FileDialogService()
         
-        self.setWindowTitle("Batch Analysis")
-        self.setModal(False)  # Non-modal to allow interaction
-        self.setMinimumWidth(900)
-        self.setMinimumHeight(650)
         self.init_ui()
         
-        # Apply modern theme
-        apply_modern_style(self)
+        # Apply theme and layout helpers from themes.py
+        style_dialog(self, "Batch Analysis")
+        apply_compact_layout(self)
     
     def init_ui(self):
         """Initialize the UI."""
         layout = QVBoxLayout(self)
         
-        # File list
-        layout.addWidget(QLabel("Files to analyze:"))
+        # File List Section
+        file_group = QGroupBox("Files to Analyze")
+        style_group_box(file_group)
+        file_group_layout = QVBoxLayout(file_group)
+        
         self.file_list = QListWidget()
         self.file_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        layout.addWidget(self.file_list)
+        style_list_widget(self.file_list)
+        file_group_layout.addWidget(self.file_list)
         
-        # File count label
         self.file_count_label = QLabel("0 files selected")
-        layout.addWidget(self.file_count_label)
+        style_status_label(self.file_count_label, 'muted')
+        file_group_layout.addWidget(self.file_count_label)
         
-        # File selection buttons
+        layout.addWidget(file_group)
+        
+        # File Management Buttons
         file_button_layout = QHBoxLayout()
-        self.add_files_btn = QPushButton("Add Files...")
-        self.remove_selected_btn = QPushButton("Remove Selected")
-        self.clear_all_btn = QPushButton("Clear All")
-        
-        # Apply secondary styling to file management buttons
-        style_button(self.add_files_btn, "secondary")
-        style_button(self.remove_selected_btn, "secondary")
-        style_button(self.clear_all_btn, "secondary")
+        self.add_files_btn = create_styled_button("Add Files...", "secondary", self)
+        self.remove_selected_btn = create_styled_button("Remove Selected", "secondary", self)
+        self.clear_all_btn = create_styled_button("Clear All", "secondary", self)
         
         file_button_layout.addWidget(self.add_files_btn)
         file_button_layout.addWidget(self.remove_selected_btn)
@@ -115,37 +117,42 @@ class BatchAnalysisDialog(QDialog):
         file_button_layout.addStretch()
         layout.addLayout(file_button_layout)
         
-        # Processing options (simplified - only parallel checkbox)
-        options_layout = QHBoxLayout()
+        # Processing Options
+        options_group = QGroupBox("Processing Options")
+        style_group_box(options_group)
+        options_layout = QHBoxLayout(options_group)
+        
         self.parallel_checkbox = QCheckBox("Parallel Processing")
         self.parallel_checkbox.setChecked(True)
+        style_checkbox(self.parallel_checkbox)
         options_layout.addWidget(self.parallel_checkbox)
         options_layout.addStretch()
-        layout.addLayout(options_layout)
+        layout.addWidget(options_group)
         
-        # Progress section
-        layout.addWidget(QLabel("Progress:"))
+        # Progress Section
+        progress_group = QGroupBox("Progress")
+        style_group_box(progress_group)
+        progress_layout = QVBoxLayout(progress_group)
+        
         self.progress_bar = QProgressBar()
-        layout.addWidget(self.progress_bar)
+        style_progress_bar(self.progress_bar)
+        progress_layout.addWidget(self.progress_bar)
         
         self.status_label = QLabel("Ready")
-        layout.addWidget(self.status_label)
+        style_status_label(self.status_label, 'muted')
+        progress_layout.addWidget(self.status_label)
         
-        # Buttons
+        layout.addWidget(progress_group)
+        
+        # Action Buttons
         button_layout = QHBoxLayout()
         
-        self.analyze_btn = QPushButton("Start Analysis")
-        self.cancel_btn = QPushButton("Cancel")
+        self.analyze_btn = create_styled_button("Start Analysis", "primary", self)
+        self.cancel_btn = create_styled_button("Cancel", "secondary", self)
         self.cancel_btn.setEnabled(False)
-        self.view_results_btn = QPushButton("View Results")
+        self.view_results_btn = create_styled_button("View Results", "accent", self)
         self.view_results_btn.setEnabled(False)
-        self.close_btn = QPushButton("Close")
-        
-        # Apply appropriate styling to action buttons
-        style_button(self.analyze_btn, "primary")  # Main action
-        style_button(self.cancel_btn, "secondary")
-        style_button(self.view_results_btn, "secondary")
-        style_button(self.close_btn, "secondary")
+        self.close_btn = create_styled_button("Close", "secondary", self)
         
         button_layout.addWidget(self.analyze_btn)
         button_layout.addWidget(self.cancel_btn)
@@ -176,14 +183,12 @@ class BatchAnalysisDialog(QDialog):
             "All files (*.*)"
         )
         
-        # Get default directory from parent if available
         default_dir = None
         if hasattr(self.parent(), 'current_file_path'):
             current_path = self.parent().current_file_path
             if current_path:
                 default_dir = str(Path(current_path).parent)
         
-        # Get multiple files
         file_paths = self.file_dialog_service.get_import_paths(
             self, 
             "Select Files for Batch Analysis",
@@ -192,7 +197,6 @@ class BatchAnalysisDialog(QDialog):
         )
         
         if file_paths:
-            # Add to list, avoiding duplicates
             for file_path in file_paths:
                 if file_path not in self.file_paths:
                     self.file_paths.append(file_path)
@@ -207,7 +211,6 @@ class BatchAnalysisDialog(QDialog):
         if not selected_items:
             return
         
-        # Remove in reverse order to maintain indices
         for item in reversed(selected_items):
             row = self.file_list.row(item)
             self.file_list.takeItem(row)
@@ -224,9 +227,12 @@ class BatchAnalysisDialog(QDialog):
         self.update_button_states()
     
     def update_file_count(self):
-        """Update the file count label."""
+        """Update the file count label using theme utilities."""
         count = len(self.file_paths)
         self.file_count_label.setText(f"{count} file{'s' if count != 1 else ''} selected")
+        
+        color = get_file_count_color(count)
+        self.file_count_label.setStyleSheet(f"color: {color};")
     
     def update_button_states(self):
         """Update button enabled states based on current state."""
@@ -251,12 +257,13 @@ class BatchAnalysisDialog(QDialog):
         # Reset progress
         self.progress_bar.setMaximum(len(self.file_paths))
         self.progress_bar.setValue(0)
+        style_status_label(self.status_label, 'info')
         self.status_label.setText("Starting analysis...")
         
         # Create and start worker thread
         self.worker = BatchAnalysisWorker(
             self.batch_service,
-            self.file_paths.copy(),  # Copy list to avoid modifications
+            self.file_paths.copy(),
             self.params,
             self.parallel_checkbox.isChecked()
         )
@@ -269,8 +276,6 @@ class BatchAnalysisDialog(QDialog):
         
         # Start analysis
         self.worker.start()
-        
-        # Update UI state
         self.update_button_states()
         logger.info(f"Started batch analysis of {len(self.file_paths)} files")
     
@@ -279,37 +284,35 @@ class BatchAnalysisDialog(QDialog):
         if self.worker and self.worker.isRunning():
             self.worker.quit()
             self.worker.wait()
+            style_status_label(self.status_label, 'warning')
             self.status_label.setText("Analysis cancelled")
             self.update_button_states()
     
     def on_progress(self, completed, total, current_file):
         """Handle progress updates from worker."""
         self.progress_bar.setValue(completed)
+        style_status_label(self.status_label, 'info')
         self.status_label.setText(f"Processing {current_file} ({completed}/{total})")
     
     def on_file_complete(self, result: FileAnalysisResult):
         """Handle completion of individual file."""
-        status = "✔" if result.success else "✗"
+        status = "✓" if result.success else "✗"
         logger.debug(f"{status} Completed: {result.base_name}")
     
     def on_analysis_finished(self, result: BatchAnalysisResult):
         """Handle completion of batch analysis."""
         self.batch_result = result
         
-        # Update status (no popup dialog)
         success_count = len(result.successful_results)
         fail_count = len(result.failed_results)
         total_time = result.processing_time
         
         if fail_count > 0:
-            status_msg = (
-                f"Complete: {success_count} succeeded, "
-                f"{fail_count} failed in {total_time:.1f}s"
-            )
+            status_msg = f"Complete: {success_count} succeeded, {fail_count} failed in {total_time:.1f}s"
+            style_status_label(self.status_label, 'warning')
         else:
-            status_msg = (
-                f"Complete: {success_count} files analyzed in {total_time:.1f}s"
-            )
+            status_msg = f"Complete: {success_count} files analyzed in {total_time:.1f}s"
+            style_status_label(self.status_label, 'success')
         
         self.status_label.setText(status_msg)
         self.update_button_states()
@@ -318,6 +321,7 @@ class BatchAnalysisDialog(QDialog):
     def on_error(self, error_msg):
         """Handle errors from worker."""
         QMessageBox.critical(self, "Analysis Error", f"Batch analysis failed:\n{error_msg}")
+        style_status_label(self.status_label, 'error')
         self.status_label.setText("Analysis failed")
         self.update_button_states()
     
@@ -327,20 +331,17 @@ class BatchAnalysisDialog(QDialog):
             return
         
         try:
-            # Import here to avoid circular dependencies
             from data_analysis_gui.dialogs.batch_results_window import BatchResultsWindow
             from data_analysis_gui.services.plot_service import PlotService
             
-            # Create plot service
             plot_service = PlotService()
             
-            # Create and show results window
             results_window = BatchResultsWindow(
                 self,
                 self.batch_result,
                 self.batch_service,
                 plot_service,
-                self.parent().controller.data_service  # Pass data service
+                self.parent().controller.data_service
             )
             results_window.show()
             
