@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import List, Optional
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QListWidget, QProgressBar, QLabel, QCheckBox,
+                             QListWidget, QProgressBar, QLabel,
                              QDialogButtonBox, QMessageBox,
                              QAbstractItemView, QGroupBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
@@ -13,14 +13,11 @@ from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResul
 from data_analysis_gui.config.logging import get_logger
 from data_analysis_gui.config.themes import (
     style_dialog, apply_compact_layout, style_list_widget, 
-    style_progress_bar, style_group_box, style_checkbox, 
+    style_progress_bar, style_group_box, 
     style_status_label, get_file_count_color, create_styled_button
 )
 
 logger = get_logger(__name__)
-
-# Default number of workers for parallel processing
-DEFAULT_MAX_WORKERS = 4
 
 
 class BatchAnalysisWorker(QThread):
@@ -30,12 +27,11 @@ class BatchAnalysisWorker(QThread):
     finished = pyqtSignal(object)  # BatchAnalysisResult
     error = pyqtSignal(str)
     
-    def __init__(self, batch_service, file_paths, params, parallel):
+    def __init__(self, batch_service, file_paths, params):
         super().__init__()
         self.batch_service = batch_service
         self.file_paths = file_paths
         self.params = params
-        self.parallel = parallel
     
     def run(self):
         """Run batch analysis in thread."""
@@ -44,11 +40,10 @@ class BatchAnalysisWorker(QThread):
             self.batch_service.on_progress = lambda c, t, n: self.progress.emit(c, t, n)
             self.batch_service.on_file_complete = lambda r: self.file_complete.emit(r)
             
+            # Simple sequential processing
             result = self.batch_service.process_files(
                 self.file_paths, 
-                self.params, 
-                self.parallel, 
-                DEFAULT_MAX_WORKERS
+                self.params
             )
             
             # Ensure result has selection state initialized
@@ -116,18 +111,6 @@ class BatchAnalysisDialog(QDialog):
         file_button_layout.addWidget(self.clear_all_btn)
         file_button_layout.addStretch()
         layout.addLayout(file_button_layout)
-        
-        # Processing Options
-        options_group = QGroupBox("Processing Options")
-        style_group_box(options_group)
-        options_layout = QHBoxLayout(options_group)
-        
-        self.parallel_checkbox = QCheckBox("Parallel Processing")
-        self.parallel_checkbox.setChecked(True)
-        style_checkbox(self.parallel_checkbox)
-        options_layout.addWidget(self.parallel_checkbox)
-        options_layout.addStretch()
-        layout.addWidget(options_group)
         
         # Progress Section
         progress_group = QGroupBox("Progress")
@@ -246,7 +229,6 @@ class BatchAnalysisDialog(QDialog):
         self.analyze_btn.setEnabled(not is_running and has_files)
         self.cancel_btn.setEnabled(is_running)
         self.view_results_btn.setEnabled(has_results)
-        self.parallel_checkbox.setEnabled(not is_running)
     
     def start_analysis(self):
         """Start the batch analysis."""
@@ -264,8 +246,7 @@ class BatchAnalysisDialog(QDialog):
         self.worker = BatchAnalysisWorker(
             self.batch_service,
             self.file_paths.copy(),
-            self.params,
-            self.parallel_checkbox.isChecked()
+            self.params
         )
         
         # Connect worker signals
@@ -296,7 +277,7 @@ class BatchAnalysisDialog(QDialog):
     
     def on_file_complete(self, result: FileAnalysisResult):
         """Handle completion of individual file."""
-        status = "✓" if result.success else "✗"
+        status = "✔" if result.success else "✗"
         logger.debug(f"{status} Completed: {result.base_name}")
     
     def on_analysis_finished(self, result: BatchAnalysisResult):

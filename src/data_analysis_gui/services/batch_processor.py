@@ -1,8 +1,8 @@
 """
-Simplified batch processing with direct method calls.
+Simplified batch processing with sequential execution.
 
-This module provides straightforward batch analysis functionality without
-complex dependency injection patterns.
+This module provides straightforward batch analysis functionality
+using simple sequential processing for clarity and maintainability.
 
 Author: Data Analysis GUI Contributors
 License: MIT
@@ -12,7 +12,6 @@ import time
 import re
 from pathlib import Path
 from typing import List, Callable, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from data_analysis_gui.core.params import AnalysisParameters
 from data_analysis_gui.core.models import (
@@ -32,7 +31,7 @@ class BatchProcessor:
     """
     Processes multiple files with the same analysis parameters.
     
-    Simple, direct implementation without complex dependency patterns.
+    Simple, direct implementation with sequential processing.
     Scientists can easily understand and modify the batch processing logic.
     """
     
@@ -54,17 +53,13 @@ class BatchProcessor:
     
     def process_files(self,
                      file_paths: List[str],
-                     params: AnalysisParameters,
-                     parallel: bool = False,
-                     max_workers: int = 4) -> BatchAnalysisResult:
+                     params: AnalysisParameters) -> BatchAnalysisResult:
         """
-        Process multiple files with the same parameters.
+        Process multiple files sequentially with the same parameters.
         
         Args:
             file_paths: List of files to process
             params: Analysis parameters
-            parallel: Whether to use parallel processing
-            max_workers: Number of parallel workers
             
         Returns:
             BatchAnalysisResult with all results
@@ -78,57 +73,24 @@ class BatchProcessor:
         successful_results = []
         failed_results = []
         
-        if parallel and len(file_paths) > 1:
-            # Parallel processing
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = {
-                    executor.submit(self._process_single_file, path, params): path
-                    for path in file_paths
-                }
-                
-                completed = 0
-                for future in as_completed(futures):
-                    completed += 1
-                    path = futures[future]
-                    
-                    if self.on_progress:
-                        self.on_progress(completed, len(file_paths), Path(path).name)
-                    
-                    try:
-                        result = future.result()
-                        if result.success:
-                            successful_results.append(result)
-                        else:
-                            failed_results.append(result)
-                        
-                        if self.on_file_complete:
-                            self.on_file_complete(result)
-                            
-                    except Exception as e:
-                        logger.error(f"Failed to process {path}: {e}")
-                        failed_results.append(
-                            FileAnalysisResult(
-                                file_path=path,
-                                base_name=Path(path).stem,
-                                success=False,
-                                error_message=str(e)
-                            )
-                        )
-        else:
-            # Sequential processing
-            for i, path in enumerate(file_paths):
-                if self.on_progress:
-                    self.on_progress(i + 1, len(file_paths), Path(path).name)
-                
-                result = self._process_single_file(path, params)
-                
-                if result.success:
-                    successful_results.append(result)
-                else:
-                    failed_results.append(result)
-                
-                if self.on_file_complete:
-                    self.on_file_complete(result)
+        # Simple sequential processing
+        for i, path in enumerate(file_paths):
+            # Update progress
+            if self.on_progress:
+                self.on_progress(i + 1, len(file_paths), Path(path).name)
+            
+            # Process the file
+            result = self._process_single_file(path, params)
+            
+            # Store result
+            if result.success:
+                successful_results.append(result)
+            else:
+                failed_results.append(result)
+            
+            # Notify completion
+            if self.on_file_complete:
+                self.on_file_complete(result)
         
         end_time = time.time()
         

@@ -145,19 +145,24 @@ class ApplicationController:
     def run_batch_analysis(
         self,
         file_paths: List[str],
-        params: AnalysisParameters,
-        parallel: bool = False,
-        max_workers: int = 4,
+        params: AnalysisParameters
     ) -> BatchAnalysisResult:
         """
         Run a batch analysis over multiple files.
+        
+        Simple sequential processing for clarity and reliability.
+        
+        Args:
+            file_paths: List of files to analyze
+            params: Analysis parameters to use
+            
+        Returns:
+            BatchAnalysisResult with all results
         """
         try:
             return self.batch_processor.process_files(
                 file_paths=file_paths,
-                params=params,
-                parallel=parallel,
-                max_workers=max_workers,
+                params=params
             )
         except Exception as e:
             logger.error(f"Batch analysis failed: {e}", exc_info=True)

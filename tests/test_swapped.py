@@ -214,11 +214,10 @@ class TestSwapChannels:
         # Convert to string paths for batch processor
         file_paths = [str(f) for f in mat_files]
         
-        # Run batch analysis with swapped channels
+        # Run batch analysis with swapped channels (removed parallel parameter)
         batch_result = batch_processor.process_files(
             file_paths=file_paths,
-            params=analysis_parameters,
-            parallel=False  # Use sequential for deterministic results
+            params=analysis_parameters
         )
         
         # Check that we have successful results
@@ -285,44 +284,6 @@ class TestSwapChannels:
         assert analysis_parameters.x_axis.channel is None
         assert analysis_parameters.y_axis.measure == "Average"
         assert analysis_parameters.y_axis.channel == "Current"
-    
-    def test_batch_processor_with_parallel_processing(self, batch_processor, analysis_parameters, temp_output_dir):
-        """Test batch processing with parallel execution."""
-        
-        # Skip if sample data directory doesn't exist
-        if not SAMPLE_DATA_DIR.exists():
-            pytest.skip(f"Sample data directory not found: {SAMPLE_DATA_DIR}")
-        
-        # Get subset of files for faster parallel test
-        mat_files = get_mat_files(SAMPLE_DATA_DIR)[:3]  # Test with first 3 files
-        
-        if not mat_files:
-            pytest.skip("No MAT files found in sample data directory")
-        
-        file_paths = [str(f) for f in mat_files]
-        
-        # Run parallel batch analysis
-        batch_result = batch_processor.process_files(
-            file_paths=file_paths,
-            params=analysis_parameters,
-            parallel=True,
-            max_workers=2
-        )
-        
-        # Verify results
-        assert len(batch_result.successful_results) == len(mat_files)
-        assert batch_result.processing_time > 0
-        
-        # Export and verify files were created
-        export_result = batch_processor.export_results(
-            batch_result=batch_result,
-            output_dir=str(temp_output_dir)
-        )
-        
-        for result in batch_result.successful_results:
-            csv_path = temp_output_dir / f"{result.base_name}.csv"
-            assert csv_path.exists(), f"CSV not created for {result.base_name}"
-
 
 # Integration test that uses the full application controller
 class TestSwapChannelsIntegration:
@@ -366,12 +327,11 @@ class TestSwapChannelsIntegration:
             channel_config={'channels_swapped': True}
         )
         
-        # Run batch analysis
+        # Run batch analysis (removed parallel parameter)
         file_paths = [str(f) for f in test_files]
         batch_result = controller.run_batch_analysis(
             file_paths=file_paths,
-            params=params,
-            parallel=False
+            params=params
         )
         
         assert len(batch_result.successful_results) == len(test_files)

@@ -129,7 +129,7 @@ class TestBatchAnalysisWorkflow:
         )
     
     def test_batch_analysis_complete(self, controller, batch_service, 
-                                    test_data_path, golden_data_path):
+                                test_data_path, golden_data_path):
         """
         Test the complete batch analysis workflow mimicking exact user actions.
         
@@ -200,11 +200,10 @@ class TestBatchAnalysisWorkflow:
         
         batch_service.on_file_complete = on_file_complete
         
-        # Run batch analysis (parallel=False for deterministic testing)
+        # Run batch analysis (removed parallel parameter)
         batch_result = batch_service.process_files(
             file_paths=input_files,
-            params=params,
-            parallel=False  # Use sequential for deterministic testing
+            params=params
         )
         
         # Verify batch analysis completed successfully
@@ -285,8 +284,8 @@ class TestBatchAnalysisWorkflow:
         
         params = self.create_parameters_from_gui_state(controller, gui_state)
         
-        # Run batch analysis
-        batch_result = batch_service.process_files(input_files, params, parallel=False)
+        # Run batch analysis (removed parallel parameter)
+        batch_result = batch_service.process_files(input_files, params)
         
         # Verify batch result structure
         assert batch_result.parameters == params, "Parameters should be preserved in result"
@@ -345,8 +344,8 @@ class TestBatchAnalysisWorkflow:
             channel_config={'voltage': 0, 'current': 1}
         )
         
-        # Run batch analysis
-        batch_result = batch_service.process_files(input_files, params, parallel=False)
+        # Run batch analysis (removed parallel parameter)
+        batch_result = batch_service.process_files(input_files, params)
         
         with tempfile.TemporaryDirectory() as temp_dir:
             # Export results (using new method name)
@@ -385,11 +384,10 @@ class TestBatchAnalysisWorkflow:
             channel_config={'voltage': 0, 'current': 1}
         )
         
-        # Run batch analysis through controller
+        # Run batch analysis through controller (removed parallel parameter)
         batch_result = controller.run_batch_analysis(
             file_paths=input_files,
-            params=params,
-            parallel=False
+            params=params
         )
         
         # Verify results

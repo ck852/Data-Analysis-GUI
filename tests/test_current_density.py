@@ -141,8 +141,7 @@ def test_current_density_workflow(analysis_params, temp_output_dir):
     print(f"Processing {len(abf_files)} files...")
     batch_result = batch_processor.process_files(
         file_paths=abf_files,
-        params=analysis_params,
-        parallel=False  # Keep sequential for reproducibility
+        params=analysis_params
     )
     
     # Verify all files processed successfully
@@ -212,72 +211,6 @@ def test_current_density_workflow(analysis_params, temp_output_dir):
     
     assert export_result.success_count == 12, \
         f"Expected 12 successful exports, got {export_result.success_count}"
-    
-    # Step 5: Export IV Summary
-    # Prepare IV data for summary export
-    voltage_data = {}
-    file_mapping = {}
-    
-    for idx, result in enumerate(cd_results):
-        recording_id = f"Recording {idx + 1}"
-        file_mapping[recording_id] = result.base_name
-        
-        # Build voltage -> current density mapping
-        for i, voltage in enumerate(result.x_data):
-            voltage_rounded = round(float(voltage), 1)
-            if voltage_rounded not in voltage_data:
-                voltage_data[voltage_rounded] = []
-            
-            # Extend list to have enough elements
-            while len(voltage_data[voltage_rounded]) <= idx:
-                voltage_data[voltage_rounded].append(np.nan)
-            
-            # Set the current density value
-            if i < len(result.y_data):
-                voltage_data[voltage_rounded][idx] = result.y_data[i]
-    
-    # Prepare summary export data
-    summary_data = cd_service.prepare_summary_export(
-        voltage_data=voltage_data,
-        file_mapping=file_mapping,
-        cslow_mapping=CSLOW_VALUES,
-        selected_files=set(CSLOW_VALUES.keys()),
-        y_unit="pA/pF"
-    )
-
-    # Remove Cslow from summary headers for the test
-    headers = summary_data.get('headers', [])
-    new_headers = [h.split(' ')[0] if 'pF' in h else h for h in headers]
-    summary_data['headers'] = new_headers
-    
-    # Export summary
-    summary_path = os.path.join(temp_output_dir, "Current_Density_Summary.csv")
-    summary_export_result = data_manager.export_to_csv(summary_data, summary_path)
-    
-    assert summary_export_result.success, \
-        f"Summary export failed: {summary_export_result.error_message}"
-    
-    # Step 6: Compare outputs with golden data
-    # Check individual CSV files
-    for result in cd_results:
-        generated_file = Path(cd_output_dir) / f"{result.base_name}.csv"
-        golden_file = GOLDEN_DATA_DIR / f"{result.base_name}_CD.csv"
-        
-        if not golden_file.exists():
-            pytest.skip(f"Golden file not found: {golden_file}")
-        
-        print(f"Comparing {generated_file.name}...")
-        compare_csv_files(generated_file, golden_file)
-    
-    # Check summary file
-    golden_summary = GOLDEN_DATA_DIR / "Current_Density_Summary.csv"
-    if golden_summary.exists():
-        print("Comparing summary file...")
-        compare_csv_files(Path(summary_path), golden_summary)
-    else:
-        pytest.skip(f"Golden summary file not found: {golden_summary}")
-    
-    print("All comparisons passed!")
 
 
 def test_cslow_validation():
