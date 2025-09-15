@@ -6,8 +6,11 @@ Provides essential zoom/pan functionality with a modern appearance.
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt5.QtCore import Qt, pyqtSignal, QSize
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+
+# Import centralized configuration from plot_style
+from data_analysis_gui.config.plot_style import TOOLBAR_CONFIG, get_toolbar_style
 
 
 class StreamlinedNavigationToolbar(NavigationToolbar2QT):
@@ -39,7 +42,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         # Call parent constructor
         super().__init__(canvas, parent)
         
-        # Apply custom styling
+        # Apply custom styling from centralized configuration
         self._apply_styling()
     
     def _init_toolbar(self):
@@ -56,24 +59,31 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         # Add a stretch to push everything to the left
         self.addStretch()
         
-        # Add a subtle label for current mode
+        # Add a subtle label for current mode with proper font size
         self.mode_label = QLabel("")
-        self.mode_label.setStyleSheet("""
-            QLabel {
+        self.mode_label.setStyleSheet(f"""
+            QLabel {{
                 color: #606060;
-                font-size: 9px;
+                font-size: {TOOLBAR_CONFIG['mode_label_font_size']}px;
                 margin: 0px 10px;
-            }
+            }}
         """)
         self.addWidget(self.mode_label)
     
     def _add_streamlined_tools(self):
         """Add only essential navigation tools with custom icons."""
+        from PyQt5.QtGui import QFont
+        
+        # Create font for toolbar actions
+        toolbar_font = QFont()
+        toolbar_font.setPointSize(TOOLBAR_CONFIG['button_font_size'])
+        
         # Home (reset view)
         self.home_action = QAction("Reset", self)
         self.home_action.setToolTip("Reset to original view")
         self.home_action.triggered.connect(self.home)
         self.home_action.setIcon(self._create_icon('home'))
+        self.home_action.setFont(toolbar_font)
         self.addAction(self.home_action)
         
         # Back/Forward navigation
@@ -81,12 +91,14 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         self.back_action.setToolTip("Back to previous view")
         self.back_action.triggered.connect(self.back)
         self.back_action.setIcon(self._create_icon('back'))
+        self.back_action.setFont(toolbar_font)
         self.addAction(self.back_action)
         
         self.forward_action = QAction("Forward", self)
         self.forward_action.setToolTip("Forward to next view")
         self.forward_action.triggered.connect(self.forward)
         self.forward_action.setIcon(self._create_icon('forward'))
+        self.forward_action.setFont(toolbar_font)
         self.addAction(self.forward_action)
         
         self.addSeparator()
@@ -97,6 +109,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         self.pan_action.setCheckable(True)
         self.pan_action.triggered.connect(self.pan)
         self.pan_action.setIcon(self._create_icon('pan'))
+        self.pan_action.setFont(toolbar_font)
         self.addAction(self.pan_action)
         
         # Zoom
@@ -105,6 +118,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         self.zoom_action.setCheckable(True)
         self.zoom_action.triggered.connect(self.zoom)
         self.zoom_action.setIcon(self._create_icon('zoom'))
+        self.zoom_action.setFont(toolbar_font)
         self.addAction(self.zoom_action)
         
         self.addSeparator()
@@ -114,6 +128,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         self.save_action.setToolTip("Save the figure")
         self.save_action.triggered.connect(self.save_figure)
         self.save_action.setIcon(self._create_icon('save'))
+        self.save_action.setFont(toolbar_font)
         self.addAction(self.save_action)
     
     def _create_icon(self, icon_type: str) -> QIcon:
@@ -126,8 +141,11 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         Returns:
             QIcon object
         """
+        # Use icon size from centralized configuration
+        icon_size = TOOLBAR_CONFIG['icon_size']
+        
         # Create a pixmap for the icon
-        pixmap = QPixmap(16, 16)
+        pixmap = QPixmap(icon_size, icon_size)
         pixmap.fill(Qt.transparent)
         
         painter = QPainter(pixmap)
@@ -138,93 +156,63 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         painter.setPen(color)
         painter.setBrush(color)
         
+        # Scale factor for larger icons
+        scale = icon_size / 16.0  # Original designs were for 16x16
+        
         if icon_type == 'home':
-            # Simple house shape
-            painter.drawLine(8, 4, 3, 9)
-            painter.drawLine(8, 4, 13, 9)
-            painter.drawRect(5, 9, 6, 5)
+            # Simple house shape (scaled)
+            painter.drawLine(int(8*scale), int(4*scale), int(3*scale), int(9*scale))
+            painter.drawLine(int(8*scale), int(4*scale), int(13*scale), int(9*scale))
+            painter.drawRect(int(5*scale), int(9*scale), int(6*scale), int(5*scale))
         
         elif icon_type == 'back':
-            # Left arrow
-            painter.drawLine(5, 8, 11, 4)
-            painter.drawLine(5, 8, 11, 12)
-            painter.drawLine(5, 8, 13, 8)
+            # Left arrow (scaled)
+            painter.drawLine(int(5*scale), int(8*scale), int(11*scale), int(4*scale))
+            painter.drawLine(int(5*scale), int(8*scale), int(11*scale), int(12*scale))
+            painter.drawLine(int(5*scale), int(8*scale), int(13*scale), int(8*scale))
         
         elif icon_type == 'forward':
-            # Right arrow
-            painter.drawLine(11, 8, 5, 4)
-            painter.drawLine(11, 8, 5, 12)
-            painter.drawLine(11, 8, 3, 8)
+            # Right arrow (scaled)
+            painter.drawLine(int(11*scale), int(8*scale), int(5*scale), int(4*scale))
+            painter.drawLine(int(11*scale), int(8*scale), int(5*scale), int(12*scale))
+            painter.drawLine(int(11*scale), int(8*scale), int(3*scale), int(8*scale))
         
         elif icon_type == 'pan':
-            # Hand/move icon
-            painter.drawLine(8, 3, 8, 13)
-            painter.drawLine(3, 8, 13, 8)
-            painter.drawLine(5, 5, 8, 3)
-            painter.drawLine(11, 5, 8, 3)
-            painter.drawLine(5, 11, 8, 13)
-            painter.drawLine(11, 11, 8, 13)
+            # Hand/move icon (scaled)
+            painter.drawLine(int(8*scale), int(3*scale), int(8*scale), int(13*scale))
+            painter.drawLine(int(3*scale), int(8*scale), int(13*scale), int(8*scale))
+            painter.drawLine(int(5*scale), int(5*scale), int(8*scale), int(3*scale))
+            painter.drawLine(int(11*scale), int(5*scale), int(8*scale), int(3*scale))
+            painter.drawLine(int(5*scale), int(11*scale), int(8*scale), int(13*scale))
+            painter.drawLine(int(11*scale), int(11*scale), int(8*scale), int(13*scale))
         
         elif icon_type == 'zoom':
-            # Magnifying glass
+            # Magnifying glass (scaled)
             painter.setBrush(Qt.NoBrush)
-            painter.drawEllipse(4, 4, 7, 7)
-            painter.drawLine(10, 10, 13, 13)
+            painter.drawEllipse(int(4*scale), int(4*scale), int(7*scale), int(7*scale))
+            painter.drawLine(int(10*scale), int(10*scale), int(13*scale), int(13*scale))
         
         elif icon_type == 'save':
-            # Floppy disk / save icon
-            painter.drawRect(3, 3, 10, 10)
-            painter.fillRect(5, 3, 6, 4, QColor('white'))
-            painter.fillRect(9, 4, 2, 2, color)
+            # Floppy disk / save icon (scaled)
+            painter.drawRect(int(3*scale), int(3*scale), int(10*scale), int(10*scale))
+            painter.fillRect(int(5*scale), int(3*scale), int(6*scale), int(4*scale), QColor('white'))
+            painter.fillRect(int(9*scale), int(4*scale), int(2*scale), int(2*scale), color)
         
         painter.end()
         
         return QIcon(pixmap)
     
     def _apply_styling(self):
-        """Apply custom styling to match the GUI."""
-        self.setStyleSheet("""
-            QToolBar {
-                background-color: #F5F5F5;
-                border: none;
-                border-bottom: 1px solid #D0D0D0;
-                padding: 2px;
-                spacing: 2px;
-            }
-            
-            QToolBar::separator {
-                background-color: #D0D0D0;
-                width: 1px;
-                margin: 4px 6px;
-            }
-            
-            QToolButton {
-                background-color: transparent;
-                border: 1px solid transparent;
-                border-radius: 3px;
-                padding: 4px;
-                margin: 1px;
-            }
-            
-            QToolButton:hover {
-                background-color: #E0E0E0;
-                border: 1px solid #C0C0C0;
-            }
-            
-            QToolButton:pressed {
-                background-color: #D0D0D0;
-                border: 1px solid #B0B0B0;
-            }
-            
-            QToolButton:checked {
-                background-color: #D8E4F0;
-                border: 1px solid #2E86AB;
-            }
-        """)
+        """Apply custom styling to match the GUI using centralized configuration."""
+        # Get stylesheet from centralized configuration
+        self.setStyleSheet(get_toolbar_style())
         
-        # Make the toolbar more compact
-        self.setIconSize(self.iconSize() * 0.8)
+        # Set icon size using configuration
+        self.setIconSize(QSize(TOOLBAR_CONFIG['icon_size'], TOOLBAR_CONFIG['icon_size']))
         self.setMovable(False)
+        
+        # Set toolbar button style to show text beside icons
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
     
     def pan(self, *args):
         """Override pan to update mode indicator."""
@@ -317,7 +305,11 @@ class MinimalNavigationToolbar(QWidget):
         self.pan_btn = self._create_tool_button("Pan", "pan")
         self.reset_btn = self._create_tool_button("Reset", "reset")
         
-        layout.addWidget(QLabel("Tools:"))
+        # Create label with proper font size from configuration
+        tools_label = QLabel("Tools:")
+        tools_label.setStyleSheet(f"font-size: {TOOLBAR_CONFIG['button_font_size']}px;")
+        
+        layout.addWidget(tools_label)
         layout.addWidget(self.zoom_btn)
         layout.addWidget(self.pan_btn)
         layout.addWidget(self.reset_btn)
@@ -331,27 +323,29 @@ class MinimalNavigationToolbar(QWidget):
         self.current_mode = 'none'
     
     def _create_tool_button(self, text: str, mode: str):
-        """Create a styled tool button."""
+        """Create a styled tool button with proper font size."""
         from PyQt5.QtWidgets import QPushButton
         
         btn = QPushButton(text)
         btn.setCheckable(mode != 'reset')
-        btn.setMaximumHeight(24)
-        btn.setStyleSheet("""
-            QPushButton {
+        btn.setMaximumHeight(TOOLBAR_CONFIG['button_min_height'])
+        btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #F0F0F0;
                 border: 1px solid #C0C0C0;
                 border-radius: 3px;
-                padding: 2px 8px;
-                font-size: 11px;
-            }
-            QPushButton:hover {
+                padding: {TOOLBAR_CONFIG['button_padding']};
+                font-size: {TOOLBAR_CONFIG['button_font_size']}px;
+                font-weight: 500;
+                min-height: {TOOLBAR_CONFIG['button_min_height'] - 4}px;
+            }}
+            QPushButton:hover {{
                 background-color: #E0E0E0;
-            }
-            QPushButton:checked {
+            }}
+            QPushButton:checked {{
                 background-color: #D8E4F0;
                 border-color: #2E86AB;
-            }
+            }}
         """)
         return btn
     

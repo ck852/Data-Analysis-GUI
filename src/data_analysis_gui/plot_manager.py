@@ -93,7 +93,7 @@ class PlotManager(QObject):
         self._style_axes()
 
     def _style_axes(self):
-        """Apply modern styling to the axes."""
+        """Apply modern styling to the axes with updated font sizes."""
         self.ax.set_facecolor('#FAFBFC')
         self.ax.spines['top'].set_visible(False)
         self.ax.spines['right'].set_visible(False)
@@ -102,12 +102,13 @@ class PlotManager(QObject):
         self.ax.spines['left'].set_color('#B0B0B0')
         self.ax.spines['bottom'].set_color('#B0B0B0')
         
+        # Use the increased font sizes from plot_style
         self.ax.tick_params(
             axis='both',
             which='major',
-            labelsize=9,
+            labelsize=12,  # Increased from 9
             colors='#606060',
-            length=4,
+            length=5,      # Increased from 4
             width=0.8
         )
         
@@ -165,24 +166,14 @@ class PlotManager(QObject):
         channel: int,
         sweep_index: int,
         channel_type: str,
-        title: str = None,
-        x_label: str = None,
-        y_label: str = None,
         channel_config: Optional[dict] = None,
+        title: Optional[str] = None,
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
     ) -> None:
         """
-        Updates the plot with new sweep data using modern styling and centralized labels.
-        
-        Args:
-            t: Time array in milliseconds
-            y: Data matrix
-            channel: Channel index to plot
-            sweep_index: Index of the sweep
-            channel_type: Type of channel ("Voltage" or "Current")
-            title: Plot title (from PlotFormatter)
-            x_label: X-axis label (from PlotFormatter)
-            y_label: Y-axis label (from PlotFormatter)
-            channel_config: Optional channel configuration
+        Updates the plot with new sweep data using modern styling.
+        Now accepts optional title and labels for consistency.
         """
         self.ax.clear()
 
@@ -195,17 +186,16 @@ class PlotManager(QObject):
             alpha=line_style['alpha']
         )
 
-        # Apply labels from centralized formatter
-        if title:
-            self.ax.set_title(title, fontsize=10, fontweight='normal', pad=12)
-        if x_label:
-            self.ax.set_xlabel(x_label, fontsize=10, fontweight='normal')
-        if y_label:
-            self.ax.set_ylabel(y_label, fontsize=10, fontweight='normal')
-        
-        # Apply additional sweep-specific styling
-        self._style_axes()  # Use existing axes styling
-        
+        # Apply sweep-specific formatting with custom labels if provided
+        if title or x_label or y_label:
+            # Use custom labels/title
+            from data_analysis_gui.config.plot_style import style_axis
+            style_axis(self.ax, title=title, xlabel=x_label, ylabel=y_label)
+            self.ax.set_facecolor('#FAFBFC')  # Keep sweep plot background
+        else:
+            # Use default formatting
+            format_sweep_plot(self.ax, sweep_index, channel_type)
+
         # Restore range lines with consistent styling
         for line in self.range_lines:
             self.ax.add_line(line)
@@ -215,7 +205,8 @@ class PlotManager(QObject):
         self.ax.autoscale_view(tight=True)
         self.ax.margins(x=0.02, y=0.05)
 
-        self.figure.tight_layout(pad=1.5)
+        # Adjust layout with more padding for larger fonts
+        self.figure.tight_layout(pad=2.0)  # Increased from 1.5
         self.redraw()
         self.plot_updated.emit()
         logger.info(f"Updated plot for sweep {sweep_index}, channel {channel}.")
@@ -475,10 +466,10 @@ class PlotManager(QObject):
     @staticmethod
     def setup_plot_style(ax: Axes, title: str = "", xlabel: str = "", 
                         ylabel: str = "", grid: bool = True) -> None:
-        """Configure plot appearance."""
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel(xlabel, fontsize=10)
-        ax.set_ylabel(ylabel, fontsize=10)
+        """Configure plot appearance with larger font sizes."""
+        # Use the style_axis function from plot_style which has the updated font sizes
+        from data_analysis_gui.config.plot_style import style_axis
+        style_axis(ax, title=title, xlabel=xlabel, ylabel=ylabel)
         
         if grid:
             ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
@@ -520,7 +511,7 @@ class BatchPlotter:
         figsize: Tuple[int, int] = (10, 6)
     ) -> Tuple[Figure, Axes]:
         """
-        Creates a new Figure and Axes for a batch plot.
+        Creates a new Figure and Axes for a batch plot with updated font sizes.
 
         Args:
             x_label: The label for the x-axis.
@@ -533,9 +524,16 @@ class BatchPlotter:
         """
         fig = Figure(figsize=figsize, tight_layout=True)
         ax = fig.add_subplot(111)
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        ax.set_title(title or f"{y_label} vs {x_label}")
+        
+        # Use style_axis for consistent font sizes
+        from data_analysis_gui.config.plot_style import style_axis
+        style_axis(
+            ax,
+            title=title or f"{y_label} vs {x_label}",
+            xlabel=x_label,
+            ylabel=y_label
+        )
+        
         ax.grid(True, which='both', linestyle='--', alpha=0.5)
         return fig, ax
 
@@ -563,12 +561,13 @@ class BatchPlotter:
     @staticmethod
     def finalize_plot(fig: Figure, ax: Axes) -> None:
         """
-        Finalizes a batch plot by adding a legend if applicable.
+        Finalizes a batch plot by adding a legend with proper font size.
 
         Args:
             fig: The Matplotlib Figure.
             ax: The Matplotlib Axes.
         """
         if ax.get_legend_handles_labels()[0]:
+            # Legend font size is now handled by the rcParams in plot_style
             ax.legend()
         logger.info("Finalized batch plot.")

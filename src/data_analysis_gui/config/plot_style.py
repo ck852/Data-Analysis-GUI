@@ -35,6 +35,16 @@ COLOR_CYCLE = [
     '#4A7C59',  # Forest green
 ]
 
+# TOOLBAR CONFIGURATION - Centralized here for single source of truth
+TOOLBAR_CONFIG = {
+    'button_font_size': 14,      # Increased from 11px for better readability
+    'button_padding': '8px 16px', # Increased padding to accommodate larger text
+    'icon_size_multiplier': 1.0,  
+    'mode_label_font_size': 14,   # Increased from 11px to match button font
+    'button_min_height': 36,      # Increased from 32 to accommodate larger fonts
+    'icon_size': 22,              # Slightly increased from 20 for proportion
+}
+
 def get_plot_style() -> Dict[str, Any]:
     """
     Get matplotlib rcParams for modern scientific plots synchronized with GUI theme.
@@ -48,6 +58,14 @@ def get_plot_style() -> Dict[str, Any]:
     # Filter out generic families and -apple-system
     font_list = [f for f in font_list if f not in ['-apple-system', 'BlinkMacSystemFont', 'sans-serif']]
     
+    # INCREASED FONT SIZES FOR BETTER READABILITY
+    plot_font_sizes = {
+        'tick_size': 12,      # Increased from 10
+        'label_size': 14,     # Increased from 11
+        'title_size': 16,     # Increased from 12
+        'legend_size': 12,    # Increased from 10
+    }
+    
     return {
         # Figure
         'figure.facecolor': '#FAFAFA',
@@ -55,7 +73,7 @@ def get_plot_style() -> Dict[str, Any]:
         'figure.frameon': True,
         'figure.autolayout': False,
         'figure.dpi': 100,
-        'figure.titlesize': TYPOGRAPHY['plot_title_size'],
+        'figure.titlesize': plot_font_sizes['title_size'],
         'figure.titleweight': 'normal',
         
         # Axes
@@ -63,12 +81,13 @@ def get_plot_style() -> Dict[str, Any]:
         'axes.edgecolor': '#B0B0B0',
         'axes.linewidth': 0.8,
         'axes.grid': True,
-        'axes.titlesize': TYPOGRAPHY['plot_title_size'],
+        'axes.titlesize': plot_font_sizes['title_size'],
         'axes.titleweight': 'normal',
-        'axes.titlepad': 8,
-        'axes.labelsize': TYPOGRAPHY['plot_label_size'],
+        'axes.titlepad': 10,  # Increased from 8 for larger fonts
+        'axes.labelsize': plot_font_sizes['label_size'],
         'axes.labelweight': 'normal',
         'axes.labelcolor': '#2D3436',
+        'axes.labelpad': 6,  # Added explicit padding
         'axes.axisbelow': True,
         'axes.prop_cycle': mpl.cycler(color=COLOR_CYCLE),
         'axes.spines.left': True,
@@ -87,7 +106,7 @@ def get_plot_style() -> Dict[str, Any]:
         # Lines
         'lines.linewidth': 1.5,
         'lines.antialiased': True,
-        'lines.markersize': 5,
+        'lines.markersize': 6,  # Increased slightly for visibility
         'lines.markeredgewidth': 0,
         'lines.markeredgecolor': 'auto',
         'lines.solid_capstyle': 'round',
@@ -98,36 +117,36 @@ def get_plot_style() -> Dict[str, Any]:
         'patch.edgecolor': 'none',
         'patch.antialiased': True,
         
-        # Ticks - synchronized with theme
-        'xtick.major.size': 4,
-        'xtick.minor.size': 2,
+        # Ticks - synchronized with increased font sizes
+        'xtick.major.size': 5,  # Increased from 4
+        'xtick.minor.size': 3,  # Increased from 2
         'xtick.major.width': 0.8,
         'xtick.minor.width': 0.6,
-        'xtick.major.pad': 5,
-        'xtick.minor.pad': 5,
+        'xtick.major.pad': 6,  # Increased from 5
+        'xtick.minor.pad': 6,  # Increased from 5
         'xtick.color': '#606060',
-        'xtick.labelsize': TYPOGRAPHY['plot_tick_size'],
+        'xtick.labelsize': plot_font_sizes['tick_size'],
         'xtick.direction': 'out',
         'xtick.top': False,
         
-        'ytick.major.size': 4,
-        'ytick.minor.size': 2,
+        'ytick.major.size': 5,  # Increased from 4
+        'ytick.minor.size': 3,  # Increased from 2
         'ytick.major.width': 0.8,
         'ytick.minor.width': 0.6,
-        'ytick.major.pad': 5,
-        'ytick.minor.pad': 5,
+        'ytick.major.pad': 6,  # Increased from 5
+        'ytick.minor.pad': 6,  # Increased from 5
         'ytick.color': '#606060',
-        'ytick.labelsize': TYPOGRAPHY['plot_tick_size'],
+        'ytick.labelsize': plot_font_sizes['tick_size'],
         'ytick.direction': 'out',
         'ytick.right': False,
         
         # Font - synchronized with theme
         'font.family': ['sans-serif'],
         'font.sans-serif': font_list + ['Helvetica', 'Arial', 'DejaVu Sans'],
-        'font.size': TYPOGRAPHY['plot_label_size'],  # Base size from theme
+        'font.size': plot_font_sizes['label_size'],  # Base size from theme
         'font.weight': 'normal',
         
-        # Legend - synchronized with theme
+        # Legend - synchronized with increased font sizes
         'legend.frameon': True,
         'legend.framealpha': 0.95,
         'legend.facecolor': 'white',
@@ -137,10 +156,10 @@ def get_plot_style() -> Dict[str, Any]:
         'legend.numpoints': 1,
         'legend.scatterpoints': 1,
         'legend.markerscale': 1.0,
-        'legend.fontsize': TYPOGRAPHY['plot_legend_size'],
-        'legend.title_fontsize': TYPOGRAPHY['plot_label_size'],
-        'legend.borderpad': 0.4,
-        'legend.columnspacing': 1.0,
+        'legend.fontsize': plot_font_sizes['legend_size'],
+        'legend.title_fontsize': plot_font_sizes['label_size'],
+        'legend.borderpad': 0.5,  # Increased slightly
+        'legend.columnspacing': 1.2,
         'legend.loc': 'best',
         
         # Savefig
@@ -177,12 +196,20 @@ def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
         ylabel: Optional y-axis label
         remove_top_right: Whether to remove top and right spines
     """
+    # Use the increased font sizes
+    plot_font_sizes = {
+        'tick_size': 12,
+        'label_size': 14,
+        'title_size': 16,
+        'legend_size': 12,
+    }
+    
     if title:
-        ax.set_title(title, fontsize=TYPOGRAPHY['plot_title_size'], fontweight='normal', pad=12)
+        ax.set_title(title, fontsize=plot_font_sizes['title_size'], fontweight='normal', pad=14)
     if xlabel:
-        ax.set_xlabel(xlabel, fontsize=TYPOGRAPHY['plot_label_size'], fontweight='normal')
+        ax.set_xlabel(xlabel, fontsize=plot_font_sizes['label_size'], fontweight='normal')
     if ylabel:
-        ax.set_ylabel(ylabel, fontsize=TYPOGRAPHY['plot_label_size'], fontweight='normal')
+        ax.set_ylabel(ylabel, fontsize=plot_font_sizes['label_size'], fontweight='normal')
     
     if remove_top_right:
         ax.spines['top'].set_visible(False)
@@ -198,13 +225,13 @@ def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
     ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#E1E5E8')
     ax.set_axisbelow(True)
     
-    # Tick styling with theme font sizes
+    # Tick styling with increased font sizes
     ax.tick_params(
         axis='both',
         which='major',
-        labelsize=TYPOGRAPHY['plot_tick_size'],
+        labelsize=plot_font_sizes['tick_size'],
         colors='#606060',
-        length=4,
+        length=5,  # Increased from 4
         width=0.8,
         direction='out'
     )
@@ -221,7 +248,7 @@ def get_line_styles():
             'color': COLORS['primary'],
             'linewidth': 1.5,
             'marker': 'o',
-            'markersize': 4,
+            'markersize': 5,  # Increased from 4
             'markeredgewidth': 0,
             'alpha': 0.9
         },
@@ -229,7 +256,7 @@ def get_line_styles():
             'color': COLORS['secondary'],
             'linewidth': 1.5,
             'marker': 's',
-            'markersize': 4,
+            'markersize': 5,  # Increased from 4
             'markeredgewidth': 0,
             'alpha': 0.9,
             'linestyle': '--'
@@ -303,7 +330,12 @@ def format_batch_plot(ax, x_label: str, y_label: str):
     # Batch plots need clear differentiation
     ax.set_facecolor('#FFFFFF')
     
-    # Ensure legend is well-positioned with theme font size
+    # Get the increased font sizes
+    plot_font_sizes = {
+        'legend_size': 12,  # Increased from 10
+    }
+    
+    # Ensure legend is well-positioned with increased font size
     if ax.get_lines():  # Check if there are any lines plotted
         ax.legend(
             loc='best',
@@ -312,5 +344,63 @@ def format_batch_plot(ax, x_label: str, y_label: str):
             shadow=False,
             framealpha=0.95,
             edgecolor='#D0D0D0',
-            fontsize=TYPOGRAPHY['plot_legend_size']
+            fontsize=plot_font_sizes['legend_size']
         )
+
+def get_toolbar_style() -> str:
+    """
+    Get toolbar stylesheet with proper font sizes.
+    Centralized here to maintain single source of truth for plot-related styling.
+    
+    Returns:
+        CSS stylesheet string for toolbar
+    """
+    config = TOOLBAR_CONFIG
+    
+    return f"""
+        QToolBar {{
+            background-color: #F5F5F5;
+            border: none;
+            border-bottom: 1px solid #D0D0D0;
+            padding: 4px;
+            spacing: 4px;
+        }}
+        
+        QToolBar::separator {{
+            background-color: #D0D0D0;
+            width: 1px;
+            margin: 6px 8px;
+        }}
+        
+        QToolButton {{
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: {config['button_padding']};
+            margin: 2px;
+            font-size: {config['button_font_size']}px;
+            font-weight: 500;
+            min-height: {config['button_min_height']}px;
+        }}
+        
+        QToolButton:hover {{
+            background-color: #E0E0E0;
+            border: 1px solid #C0C0C0;
+        }}
+        
+        QToolButton:pressed {{
+            background-color: #D0D0D0;
+            border: 1px solid #B0B0B0;
+        }}
+        
+        QToolButton:checked {{
+            background-color: #D8E4F0;
+            border: 1px solid #2E86AB;
+        }}
+        
+        QLabel {{
+            color: #606060;
+            font-size: {config['mode_label_font_size']}px;
+            margin: 0px 10px;
+        }}
+    """
