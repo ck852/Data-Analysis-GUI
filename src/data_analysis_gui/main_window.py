@@ -25,6 +25,7 @@ from data_analysis_gui.core.app_controller import ApplicationController
 from data_analysis_gui.core.models import FileInfo
 from data_analysis_gui.core.params import AnalysisParameters
 from data_analysis_gui.config.logging import get_logger
+from data_analysis_gui.core.plot_formatter import PlotFormatter
 
 # Widget imports
 from data_analysis_gui.widgets.control_panel import ControlPanel
@@ -56,6 +57,9 @@ class MainWindow(QMainWindow):
         # Initialize controller (which creates all services)
         self.controller = ApplicationController()
         
+        # Initialize plot formatter for consistent plot labeling
+        self.plot_formatter = PlotFormatter()
+
         # Get shared services from controller
         services = self.controller.get_services()
         self.channel_definitions = services['channel_definitions']
@@ -325,7 +329,7 @@ class MainWindow(QMainWindow):
         self._update_plot()
 
     def _update_plot(self):
-        """Update the sweep plot using controller"""
+        """Update the sweep plot using controller and centralized formatter"""
         if not self.controller.has_data():
             return
             
@@ -340,12 +344,28 @@ class MainWindow(QMainWindow):
         
         if result.success:
             plot_data = result.data
+            
+            # Use centralized formatter for consistent labels
+            sweep_info = {
+                'sweep_index': int(sweep) if sweep.isdigit() else 0,
+                'channel_type': channel_type
+            }
+            plot_labels = self.plot_formatter.get_plot_titles_and_labels(
+                'sweep', 
+                sweep_info=sweep_info
+            )
+            
+            # Update plot with formatted labels
             self.plot_manager.update_sweep_plot(
                 t=plot_data.time_ms,
                 y=plot_data.data_matrix,
                 channel=plot_data.channel_id,
-                sweep_index=int(sweep) if sweep.isdigit() else 0,
-                channel_type=channel_type
+                sweep_index=sweep_info['sweep_index'],
+                channel_type=channel_type,
+                title=plot_labels['title'],
+                x_label=plot_labels['x_label'],
+                y_label=plot_labels['y_label'],
+                channel_config=None
             )
             self._sync_cursors_to_plot()
         else:

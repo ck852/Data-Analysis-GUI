@@ -165,10 +165,24 @@ class PlotManager(QObject):
         channel: int,
         sweep_index: int,
         channel_type: str,
+        title: str = None,
+        x_label: str = None,
+        y_label: str = None,
         channel_config: Optional[dict] = None,
     ) -> None:
         """
-        Updates the plot with new sweep data using modern styling.
+        Updates the plot with new sweep data using modern styling and centralized labels.
+        
+        Args:
+            t: Time array in milliseconds
+            y: Data matrix
+            channel: Channel index to plot
+            sweep_index: Index of the sweep
+            channel_type: Type of channel ("Voltage" or "Current")
+            title: Plot title (from PlotFormatter)
+            x_label: X-axis label (from PlotFormatter)
+            y_label: Y-axis label (from PlotFormatter)
+            channel_config: Optional channel configuration
         """
         self.ax.clear()
 
@@ -181,9 +195,17 @@ class PlotManager(QObject):
             alpha=line_style['alpha']
         )
 
-        # Apply sweep-specific formatting
-        format_sweep_plot(self.ax, sweep_index, channel_type)
-
+        # Apply labels from centralized formatter
+        if title:
+            self.ax.set_title(title, fontsize=10, fontweight='normal', pad=12)
+        if x_label:
+            self.ax.set_xlabel(x_label, fontsize=10, fontweight='normal')
+        if y_label:
+            self.ax.set_ylabel(y_label, fontsize=10, fontweight='normal')
+        
+        # Apply additional sweep-specific styling
+        self._style_axes()  # Use existing axes styling
+        
         # Restore range lines with consistent styling
         for line in self.range_lines:
             self.ax.add_line(line)
