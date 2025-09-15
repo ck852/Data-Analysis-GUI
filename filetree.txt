@@ -5,12 +5,10 @@ streamlining/
 |       |   |-- __init__.py
 |       |   |-- environment.py
 |       |   |-- logging.py
+|       |   |-- plot_style.py
 |       |   |-- settings.py
 |       |   `-- themes.py
 |       |-- core/
-|       |   |-- backends/
-|       |   |   |-- headless_backend.py
-|       |   |   `-- qt_backend.py
 |       |   |-- loaders/
 |       |   |   |-- __init__.py
 |       |   |   `-- abf_loader.py
@@ -22,13 +20,11 @@ streamlining/
 |       |   |-- data_extractor.py
 |       |   |-- dataset.py
 |       |   |-- exceptions.py
-|       |   |-- interfaces.py
 |       |   |-- iv_analysis.py
 |       |   |-- metrics_calculator.py
 |       |   |-- models.py
 |       |   |-- params.py
 |       |   |-- plot_formatter.py
-|       |   |-- plotting_interface.py
 |       |   `-- session_settings.py
 |       |-- dialogs/
 |       |   |-- __init__.py
@@ -53,6 +49,7 @@ streamlining/
 |       |   |-- __init__.py
 |       |   |-- control_panel.py
 |       |   |-- custom_inputs.py
+|       |   |-- custom_toolbar.py
 |       |   `-- shared_widgets.py
 |       |-- __init__.py
 |       |-- cli.py
@@ -147,9 +144,7 @@ streamlining/
 |   |   |   |   |-- 250514_012_CD.csv
 |   |   |   |   `-- Current_Density_Summary.csv
 |   |   |   |-- golden_mat_DR/
-|   |   |   |   |-- 250202_0071-234_analyzed.csv
-|   |   |   |   |-- 250202_0071-234_analyzed_Average_Current_+60mV.csv
-|   |   |   |   `-- 250202_0071-234_analyzed_Average_Current_-60mV.csv
+|   |   |   |   `-- 250202_007.csv
 |   |   |   |-- golden_mat_IV/
 |   |   |   |   |-- range_2/
 |   |   |   |   |   |-- 250514_001.csv
@@ -196,8 +191,8 @@ streamlining/
 |   |   |           `-- 250514_012_positive.csv
 |   |   `-- sample_data/
 |   |       |-- DR/
-|   |       |   |-- 250202_007 dual range.csv
-|   |       |   `-- 250202_007[1-234].mat
+|   |       |   |-- 250202_007[1-234].mat
+|   |       |   `-- 250202_007_dual_range.csv
 |   |       |-- IV+CD/
 |   |       |   |-- abf/
 |   |       |   |   |-- 250514_001[1-11].abf
@@ -239,7 +234,9 @@ streamlining/
 |   |               `-- 240809_003[1-12].mat
 |   |-- test_batch_analysis.py
 |   |-- test_current_density.py
-|   `-- test_single_export.py
+|   |-- test_peak.py
+|   |-- test_single_export.py
+|   `-- test_swapped.py
 |-- filetree.txt
 |-- filetree_full.py
 |-- pyproject.toml

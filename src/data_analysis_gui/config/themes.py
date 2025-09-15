@@ -83,14 +83,19 @@ MODERN_COLORS = {
 
 TYPOGRAPHY = {
     'font_family': 'Segoe UI, -apple-system, BlinkMacSystemFont, Arial, sans-serif',
-    'font_size_base': '10px',
-    'font_size_small': '9px',
-    'font_size_large': '12px',
-    'font_size_xlarge': '14px',
+    'font_size_base': '18px',      # Increased from 10px
+    'font_size_small': '17px',     # Increased from 9px
+    'font_size_large': '20px',     # Increased from 12px
+    'font_size_xlarge': '22px',    # Increased from 14px
     'font_weight_normal': '400',
     'font_weight_medium': '500',
     'font_weight_bold': '600',
     'line_height': '1.5',
+    # Plot-specific sizes for matplotlib integration
+    'plot_tick_size': 10,          # For matplotlib tick labels
+    'plot_label_size': 11,         # For matplotlib axis labels
+    'plot_title_size': 12,         # For matplotlib titles
+    'plot_legend_size': 10,        # For matplotlib legends
 }
 
 # ============================================================================
@@ -100,30 +105,30 @@ TYPOGRAPHY = {
 SPACING = {
     'padding_xs': '2px',
     'padding_sm': '4px',
-    'padding_md': '8px',
-    'padding_lg': '12px',
-    'padding_xl': '16px',
+    'padding_md': '6px',       # Reduced from 8px for tighter layout
+    'padding_lg': '10px',      # Reduced from 12px
+    'padding_xl': '14px',      # Reduced from 16px
     'margin_xs': '2px',
     'margin_sm': '4px',
-    'margin_md': '8px',
-    'margin_lg': '12px',
-    'margin_xl': '16px',
+    'margin_md': '6px',        # Reduced from 8px
+    'margin_lg': '10px',       # Reduced from 12px
+    'margin_xl': '14px',       # Reduced from 16px
     'border_radius': '3px',
     'border_radius_lg': '4px',
     'border_radius_xl': '6px',
 }
 
 WIDGET_SIZES = {
-    'button_height': 28,
+    'button_height': 30,           # Increased from 28 to accommodate larger font
     'button_min_width': 80,
-    'input_height': 28,
+    'input_height': 30,            # Increased from 28 to match button height
     'checkbox_size': 16,
     'color_indicator_size': 20,
     'min_dialog_width': 900,
     'min_dialog_height': 650,
     'toolbar_icon_size': 16,
-    'list_item_height': 24,
-    'group_box_margin_top': 8,
+    'list_item_height': 26,        # Increased from 24
+    'group_box_margin_top': 6,     # Reduced from 8
 }
 
 # ============================================================================
@@ -305,7 +310,7 @@ def style_progress_bar(widget: QProgressBar) -> None:
 # ============================================================================
 
 def style_group_box(widget: QGroupBox) -> None:
-    """Apply standard styling to a QGroupBox."""
+    """Apply standard styling to a QGroupBox with tighter spacing."""
     widget.setStyleSheet(f"""
         QGroupBox {{
             font-weight: {TYPOGRAPHY['font_weight_medium']};
@@ -315,7 +320,7 @@ def style_group_box(widget: QGroupBox) -> None:
             border-radius: {SPACING['border_radius_lg']};
             margin-top: {WIDGET_SIZES['group_box_margin_top']}px;
             padding-top: {SPACING['padding_md']};
-            padding-bottom: {SPACING['padding_sm']};
+            padding-bottom: {SPACING['padding_xs']};
             padding-left: {SPACING['padding_sm']};
             padding-right: {SPACING['padding_sm']};
         }}
@@ -726,8 +731,8 @@ def apply_modern_style(widget: QWidget) -> None:
     """Apply modern styling to a widget and all its children."""
     widget.setStyleSheet(get_dialog_stylesheet())
 
-def apply_compact_layout(widget: QWidget, spacing: int = 8, margin: int = 12) -> None:
-    """Apply compact spacing to a widget's layout."""
+def apply_compact_layout(widget: QWidget, spacing: int = 6, margin: int = 10) -> None:
+    """Apply compact spacing to a widget's layout. Reduced defaults for tighter UI."""
     if widget.layout():
         widget.layout().setSpacing(spacing)
         widget.layout().setContentsMargins(margin, margin, margin, margin)

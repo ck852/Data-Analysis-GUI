@@ -66,18 +66,32 @@ class ControlPanel(QWidget):
         self._connect_signals()
 
     def _setup_ui(self):
-        """Set up the control panel UI"""
+        """Set up the control panel UI with improved spacing"""
         # Create scroll area for the controls
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setMaximumWidth(400)
+        
+        # Add subtle border to scroll area
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #E0E0E0;
+                border-radius: 4px;
+                background-color: #FAFAFA;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: #FAFAFA;
+            }
+        """)
 
         # Main control widget inside scroll area
         control_widget = QWidget()
         scroll_area.setWidget(control_widget)
 
-        # Layout for control widget
+        # Layout for control widget with tighter spacing
         layout = QVBoxLayout(control_widget)
+        layout.setSpacing(8)  # Reduced spacing between groups
+        layout.setContentsMargins(8, 8, 8, 8)  # Reduced margins
 
         # Add all control groups
         layout.addWidget(self._create_analysis_settings_group())
@@ -90,18 +104,23 @@ class ControlPanel(QWidget):
         self.export_plot_btn.setEnabled(False)
         layout.addWidget(self.export_plot_btn)
 
-        layout.addStretch()
+        # Small spacing at bottom instead of stretch
+        layout.addSpacing(10)
 
         # Set main layout for this widget
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(scroll_area)
-        layout.setSpacing(2)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
     def _create_analysis_settings_group(self):
-        """Create the analysis settings group"""
+        """Create the analysis settings group with improved spacing"""
         analysis_group = QGroupBox("Analysis Settings")
         analysis_layout = QGridLayout(analysis_group)
+        
+        # Tighter spacing for grid layout
+        analysis_layout.setSpacing(6)
+        analysis_layout.setContentsMargins(8, 10, 8, 8)
 
         # Range 1 settings
         self._add_range1_settings(analysis_layout)
@@ -120,6 +139,7 @@ class ControlPanel(QWidget):
         self.period_spin.setRange(1, 100000)
         self.period_spin.setValue(DEFAULT_SETTINGS['stimulus_period'])
         self.period_spin.setSingleStep(100)
+        self.period_spin.setMinimumHeight(30)  # Match button height
         analysis_layout.addWidget(self.period_spin, 5, 1)
 
         return analysis_group
@@ -132,6 +152,7 @@ class ControlPanel(QWidget):
         self.start_spin.setValue(DEFAULT_SETTINGS['range1_start'])
         self.start_spin.setSingleStep(0.05)
         self.start_spin.setDecimals(2)
+        self.start_spin.setMinimumHeight(30)
         layout.addWidget(self.start_spin, 0, 1)
 
         layout.addWidget(QLabel("Range 1 End (ms):"), 1, 0)
@@ -140,6 +161,7 @@ class ControlPanel(QWidget):
         self.end_spin.setValue(DEFAULT_SETTINGS['range1_end'])
         self.end_spin.setSingleStep(0.05)
         self.end_spin.setDecimals(2)
+        self.end_spin.setMinimumHeight(30)
         layout.addWidget(self.end_spin, 1, 1)
 
     def _add_range2_settings(self, layout):
@@ -151,6 +173,7 @@ class ControlPanel(QWidget):
         self.start_spin2.setSingleStep(0.05)
         self.start_spin2.setDecimals(2)
         self.start_spin2.setEnabled(False)
+        self.end_spin.setMinimumHeight(30)
         layout.addWidget(self.start_spin2, 3, 1)
 
         layout.addWidget(QLabel("Range 2 End (ms):"), 4, 0)
@@ -160,23 +183,30 @@ class ControlPanel(QWidget):
         self.end_spin2.setSingleStep(0.05)
         self.end_spin2.setDecimals(2)
         self.end_spin2.setEnabled(False)
+        self.end_spin.setMinimumHeight(30)
         layout.addWidget(self.end_spin2, 4, 1)
 
     def _create_plot_settings_group(self):
-        """Create the plot settings group"""
+        """Create the plot settings group with improved spacing"""
         plot_group = QGroupBox("Plot Settings")
         plot_layout = QGridLayout(plot_group)
+        
+        # Tighter spacing for grid layout
+        plot_layout.setSpacing(6)
+        plot_layout.setContentsMargins(8, 10, 8, 8)
 
         # X-axis settings
         plot_layout.addWidget(QLabel("X-Axis:"), 0, 0)
         self.x_measure_combo = QComboBox()
         self.x_measure_combo.addItems(["Time", "Peak", "Average"])
         self.x_measure_combo.setCurrentText("Average")
+        self.x_measure_combo.setMinimumHeight(30)
         plot_layout.addWidget(self.x_measure_combo, 0, 1)
 
         self.x_channel_combo = QComboBox()
         self.x_channel_combo.addItems(["Voltage", "Current"])
         self.x_channel_combo.setCurrentText("Voltage")
+        self.x_channel_combo.setMinimumHeight(30)
         plot_layout.addWidget(self.x_channel_combo, 0, 2)
 
         # Y-axis settings
@@ -184,16 +214,18 @@ class ControlPanel(QWidget):
         self.y_measure_combo = QComboBox()
         self.y_measure_combo.addItems(["Peak", "Average", "Time"])
         self.y_measure_combo.setCurrentText("Average")
+        self.y_measure_combo.setMinimumHeight(30)
         plot_layout.addWidget(self.y_measure_combo, 1, 1)
 
         self.y_channel_combo = QComboBox()
         self.y_channel_combo.addItems(["Voltage", "Current"])
         self.y_channel_combo.setCurrentText("Current")
+        self.y_channel_combo.setMinimumHeight(30)
         plot_layout.addWidget(self.y_channel_combo, 1, 2)
 
         # Update plot button
         self.update_plot_btn = QPushButton("Generate Analysis Plot")
-        style_button(self.update_plot_btn, "primary")  # Make it stand out
+        style_button(self.update_plot_btn, "primary")
         self.update_plot_btn.clicked.connect(self.analysis_requested.emit)
         self.update_plot_btn.setEnabled(False)
         plot_layout.addWidget(self.update_plot_btn, 2, 0, 1, 3)
@@ -203,6 +235,7 @@ class ControlPanel(QWidget):
         self.peak_mode_combo.addItems(["Absolute", "Positive", "Negative", "Peak-Peak"])
         self.peak_mode_combo.setCurrentText("Absolute")
         self.peak_mode_combo.setToolTip("Peak calculation mode (applies when X or Y axis is set to Peak)")
+        self.peak_mode_combo.setMinimumHeight(30)
         plot_layout.addWidget(self.peak_mode_combo, 3, 1, 1, 2)
 
         # Connect signal to enable/disable peak mode based on axis selection

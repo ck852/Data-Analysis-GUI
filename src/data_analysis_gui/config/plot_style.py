@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from typing import Dict, Any
 
+from data_analysis_gui.config.themes import TYPOGRAPHY
+
 # Define a modern scientific color palette
 COLORS = {
     'primary': '#2E86AB',      # Deep blue
@@ -35,11 +37,17 @@ COLOR_CYCLE = [
 
 def get_plot_style() -> Dict[str, Any]:
     """
-    Get matplotlib rcParams for modern scientific plots.
+    Get matplotlib rcParams for modern scientific plots synchronized with GUI theme.
     
     Returns:
         Dictionary of matplotlib rcParams
     """
+    # Extract font family from theme (handle the CSS font-family string)
+    font_family_str = TYPOGRAPHY['font_family']
+    font_list = [f.strip() for f in font_family_str.split(',')]
+    # Filter out generic families and -apple-system
+    font_list = [f for f in font_list if f not in ['-apple-system', 'BlinkMacSystemFont', 'sans-serif']]
+    
     return {
         # Figure
         'figure.facecolor': '#FAFAFA',
@@ -47,7 +55,7 @@ def get_plot_style() -> Dict[str, Any]:
         'figure.frameon': True,
         'figure.autolayout': False,
         'figure.dpi': 100,
-        'figure.titlesize': 12,
+        'figure.titlesize': TYPOGRAPHY['plot_title_size'],
         'figure.titleweight': 'normal',
         
         # Axes
@@ -55,10 +63,10 @@ def get_plot_style() -> Dict[str, Any]:
         'axes.edgecolor': '#B0B0B0',
         'axes.linewidth': 0.8,
         'axes.grid': True,
-        'axes.titlesize': 11,
+        'axes.titlesize': TYPOGRAPHY['plot_title_size'],
         'axes.titleweight': 'normal',
         'axes.titlepad': 8,
-        'axes.labelsize': 10,
+        'axes.labelsize': TYPOGRAPHY['plot_label_size'],
         'axes.labelweight': 'normal',
         'axes.labelcolor': '#2D3436',
         'axes.axisbelow': True,
@@ -90,7 +98,7 @@ def get_plot_style() -> Dict[str, Any]:
         'patch.edgecolor': 'none',
         'patch.antialiased': True,
         
-        # Ticks
+        # Ticks - synchronized with theme
         'xtick.major.size': 4,
         'xtick.minor.size': 2,
         'xtick.major.width': 0.8,
@@ -98,7 +106,7 @@ def get_plot_style() -> Dict[str, Any]:
         'xtick.major.pad': 5,
         'xtick.minor.pad': 5,
         'xtick.color': '#606060',
-        'xtick.labelsize': 9,
+        'xtick.labelsize': TYPOGRAPHY['plot_tick_size'],
         'xtick.direction': 'out',
         'xtick.top': False,
         
@@ -109,17 +117,17 @@ def get_plot_style() -> Dict[str, Any]:
         'ytick.major.pad': 5,
         'ytick.minor.pad': 5,
         'ytick.color': '#606060',
-        'ytick.labelsize': 9,
+        'ytick.labelsize': TYPOGRAPHY['plot_tick_size'],
         'ytick.direction': 'out',
         'ytick.right': False,
         
-        # Font
+        # Font - synchronized with theme
         'font.family': ['sans-serif'],
-        'font.sans-serif': ['Segoe UI', 'Helvetica', 'Arial', 'DejaVu Sans'],
-        'font.size': 10,
+        'font.sans-serif': font_list + ['Helvetica', 'Arial', 'DejaVu Sans'],
+        'font.size': TYPOGRAPHY['plot_label_size'],  # Base size from theme
         'font.weight': 'normal',
         
-        # Legend
+        # Legend - synchronized with theme
         'legend.frameon': True,
         'legend.framealpha': 0.95,
         'legend.facecolor': 'white',
@@ -129,8 +137,8 @@ def get_plot_style() -> Dict[str, Any]:
         'legend.numpoints': 1,
         'legend.scatterpoints': 1,
         'legend.markerscale': 1.0,
-        'legend.fontsize': 9,
-        'legend.title_fontsize': 10,
+        'legend.fontsize': TYPOGRAPHY['plot_legend_size'],
+        'legend.title_fontsize': TYPOGRAPHY['plot_label_size'],
         'legend.borderpad': 0.4,
         'legend.columnspacing': 1.0,
         'legend.loc': 'best',
@@ -160,7 +168,7 @@ def apply_plot_style():
 def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
                remove_top_right: bool = True):
     """
-    Apply consistent styling to a single axis.
+    Apply consistent styling to a single axis using theme settings.
     
     Args:
         ax: Matplotlib axis object
@@ -170,11 +178,11 @@ def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
         remove_top_right: Whether to remove top and right spines
     """
     if title:
-        ax.set_title(title, fontsize=11, fontweight='normal', pad=12)
+        ax.set_title(title, fontsize=TYPOGRAPHY['plot_title_size'], fontweight='normal', pad=12)
     if xlabel:
-        ax.set_xlabel(xlabel, fontsize=10, fontweight='normal')
+        ax.set_xlabel(xlabel, fontsize=TYPOGRAPHY['plot_label_size'], fontweight='normal')
     if ylabel:
-        ax.set_ylabel(ylabel, fontsize=10, fontweight='normal')
+        ax.set_ylabel(ylabel, fontsize=TYPOGRAPHY['plot_label_size'], fontweight='normal')
     
     if remove_top_right:
         ax.spines['top'].set_visible(False)
@@ -190,11 +198,11 @@ def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
     ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='#E1E5E8')
     ax.set_axisbelow(True)
     
-    # Tick styling
+    # Tick styling with theme font sizes
     ax.tick_params(
         axis='both',
         which='major',
-        labelsize=9,
+        labelsize=TYPOGRAPHY['plot_tick_size'],
         colors='#606060',
         length=4,
         width=0.8,
@@ -247,7 +255,7 @@ def get_line_styles():
 
 def format_sweep_plot(ax, sweep_index: int, channel_type: str):
     """
-    Apply specific formatting for sweep plots.
+    Apply specific formatting for sweep plots with theme-synchronized fonts.
     
     Args:
         ax: Matplotlib axis
@@ -268,7 +276,7 @@ def format_sweep_plot(ax, sweep_index: int, channel_type: str):
 
 def format_analysis_plot(ax, x_label: str, y_label: str, title: str = None):
     """
-    Apply specific formatting for analysis plots.
+    Apply specific formatting for analysis plots with theme-synchronized fonts.
     
     Args:
         ax: Matplotlib axis
@@ -283,7 +291,7 @@ def format_analysis_plot(ax, x_label: str, y_label: str, title: str = None):
 
 def format_batch_plot(ax, x_label: str, y_label: str):
     """
-    Apply specific formatting for batch plots with multiple series.
+    Apply specific formatting for batch plots with multiple series using theme fonts.
     
     Args:
         ax: Matplotlib axis
@@ -295,7 +303,7 @@ def format_batch_plot(ax, x_label: str, y_label: str):
     # Batch plots need clear differentiation
     ax.set_facecolor('#FFFFFF')
     
-    # Ensure legend is well-positioned
+    # Ensure legend is well-positioned with theme font size
     if ax.get_lines():  # Check if there are any lines plotted
         ax.legend(
             loc='best',
@@ -304,5 +312,5 @@ def format_batch_plot(ax, x_label: str, y_label: str):
             shadow=False,
             framealpha=0.95,
             edgecolor='#D0D0D0',
-            fontsize=8
+            fontsize=TYPOGRAPHY['plot_legend_size']
         )
