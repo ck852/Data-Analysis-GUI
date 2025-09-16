@@ -119,6 +119,9 @@ streamlining/
 |   |   |   |       |-- 250514_011_CD.csv
 |   |   |   |       |-- 250514_012_CD.csv
 |   |   |   |       `-- Current_Density_Summary.csv
+|   |   |   |-- golden_dual_range/
+|   |   |   |   `-- mat/
+|   |   |   |       `-- 250202_007.csv
 |   |   |   |-- golden_IV/
 |   |   |   |   |-- abf/
 |   |   |   |   |   |-- range_2/
@@ -173,8 +176,6 @@ streamlining/
 |   |   |   |       |-- 250514_011.csv
 |   |   |   |       |-- 250514_012.csv
 |   |   |   |       `-- Summary IV.csv
-|   |   |   |-- golden_mat_DR/
-|   |   |   |   `-- 250202_007.csv
 |   |   |   |-- golden_peaks/
 |   |   |   |   |-- abf/
 |   |   |   |   |   |-- 250514_012_absolute.csv
@@ -186,6 +187,24 @@ streamlining/
 |   |   |   |       |-- 250514_012_negative.csv
 |   |   |   |       |-- 250514_012_peak-peak.csv
 |   |   |   |       `-- 250514_012_positive.csv
+|   |   |   |-- golden_swapped_peaks_IV/
+|   |   |   |   `-- abf/
+|   |   |   |       |-- absolute/
+|   |   |   |       |   |-- 240809_001.csv
+|   |   |   |       |   |-- 240809_002.csv
+|   |   |   |       |   `-- 240809_003.csv
+|   |   |   |       |-- negative/
+|   |   |   |       |   |-- 240809_001.csv
+|   |   |   |       |   |-- 240809_002.csv
+|   |   |   |       |   `-- 240809_003.csv
+|   |   |   |       |-- peak-peak/
+|   |   |   |       |   |-- 240809_001.csv
+|   |   |   |       |   |-- 240809_002.csv
+|   |   |   |       |   `-- 240809_003.csv
+|   |   |   |       `-- positive/
+|   |   |   |           |-- 240809_001.csv
+|   |   |   |           |-- 240809_002.csv
+|   |   |   |           `-- 240809_003.csv
 |   |   |   `-- golden_swapped_time_course/
 |   |   |       |-- abf/
 |   |   |       |   |-- 240809_001.csv
@@ -196,9 +215,9 @@ streamlining/
 |   |   |           |-- 240809_002.csv
 |   |   |           `-- 240809_003.csv
 |   |   `-- sample_data/
-|   |       |-- DR/
-|   |       |   |-- 250202_007[1-234].mat
-|   |       |   `-- 250202_007_dual_range.csv
+|   |       |-- dual_range/
+|   |       |   |-- 250202_007[1-234].abf
+|   |       |   `-- 250202_007[1-234].mat
 |   |       |-- IV+CD/
 |   |       |   |-- abf/
 |   |       |   |   |-- 250514_001[1-11].abf
