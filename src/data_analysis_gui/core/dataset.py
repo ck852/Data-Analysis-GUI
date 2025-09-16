@@ -259,6 +259,55 @@ class ElectrophysiologyDataset:
                 f"sweeps={self.sweep_count()}, "
                 f"channels={self.channel_count()}, "
                 f"format={self.metadata.get('format', 'unknown')})")
+    
+    def update_channel_definitions(self, channel_map: Optional[Any]) -> None:
+        """
+        Update the dataset's channel metadata based on new channel definitions.
+        
+        This is used when channels are swapped after the dataset is loaded.
+        
+        Args:
+            channel_map: ChannelDefinitions instance with updated mapping
+        """
+        if channel_map is None:
+            return
+        
+        # Update channel labels based on new mapping
+        num_channels = self.channel_count()
+        labels = []
+        units = []
+        
+        for ch_id in range(num_channels):
+            # Try to get label from channel_map
+            if hasattr(channel_map, 'get_channel_label'):
+                label = channel_map.get_channel_label(ch_id, include_units=False)
+                labels.append(label)
+                
+                # Determine units based on type
+                if hasattr(channel_map, 'get_type_for_channel'):
+                    ch_type = channel_map.get_type_for_channel(ch_id)
+                    if ch_type == 'voltage':
+                        units.append('mV')
+                    elif ch_type == 'current':
+                        units.append('pA')
+                    else:
+                        units.append('')
+                else:
+                    # Fallback: guess units from label
+                    if 'voltage' in label.lower():
+                        units.append('mV')
+                    elif 'current' in label.lower():
+                        units.append('pA')
+                    else:
+                        units.append('')
+            else:
+                # No channel map available
+                labels.append(f'Channel {ch_id}')
+                units.append('')
+        
+        # Update metadata
+        self.metadata['channel_labels'] = labels
+        self.metadata['channel_units'] = units
 
 
 class DatasetLoader:

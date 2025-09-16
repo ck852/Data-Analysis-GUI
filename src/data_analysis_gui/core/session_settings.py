@@ -206,7 +206,10 @@ def apply_settings_to_main_window(main_window, settings: Dict[str, Any]):
     
     # Store view settings for later use (when file is loaded)
     if 'view' in settings:
-        main_window.last_channel_view = settings['view'].get('channel_view', 'Voltage')
+        if hasattr(main_window, 'channel_combo'):
+            channel_view = settings['view'].get('channel_view', 'Voltage')
+            main_window.channel_combo.setCurrentText(channel_view)
+
         main_window.last_directory = settings['view'].get('last_directory')
 
 

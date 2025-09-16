@@ -385,34 +385,22 @@ class ApplicationController:
             logger.error(f"Error generating filename: {e}")
             return "analysis_export.csv"
 
-    def swap_channels(self) -> Dict[str, Any]:
+    def swap_channels(self):
         """
-        Swap voltage and current channel assignments.
+        Swap channel definitions, returning new state.
+        This now works even if no data is loaded.
         """
-        if not self.has_data():
-            logger.warning("Cannot swap channels - no data loaded")
-            return {'success': False, 'reason': 'No data loaded'}
+        # Always swap the channel definitions state
+        self.channel_definitions.swap_channels()
+        is_swapped = self.channel_definitions.is_swapped()
 
-        try:
-            if self.current_dataset.channel_count() < 2:
-                logger.warning("Cannot swap - dataset has only one channel")
-                return {'success': False, 'reason': 'Dataset has only one channel'}
-
-            self.channel_definitions.swap_channels()
-
-            if hasattr(self.analysis_manager, "clear_caches"):
-                self.analysis_manager.clear_caches()
-
-            logger.info("Channels swapped successfully")
-            return {
-                'success': True,
-                'is_swapped': self.channel_definitions.is_swapped(),
-                'configuration': self.get_channel_configuration(),
-            }
-
-        except Exception as e:
-            logger.error(f"Error swapping channels: {e}", exc_info=True)
-            return {'success': False, 'reason': f'Error: {str(e)}'}
+        # If data is loaded, then update the dataset with the new definitions
+        if self.has_data():
+            self.current_dataset.update_channel_definitions(
+                self.channel_definitions
+            )
+        
+        return {'success': True, 'is_swapped': is_swapped}
 
     def get_channel_configuration(self) -> Dict[str, int]:
         """

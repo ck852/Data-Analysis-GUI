@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
         # Sweep combo - disabled until file is loaded
         self.sweep_combo = QComboBox()
         self.sweep_combo.setMinimumWidth(120)
-        self.sweep_combo.setEnabled(False)
+        self.sweep_combo.setEnabled(True)
         self.sweep_combo.currentTextChanged.connect(self._on_sweep_changed)
         style_combo_box(self.sweep_combo)
         toolbar.addWidget(self.sweep_combo)
@@ -221,14 +221,13 @@ class MainWindow(QMainWindow):
         
         toolbar.addSeparator()
         
-        # Channel selection - disabled until file is loaded
         channel_label = QLabel("Channel:")
         style_label(channel_label, 'normal')
         toolbar.addWidget(channel_label)
         
         self.channel_combo = QComboBox()
         self.channel_combo.addItems(["Voltage", "Current"])
-        self.channel_combo.setEnabled(False)
+        self.channel_combo.setEnabled(True)
         self.channel_combo.currentTextChanged.connect(self._on_channel_changed)
         style_combo_box(self.channel_combo)
         toolbar.addWidget(self.channel_combo)
