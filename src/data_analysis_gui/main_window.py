@@ -1,6 +1,6 @@
 """
-Main Window - Fully Theme-Integrated Version
-Uses themes.py functions throughout for consistent modern styling.
+Main Window - Simplified Version with Always-Active Controls
+All controls and settings are adjustable at any time, regardless of file loading state.
 """
 
 import os
@@ -18,6 +18,14 @@ from data_analysis_gui.config.themes import (
     style_main_window, style_button, create_styled_button, 
     style_combo_box, style_label, style_toolbar, 
     apply_compact_layout, WIDGET_SIZES
+)
+
+from data_analysis_gui.core.session_settings import (
+    extract_settings_from_main_window,
+    apply_settings_to_main_window,
+    revalidate_ranges_for_file,
+    load_session_settings,
+    save_session_settings
 )
 
 # Core imports
@@ -44,8 +52,8 @@ logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     """
-    Main application window with full theme integration.
-    All styling is handled by themes.py functions.
+    Main application window with simplified control management.
+    All controls are always active, removing complexity around file loading states.
     """
     
     # Application events
@@ -91,6 +99,15 @@ class MainWindow(QMainWindow):
         # Configure window
         self.setWindowTitle("Electrophysiology Data Analysis")
         
+        # Initialize default values for settings that may be loaded
+        self.last_channel_view = 'Voltage'
+        self.last_directory = None
+        
+        # Load and apply settings immediately (shows user's last configuration)
+        saved_settings = load_session_settings()
+        if saved_settings:
+            apply_settings_to_main_window(self, saved_settings)
+        
         # Apply comprehensive theme styling (handles everything)
         style_main_window(self)
 
@@ -102,15 +119,15 @@ class MainWindow(QMainWindow):
         
         # Main layout with NO spacing or margins for seamless appearance
         main_layout = QHBoxLayout(central)
-        main_layout.setSpacing(0)  # Remove spacing between elements
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove all margins
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
         # Main splitter
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setHandleWidth(1)  # Minimal splitter handle
+        splitter.setHandleWidth(1)
         main_layout.addWidget(splitter)
         
-        # Control panel (left) - no maximum width constraint
+        # Control panel (left)
         self.control_panel = ControlPanel()
         splitter.addWidget(self.control_panel)
         
@@ -159,7 +176,8 @@ class MainWindow(QMainWindow):
         self.swap_action = QAction("&Swap Channels", self)
         self.swap_action.setShortcut("Ctrl+Shift+S")
         self.swap_action.triggered.connect(self._swap_channels)
-        self.swap_action.setEnabled(False)
+        # Always enabled - no dependency on file loading
+        self.swap_action.setEnabled(True)
         analysis_menu.addAction(self.swap_action)
 
         self.batch_action = QAction("&Batch Analyze...", self)
@@ -167,8 +185,6 @@ class MainWindow(QMainWindow):
         self.batch_action.triggered.connect(self._batch_analyze)
         self.batch_action.setEnabled(True)
         analysis_menu.addAction(self.batch_action)
-        
-        # Note: Menu styling is handled by style_main_window()
 
     def _create_toolbar(self):
         """Create toolbar with proper theme styling"""
@@ -180,7 +196,7 @@ class MainWindow(QMainWindow):
         open_action = toolbar.addAction("Open", self._open_file)
         toolbar.addSeparator()
         
-        # Navigation buttons using themed button creation
+        # Navigation buttons - start disabled until file is loaded
         self.prev_btn = create_styled_button("◀", "secondary")
         self.prev_btn.setMaximumWidth(40)
         self.prev_btn.setEnabled(False)
@@ -188,7 +204,7 @@ class MainWindow(QMainWindow):
         self.prev_btn.released.connect(self._stop_navigation)
         toolbar.addWidget(self.prev_btn)
         
-        # Sweep combo with theme styling
+        # Sweep combo - disabled until file is loaded
         self.sweep_combo = QComboBox()
         self.sweep_combo.setMinimumWidth(120)
         self.sweep_combo.setEnabled(False)
@@ -205,7 +221,7 @@ class MainWindow(QMainWindow):
         
         toolbar.addSeparator()
         
-        # Channel selection with themed widgets
+        # Channel selection - disabled until file is loaded
         channel_label = QLabel("Channel:")
         style_label(channel_label, 'normal')
         toolbar.addWidget(channel_label)
@@ -230,25 +246,26 @@ class MainWindow(QMainWindow):
 
         toolbar.addSeparator()
         
-        # Center Cursor Button with theme styling
+        # Center Cursor Button - always enabled
         self.center_cursor_btn = create_styled_button("Center Nearest Cursor", "secondary")
         self.center_cursor_btn.setToolTip("Moves the nearest cursor to the center of the view")
         self.center_cursor_btn.clicked.connect(
             lambda: self._sync_cursor_to_control(*self.plot_manager.center_nearest_cursor())
         )
-        self.center_cursor_btn.setEnabled(False)
+        # Always enabled - cursor centering works regardless of file state
+        self.center_cursor_btn.setEnabled(True)
         toolbar.addWidget(self.center_cursor_btn)
 
         toolbar.addSeparator()
 
+        # Channel toggle - always enabled
         self.channel_toggle = ChannelToggleSwitch()
-        self.channel_toggle.set_enabled(False)
+        # Always enabled - can be toggled at any time
+        self.channel_toggle.set_enabled(True)
         self.channel_toggle.toggled.connect(self._on_channel_toggle)
         toolbar.addWidget(self.channel_toggle)
 
         toolbar.addSeparator()
-        
-        # Note: Toolbar styling is handled by style_main_window()
 
     def _connect_signals(self):
         """Connect all signals"""
@@ -270,7 +287,13 @@ class MainWindow(QMainWindow):
             "All files (*.*)"
         )
         
-        default_dir = str(Path(self.current_file_path).parent) if self.current_file_path else None
+        # Determine default directory
+        default_dir = None
+        if self.current_file_path:
+            default_dir = str(Path(self.current_file_path).parent)
+        elif hasattr(self, 'last_directory') and self.last_directory:
+            # Use last directory from loaded settings
+            default_dir = self.last_directory
         
         file_path = self.file_dialog_service.get_import_path(
             self, "Open Data File", default_dir, file_types
@@ -294,20 +317,19 @@ class MainWindow(QMainWindow):
         self.sweep_count_label.setText(f"Sweeps: {file_info.sweep_count}")
         style_label(self.sweep_count_label, 'normal')  # Switch from muted to normal
         
-        self.control_panel.set_controls_enabled(True)
-        
+        # Revalidate ranges with file's max sweep time if available
         if file_info.max_sweep_time:
-            self.control_panel.set_analysis_range(file_info.max_sweep_time)
+            revalidate_ranges_for_file(self, file_info.max_sweep_time)
         
-        # Enable UI elements
-        self.swap_action.setEnabled(True)
-        self.channel_toggle.set_enabled(True)  # Enable the toggle switch
-
-        # Initialize toggle state
-        if hasattr(self.channel_definitions, 'is_swapped'):
-            self.channel_toggle.set_swapped(self.channel_definitions.is_swapped())
-
-        self.center_cursor_btn.setEnabled(True)
+        # Sync channel swap state between controller and control panel
+        current_swapped = self.channel_definitions.is_swapped() if hasattr(self.channel_definitions, 'is_swapped') else False
+        self.control_panel.set_swap_state(current_swapped)
+        
+        # Apply saved channel view preference
+        if hasattr(self, 'last_channel_view'):
+            self.channel_combo.setCurrentText(self.last_channel_view)
+        
+        # Enable navigation controls (these still depend on having a file loaded)
         self.prev_btn.setEnabled(True)
         self.next_btn.setEnabled(True)
         self.sweep_combo.setEnabled(True)
@@ -316,10 +338,6 @@ class MainWindow(QMainWindow):
         # Populate sweeps
         self.sweep_combo.clear()
         self.sweep_combo.addItems(file_info.sweep_names)
-        
-        # Handle any pending swap state
-        if getattr(self.control_panel, '_is_swapped', False):
-            self._swap_channels()
         
         # Show first sweep
         if file_info.sweep_names:
@@ -332,27 +350,30 @@ class MainWindow(QMainWindow):
         Args:
             is_swapped: True if toggle is in swapped position, False otherwise
         """
-        # Get current state from channel definitions
-        current_swapped = self.channel_definitions.is_swapped() if hasattr(self.channel_definitions, 'is_swapped') else False
+        # Always try to swap - the controller will handle the state
+        result = self.controller.swap_channels()
         
-        # Only perform swap if state actually changed
-        if is_swapped != current_swapped:
-            result = self.controller.swap_channels()
+        if result['success']:
+            # Update control panel state
+            self.control_panel.set_swap_state(result['is_swapped'])
             
-            if result['success']:
-                # Update current plot
+            # Update current plot if we have data
+            if self.controller.has_data():
                 self._update_plot()
                 
                 # Switch displayed channel to show the effect
                 current = self.channel_combo.currentText()
                 self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
-                
-                self.status_bar.showMessage(
-                    f"Channel assignments updated", 3000
-                )
-            else:
-                # Revert toggle if swap failed
-                self.channel_toggle.set_swapped(current_swapped)
+            
+            self.status_bar.showMessage(
+                f"Channel assignments {'swapped' if result['is_swapped'] else 'normal'}", 3000
+            )
+        else:
+            # Revert toggle if swap failed
+            current_swapped = self.channel_definitions.is_swapped() if hasattr(self.channel_definitions, 'is_swapped') else False
+            self.channel_toggle.set_swapped(current_swapped)
+            if 'no data' not in result.get('reason', '').lower():
+                # Only show warning if it's not just because there's no data
                 QMessageBox.warning(self, "Cannot Update Channels", result['reason'])
 
     def _on_sweep_changed(self):
@@ -420,6 +441,10 @@ class MainWindow(QMainWindow):
                                f"Analysis failed:\n{result.error_message}")
             return
         
+        # Auto-save settings after successful analysis
+        settings = extract_settings_from_main_window(self)
+        save_session_settings(settings)
+        
         analysis_result = result.data
         
         if not analysis_result or not analysis_result.x_data.size:
@@ -484,19 +509,23 @@ class MainWindow(QMainWindow):
         if result['success']:
             # Update toggle to reflect new state
             self.channel_toggle.set_swapped(result['is_swapped'])
+            # Update control panel state
+            self.control_panel.set_swap_state(result['is_swapped'])
             
-            # Update current plot
-            self._update_plot()
-            
-            # Switch displayed channel
-            current = self.channel_combo.currentText()
-            self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
+            # Update current plot if we have data
+            if self.controller.has_data():
+                self._update_plot()
+                
+                # Switch displayed channel
+                current = self.channel_combo.currentText()
+                self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
             
             self.status_bar.showMessage(
-                f"Channel assignments updated", 3000
+                f"Channel assignments {'swapped' if result['is_swapped'] else 'normal'}", 3000
             )
         else:
-            QMessageBox.warning(self, "Cannot Update Channels", result['reason'])
+            if 'no data' not in result.get('reason', '').lower():
+                QMessageBox.warning(self, "Cannot Update Channels", result['reason'])
 
     def _batch_analyze(self):
         """Open batch analysis dialog"""
@@ -571,9 +600,3 @@ class MainWindow(QMainWindow):
         idx = self.sweep_combo.currentIndex()
         if idx > 0:
             self.sweep_combo.setCurrentIndex(idx - 1)
-
-    def closeEvent(self, event):
-        """Clean shutdown"""
-        if self.analysis_dialog:
-            self.analysis_dialog.close()
-        event.accept()

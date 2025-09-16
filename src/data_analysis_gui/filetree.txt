@@ -45,6 +45,7 @@ data_analysis_gui/
 |   `-- plot_service.py
 |-- widgets/
 |   |-- __init__.py
+|   |-- channel_toggle.py
 |   |-- control_panel.py
 |   |-- custom_inputs.py
 |   |-- custom_toolbar.py
