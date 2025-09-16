@@ -23,7 +23,7 @@ from data_analysis_gui.services.data_manager import DataManager
 
 # Test data configuration
 SAMPLE_DATA_DIR = Path("tests/fixtures/sample_data/IV+CD/abf")
-GOLDEN_DATA_DIR = Path("tests/fixtures/golden_data/golden_abf_CD")
+GOLDEN_DATA_DIR = Path("tests/fixtures/golden_data/golden_CD/abf")
 
 # Expected Cslow values for each file
 CSLOW_VALUES = {

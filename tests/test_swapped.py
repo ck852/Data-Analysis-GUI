@@ -30,7 +30,7 @@ from data_analysis_gui.core.app_controller import ApplicationController
 # Test fixtures paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 SAMPLE_DATA_DIR = FIXTURES_DIR / "sample_data" / "swapped" / "mat"
-GOLDEN_DATA_DIR = FIXTURES_DIR / "golden_data" / "golden_mat_swapped"
+GOLDEN_DATA_DIR = FIXTURES_DIR / "golden_data" / "golden_swapped_time_course" / "mat"
 
 
 @pytest.fixture

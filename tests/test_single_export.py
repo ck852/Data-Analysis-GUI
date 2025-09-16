@@ -39,7 +39,7 @@ class TestExportWorkflow:
     def golden_data_path(self):
         """Get the path to golden reference files."""
         current_dir = Path(__file__).parent
-        return current_dir / "fixtures" / "golden_data" / "golden_abf_IV"
+        return current_dir / "fixtures" / "golden_data" / "golden_IV" / "abf"
     
     @pytest.fixture
     def controller(self):
@@ -377,7 +377,7 @@ class TestExportWorkflow:
             assert result.records_exported > 0, "No records were exported"
             
             # ========== STEP 5: Validate Against Golden Reference ==========
-            reference_file = golden_data_path.parent / "golden_mat_DR" / "250202_007.csv"
+            reference_file = golden_data_path.parent.parent / "golden_mat_DR" / "250202_007.csv"
             assert reference_file.exists(), f"Golden reference file not found: {reference_file}"
             
             # Compare output with golden reference

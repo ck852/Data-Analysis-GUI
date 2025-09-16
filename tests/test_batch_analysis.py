@@ -41,7 +41,7 @@ class TestBatchAnalysisWorkflow:
     def golden_data_path(self):
         """Get the path to golden reference files."""
         current_dir = Path(__file__).parent
-        return current_dir / "fixtures" / "golden_data" / "golden_abf_IV"
+        return current_dir / "fixtures" / "golden_data" / "golden_IV" / "abf"
     
     @pytest.fixture
     def controller(self):
