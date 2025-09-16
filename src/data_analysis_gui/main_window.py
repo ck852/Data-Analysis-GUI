@@ -117,8 +117,9 @@ class MainWindow(QMainWindow):
         self.plot_manager = PlotManager()
         splitter.addWidget(self.plot_manager.get_plot_widget())
         
-        # Adjust splitter sizes - wider control panel to prevent scrollbar
-        splitter.setSizes([450, 950])  # Increased control panel width
+        # Set the plot manager to expand and leave the control panel at its minimum size
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
         
         # Menus and toolbar
         self._create_menus()
