@@ -2,7 +2,7 @@
 Test module for Swap Channels functionality with batch analysis.
 
 This test validates the channel swapping feature by:
-1. Loading MAT files with swapped channel configuration
+1. Loading MAT/ABF files with swapped channel configuration
 2. Activating the swap channels feature
 3. Running batch analysis with specific parameters
 4. Comparing outputs against golden reference data
@@ -16,6 +16,7 @@ import tempfile
 import shutil
 import csv
 from typing import List, Dict, Any
+from abc import ABC, abstractmethod
 
 # Import core components
 from data_analysis_gui.core.channel_definitions import ChannelDefinitions
@@ -29,8 +30,6 @@ from data_analysis_gui.core.app_controller import ApplicationController
 
 # Test fixtures paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-SAMPLE_DATA_DIR = FIXTURES_DIR / "sample_data" / "swapped" / "mat"
-GOLDEN_DATA_DIR = FIXTURES_DIR / "golden_data" / "golden_swapped_time_course" / "mat"
 
 
 @pytest.fixture
@@ -86,12 +85,12 @@ def controller(channel_definitions):
     return ApplicationController(channel_definitions=channel_definitions)
 
 
-def get_mat_files(directory: Path) -> List[Path]:
-    """Get all MAT files in a directory, sorted numerically."""
-    mat_files = list(directory.glob("*.mat"))
+def get_data_files(directory: Path, extension: str) -> List[Path]:
+    """Get all data files in a directory with given extension, sorted numerically."""
+    data_files = list(directory.glob(f"*.{extension}"))
     # Sort by the numeric part in the filename
-    mat_files.sort(key=lambda x: int(x.stem.split('_')[-1].split('[')[0]))
-    return mat_files
+    data_files.sort(key=lambda x: int(x.stem.split('_')[-1].split('[')[0]))
+    return data_files
 
 
 def load_csv_data(csv_path: Path) -> Dict[str, Any]:
@@ -165,13 +164,35 @@ def compare_csv_files(generated_path: Path, golden_path: Path, tolerance: float 
     return True
 
 
-class TestSwapChannels:
-    """Test suite for Swap Channels functionality with batch analysis."""
+class TestSwapChannelsBase(ABC):
+    """Base class for testing Swap Channels functionality with batch analysis."""
+    
+    @property
+    @abstractmethod
+    def file_format(self) -> str:
+        """Return the file format being tested ('mat' or 'abf')."""
+        pass
+    
+    @property
+    @abstractmethod
+    def file_extension(self) -> str:
+        """Return the file extension for this format."""
+        pass
+    
+    @property
+    def sample_data_dir(self) -> Path:
+        """Return the sample data directory for this format."""
+        return FIXTURES_DIR / "sample_data" / "swapped" / self.file_format
+    
+    @property
+    def golden_data_dir(self) -> Path:
+        """Return the golden data directory for this format."""
+        return FIXTURES_DIR / "golden_data" / "golden_swapped_time_course" / self.file_format
     
     def test_single_file_swap_channels(self, controller, analysis_parameters):
         """Test channel swapping on a single file."""
         # Load a single test file
-        test_file = SAMPLE_DATA_DIR / "240809_001[1-12].mat"
+        test_file = self.sample_data_dir / f"240809_001[1-12].{self.file_extension}"
         
         # Skip if test file doesn't exist
         if not test_file.exists():
@@ -202,19 +223,19 @@ class TestSwapChannels:
         """Test batch analysis with swapped channels and compare to golden data."""
         
         # Skip if sample data directory doesn't exist
-        if not SAMPLE_DATA_DIR.exists():
-            pytest.skip(f"Sample data directory not found: {SAMPLE_DATA_DIR}")
+        if not self.sample_data_dir.exists():
+            pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
         
-        # Get all MAT files in the directory
-        mat_files = get_mat_files(SAMPLE_DATA_DIR)
+        # Get all data files in the directory
+        data_files = get_data_files(self.sample_data_dir, self.file_extension)
         
-        if not mat_files:
-            pytest.skip("No MAT files found in sample data directory")
+        if not data_files:
+            pytest.skip(f"No {self.file_extension.upper()} files found in sample data directory")
         
         # Convert to string paths for batch processor
-        file_paths = [str(f) for f in mat_files]
+        file_paths = [str(f) for f in data_files]
         
-        # Run batch analysis with swapped channels (removed parallel parameter)
+        # Run batch analysis with swapped channels
         batch_result = batch_processor.process_files(
             file_paths=file_paths,
             params=analysis_parameters
@@ -234,13 +255,13 @@ class TestSwapChannels:
         assert export_result.success_count > 0, "No files exported successfully"
         
         # Skip golden data comparison if directory doesn't exist
-        if not GOLDEN_DATA_DIR.exists():
-            pytest.skip(f"Golden data directory not found: {GOLDEN_DATA_DIR}")
+        if not self.golden_data_dir.exists():
+            pytest.skip(f"Golden data directory not found: {self.golden_data_dir}")
         
         # Compare each generated CSV with golden data
         for result in batch_result.successful_results:
             generated_csv = temp_output_dir / f"{result.base_name}.csv"
-            golden_csv = GOLDEN_DATA_DIR / f"{result.base_name}.csv"
+            golden_csv = self.golden_data_dir / f"{result.base_name}.csv"
             
             assert generated_csv.exists(), f"Generated CSV not found: {generated_csv}"
             
@@ -250,6 +271,89 @@ class TestSwapChannels:
                     f"CSV comparison failed for {result.base_name}"
             else:
                 pytest.skip(f"Golden CSV not found: {golden_csv}")
+    
+    def test_full_workflow_with_controller(self, temp_output_dir):
+        """Test complete workflow using ApplicationController."""
+        
+        # Skip if sample data doesn't exist
+        if not self.sample_data_dir.exists():
+            pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
+        
+        # Create controller with fresh channel definitions
+        channel_defs = ChannelDefinitions()
+        controller = ApplicationController(channel_definitions=channel_defs)
+        
+        # Load first file to establish context
+        test_files = get_data_files(self.sample_data_dir, self.file_extension)
+        if not test_files:
+            pytest.skip("No test files found")
+        
+        # Load a file
+        load_result = controller.load_file(str(test_files[0]))
+        assert load_result.success
+        
+        # Swap channels
+        swap_result = controller.swap_channels()
+        assert swap_result['success']
+        assert swap_result['is_swapped']
+        
+        # Create analysis parameters
+        params = AnalysisParameters(
+            range1_start=50.60,
+            range1_end=548.65,
+            use_dual_range=True,
+            range2_start=550.65,
+            range2_end=648.85,
+            stimulus_period=1000.0,
+            x_axis=AxisConfig(measure="Time", channel=None),
+            y_axis=AxisConfig(measure="Average", channel="Current"),
+            channel_config={'channels_swapped': True}
+        )
+        
+        # Run batch analysis
+        file_paths = [str(f) for f in test_files]
+        batch_result = controller.run_batch_analysis(
+            file_paths=file_paths,
+            params=params
+        )
+        
+        assert len(batch_result.successful_results) == len(test_files)
+        
+        # Export results
+        export_result = controller.export_batch_results(
+            batch_result=batch_result,
+            output_directory=str(temp_output_dir)
+        )
+        
+        assert export_result.success_count == len(test_files)
+
+
+class TestSwapChannelsMAT(TestSwapChannelsBase):
+    """Test Swap Channels functionality with MAT files."""
+    
+    @property
+    def file_format(self) -> str:
+        return "mat"
+    
+    @property
+    def file_extension(self) -> str:
+        return "mat"
+
+
+class TestSwapChannelsABF(TestSwapChannelsBase):
+    """Test Swap Channels functionality with ABF files."""
+    
+    @property
+    def file_format(self) -> str:
+        return "abf"
+    
+    @property
+    def file_extension(self) -> str:
+        return "abf"
+
+
+class TestSwapChannelsGeneral:
+    """General tests for channel swapping that don't depend on file format."""
     
     def test_swap_channels_state_persistence(self, channel_definitions):
         """Test that channel swap state persists correctly."""
@@ -284,65 +388,6 @@ class TestSwapChannels:
         assert analysis_parameters.x_axis.channel is None
         assert analysis_parameters.y_axis.measure == "Average"
         assert analysis_parameters.y_axis.channel == "Current"
-
-# Integration test that uses the full application controller
-class TestSwapChannelsIntegration:
-    """Integration tests for Swap Channels with full application flow."""
-    
-    def test_full_workflow_with_controller(self, temp_output_dir):
-        """Test complete workflow using ApplicationController."""
-        
-        # Skip if sample data doesn't exist
-        if not SAMPLE_DATA_DIR.exists():
-            pytest.skip(f"Sample data directory not found: {SAMPLE_DATA_DIR}")
-        
-        # Create controller with fresh channel definitions
-        channel_defs = ChannelDefinitions()
-        controller = ApplicationController(channel_definitions=channel_defs)
-        
-        # Load first file to establish context
-        test_files = get_mat_files(SAMPLE_DATA_DIR)
-        if not test_files:
-            pytest.skip("No test files found")
-        
-        # Load a file
-        load_result = controller.load_file(str(test_files[0]))
-        assert load_result.success
-        
-        # Swap channels
-        swap_result = controller.swap_channels()
-        assert swap_result['success']
-        assert swap_result['is_swapped']
-        
-        # Create analysis parameters
-        params = AnalysisParameters(
-            range1_start=50.60,
-            range1_end=548.65,
-            use_dual_range=True,
-            range2_start=550.65,
-            range2_end=648.85,
-            stimulus_period=1000.0,
-            x_axis=AxisConfig(measure="Time", channel=None),
-            y_axis=AxisConfig(measure="Average", channel="Current"),
-            channel_config={'channels_swapped': True}
-        )
-        
-        # Run batch analysis (removed parallel parameter)
-        file_paths = [str(f) for f in test_files]
-        batch_result = controller.run_batch_analysis(
-            file_paths=file_paths,
-            params=params
-        )
-        
-        assert len(batch_result.successful_results) == len(test_files)
-        
-        # Export results
-        export_result = controller.export_batch_results(
-            batch_result=batch_result,
-            output_directory=str(temp_output_dir)
-        )
-        
-        assert export_result.success_count == len(test_files)
 
 
 if __name__ == "__main__":

@@ -21,10 +21,6 @@ from data_analysis_gui.services.current_density_service import CurrentDensitySer
 from data_analysis_gui.services.data_manager import DataManager
 
 
-# Test data configuration
-SAMPLE_DATA_DIR = Path("tests/fixtures/sample_data/IV+CD/abf")
-GOLDEN_DATA_DIR = Path("tests/fixtures/golden_data/golden_CD/abf")
-
 # Expected Cslow values for each file
 CSLOW_VALUES = {
     "250514_001": 34.4,
@@ -42,217 +38,240 @@ CSLOW_VALUES = {
 }
 
 
-@pytest.fixture
-def analysis_params():
-    """Create analysis parameters matching the GUI state."""
-    return AnalysisParameters(
-        range1_start=150.1,
-        range1_end=649.2,
-        use_dual_range=False,
-        range2_start=None,
-        range2_end=None,
-        stimulus_period=1000.0,
-        x_axis=AxisConfig(measure="Average", channel="Voltage"),
-        y_axis=AxisConfig(measure="Average", channel="Current"),
-        channel_config={'voltage': 0, 'current': 1}
-    )
+class CurrentDensityTestBase:
+    """Base class for current density workflow tests."""
 
+    # Subclasses should define these
+    FILE_TYPE = None  # 'abf' or 'mat'
+    FILE_EXTENSION = None  # '*.abf' or '*.mat'
 
-@pytest.fixture
-def temp_output_dir():
-    """Create a temporary directory for test outputs."""
-    temp_dir = tempfile.mkdtemp()
-    yield temp_dir
-    # Cleanup
-    shutil.rmtree(temp_dir)
+    @property
+    def sample_data_dir(self) -> Path:
+        """Get the sample data directory for this file type."""
+        return Path(f"tests/fixtures/sample_data/IV+CD/{self.FILE_TYPE}")
 
+    @property
+    def golden_data_dir(self) -> Path:
+        """Get the golden data directory for this file type."""
+        return Path(f"tests/fixtures/golden_data/golden_CD/{self.FILE_TYPE}")
 
-def get_abf_files() -> List[str]:
-    """Get all ABF files from the sample data directory."""
-    if not SAMPLE_DATA_DIR.exists():
-        pytest.skip(f"Sample data directory not found: {SAMPLE_DATA_DIR}")
-    
-    abf_files = list(SAMPLE_DATA_DIR.glob("*.abf"))
-    if not abf_files:
-        pytest.skip(f"No ABF files found in {SAMPLE_DATA_DIR}")
-    
-    return [str(f) for f in sorted(abf_files)]
-
-
-def compare_csv_files(generated_file: Path, golden_file: Path, rtol: float = 1e-5):
-    """
-    Compare two CSV files for equality within tolerance.
-    
-    Args:
-        generated_file: Path to generated CSV file
-        golden_file: Path to golden/expected CSV file
-        rtol: Relative tolerance for floating point comparison
-    """
-    assert generated_file.exists(), f"Generated file not found: {generated_file}"
-    assert golden_file.exists(), f"Golden file not found: {golden_file}"
-    
-    # Read both files
-    with open(generated_file, 'r') as f:
-        gen_lines = f.readlines()
-    with open(golden_file, 'r') as f:
-        gold_lines = f.readlines()
-    
-    # Compare headers
-    assert gen_lines[0].strip() == gold_lines[0].strip(), \
-        f"Headers don't match:\nGenerated: {gen_lines[0]}\nExpected: {gold_lines[0]}"
-    
-    # Compare data lines
-    assert len(gen_lines) == len(gold_lines), \
-        f"Different number of lines: {len(gen_lines)} vs {len(gold_lines)}"
-    
-    # Compare numerical data
-    for i, (gen_line, gold_line) in enumerate(zip(gen_lines[1:], gold_lines[1:]), 1):
-        gen_values = gen_line.strip().split(',')
-        gold_values = gold_line.strip().split(',')
-        
-        assert len(gen_values) == len(gold_values), \
-            f"Line {i}: Different number of values"
-        
-        for j, (gen_val, gold_val) in enumerate(zip(gen_values, gold_values)):
-            try:
-                gen_float = float(gen_val)
-                gold_float = float(gold_val)
-                np.testing.assert_allclose(gen_float, gold_float, rtol=rtol,
-                    err_msg=f"Line {i}, Column {j}: {gen_float} vs {gold_float}")
-            except ValueError:
-                # Non-numeric values should match exactly
-                assert gen_val == gold_val, \
-                    f"Line {i}, Column {j}: '{gen_val}' vs '{gold_val}'"
-
-
-def test_current_density_workflow(analysis_params, temp_output_dir):
-    """Test the complete current density analysis workflow."""
-    # Initialize services
-    channel_defs = ChannelDefinitions()
-    batch_processor = BatchProcessor(channel_defs)
-    data_manager = DataManager()
-    cd_service = CurrentDensityService()
-    
-    # Step 1: Get all ABF files
-    abf_files = get_abf_files()
-    assert len(abf_files) == 12, f"Expected 12 ABF files, found {len(abf_files)}"
-    
-    # Step 2: Perform batch analysis
-    print(f"Processing {len(abf_files)} files...")
-    batch_result = batch_processor.process_files(
-        file_paths=abf_files,
-        params=analysis_params
-    )
-    
-    # Verify all files processed successfully
-    assert len(batch_result.successful_results) == 12, \
-        f"Expected 12 successful results, got {len(batch_result.successful_results)}"
-    assert len(batch_result.failed_results) == 0, \
-        f"Unexpected failures: {[r.file_path for r in batch_result.failed_results]}"
-    
-    import dataclasses
-    # Step 3: Apply current density calculations
-    cd_results = []
-    for result in batch_result.successful_results:
-        base_name = result.base_name
-        cslow = CSLOW_VALUES.get(base_name)
-        
-        assert cslow is not None, f"No Cslow value for {base_name}"
-        
-        # Calculate current density
-        cd_y_data = cd_service.calculate_current_density(result.y_data, cslow)
-        
-        # Create export table for current density data
-        export_table = None
-        if result.export_table is not None:
-            original_data = result.export_table.get('data', np.array([[]]))
-            
-            if original_data.size > 0:
-                # Create new data with current density values
-                cd_data = original_data.copy()
-                cd_data[:, 1] = cd_y_data
-                
-                # Round voltage values to one decimal place
-                cd_data[:, 0] = np.round(cd_data[:, 0], 1)
-
-                # Create headers in the expected format
-                # Remove "Average" prefix and add Cslow info
-                headers = [
-                    "Voltage (mV)",
-                    "Current Density (pA/pF)",
-                    f"Cslow = {cslow:.2f} pF"
-                ]
-                
-                export_table = {
-                    'headers': headers,
-                    'data': cd_data,
-                    'format_spec': result.export_table.get('format_spec', '%.6f')
-                }
-        
-        # Create new result with current density values
-        cd_result = dataclasses.replace(
-            result,
-            y_data=cd_y_data,
-            export_table=export_table
+    @pytest.fixture
+    def analysis_params(self):
+        """Create analysis parameters matching the GUI state."""
+        return AnalysisParameters(
+            range1_start=150.1,
+            range1_end=649.2,
+            use_dual_range=False,
+            range2_start=None,
+            range2_end=None,
+            stimulus_period=1000.0,
+            x_axis=AxisConfig(measure="Average", channel="Voltage"),
+            y_axis=AxisConfig(measure="Average", channel="Current"),
+            channel_config={'voltage': 0, 'current': 1}
         )
-        cd_results.append(cd_result)
-    
-    # Create new batch result with current density values
-    cd_batch_result = dataclasses.replace(
-        batch_result,
-        successful_results=cd_results
-    )
-    
-    # Step 4: Export individual current density CSVs
-    cd_output_dir = os.path.join(temp_output_dir, "current_density")
-    os.makedirs(cd_output_dir, exist_ok=True)
-    
-    export_result = batch_processor.export_results(cd_batch_result, cd_output_dir)
-    
-    assert export_result.success_count == 12, \
-        f"Expected 12 successful exports, got {export_result.success_count}"
+
+    @pytest.fixture
+    def temp_output_dir(self):
+        """Create a temporary directory for test outputs."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        # Cleanup
+        shutil.rmtree(temp_dir)
+
+    def get_test_files(self) -> List[str]:
+        """Get all test files from the sample data directory."""
+        if not self.sample_data_dir.exists():
+            pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
+
+        test_files = list(self.sample_data_dir.glob(self.FILE_EXTENSION))
+        if not test_files:
+            pytest.skip(f"No {self.FILE_TYPE.upper()} files found in {self.sample_data_dir}")
+
+        return [str(f) for f in sorted(test_files)]
+
+    def compare_csv_files(self, generated_file: Path, golden_file: Path, rtol: float = 1e-5):
+        """
+        Compare two CSV files for equality within tolerance.
+
+        Args:
+            generated_file: Path to generated CSV file
+            golden_file: Path to golden/expected CSV file
+            rtol: Relative tolerance for floating point comparison
+        """
+        assert generated_file.exists(), f"Generated file not found: {generated_file}"
+        assert golden_file.exists(), f"Golden file not found: {golden_file}"
+
+        # Read both files
+        with open(generated_file, 'r') as f:
+            gen_lines = f.readlines()
+        with open(golden_file, 'r') as f:
+            gold_lines = f.readlines()
+
+        # Compare headers
+        assert gen_lines[0].strip() == gold_lines[0].strip(), \
+            f"Headers don't match:\nGenerated: {gen_lines[0]}\nExpected: {gold_lines[0]}"
+
+        # Compare data lines
+        assert len(gen_lines) == len(gold_lines), \
+            f"Different number of lines: {len(gen_lines)} vs {len(gold_lines)}"
+
+        # Compare numerical data
+        for i, (gen_line, gold_line) in enumerate(zip(gen_lines[1:], gold_lines[1:]), 1):
+            gen_values = gen_line.strip().split(',')
+            gold_values = gold_line.strip().split(',')
+
+            assert len(gen_values) == len(gold_values), \
+                f"Line {i}: Different number of values"
+
+            for j, (gen_val, gold_val) in enumerate(zip(gen_values, gold_values)):
+                try:
+                    gen_float = float(gen_val)
+                    gold_float = float(gold_val)
+                    np.testing.assert_allclose(gen_float, gold_float, rtol=rtol,
+                        err_msg=f"Line {i}, Column {j}: {gen_float} vs {gold_float}")
+                except ValueError:
+                    # Non-numeric values should match exactly
+                    assert gen_val == gold_val, \
+                        f"Line {i}, Column {j}: '{gen_val}' vs '{gold_val}'"
+
+    def test_current_density_workflow(self, analysis_params, temp_output_dir):
+        """Test the complete current density analysis workflow."""
+        # Initialize services
+        channel_defs = ChannelDefinitions()
+        batch_processor = BatchProcessor(channel_defs)
+        data_manager = DataManager()
+        cd_service = CurrentDensityService()
+
+        # Step 1: Get all test files
+        test_files = self.get_test_files()
+        assert len(test_files) == 12, f"Expected 12 {self.FILE_TYPE.upper()} files, found {len(test_files)}"
+
+        # Step 2: Perform batch analysis
+        print(f"Processing {len(test_files)} {self.FILE_TYPE.upper()} files...")
+        batch_result = batch_processor.process_files(
+            file_paths=test_files,
+            params=analysis_params
+        )
+
+        # Verify all files processed successfully
+        assert len(batch_result.successful_results) == 12, \
+            f"Expected 12 successful results, got {len(batch_result.successful_results)}"
+        assert len(batch_result.failed_results) == 0, \
+            f"Unexpected failures: {[r.file_path for r in batch_result.failed_results]}"
+
+        import dataclasses
+        # Step 3: Apply current density calculations
+        cd_results = []
+        for result in batch_result.successful_results:
+            base_name = result.base_name
+            cslow = CSLOW_VALUES.get(base_name)
+
+            assert cslow is not None, f"No Cslow value for {base_name}"
+
+            # Calculate current density
+            cd_y_data = cd_service.calculate_current_density(result.y_data, cslow)
+
+            # Create export table for current density data
+            export_table = None
+            if result.export_table is not None:
+                original_data = result.export_table.get('data', np.array([[]]))
+
+                if original_data.size > 0:
+                    # Create new data with current density values
+                    cd_data = original_data.copy()
+                    cd_data[:, 1] = cd_y_data
+
+                    # Round voltage values to one decimal place
+                    cd_data[:, 0] = np.round(cd_data[:, 0], 1)
+
+                    # Create headers in the expected format
+                    # Remove "Average" prefix and add Cslow info
+                    headers = [
+                        "Voltage (mV)",
+                        "Current Density (pA/pF)",
+                        f"Cslow = {cslow:.2f} pF"
+                    ]
+
+                    export_table = {
+                        'headers': headers,
+                        'data': cd_data,
+                        'format_spec': result.export_table.get('format_spec', '%.6f')
+                    }
+
+            # Create new result with current density values
+            cd_result = dataclasses.replace(
+                result,
+                y_data=cd_y_data,
+                export_table=export_table
+            )
+            cd_results.append(cd_result)
+
+        # Create new batch result with current density values
+        cd_batch_result = dataclasses.replace(
+            batch_result,
+            successful_results=cd_results
+        )
+
+        # Step 4: Export individual current density CSVs
+        cd_output_dir = os.path.join(temp_output_dir, "current_density")
+        os.makedirs(cd_output_dir, exist_ok=True)
+
+        export_result = batch_processor.export_results(cd_batch_result, cd_output_dir)
+
+        assert export_result.success_count == 12, \
+            f"Expected 12 successful exports, got {export_result.success_count}"
+
+    def test_cslow_validation(self):
+        """Test Cslow validation functionality."""
+        cd_service = CurrentDensityService()
+
+        # Test valid values
+        current = np.array([100.0, 200.0, 300.0])
+        cslow = 20.0
+        cd = cd_service.calculate_current_density(current, cslow)
+
+        expected = np.array([5.0, 10.0, 15.0])
+        np.testing.assert_allclose(cd, expected)
+
+        # Test invalid Cslow
+        with pytest.raises(ValueError, match="Cslow must be positive"):
+            cd_service.calculate_current_density(current, 0.0)
+
+        with pytest.raises(ValueError, match="Cslow must be positive"):
+            cd_service.calculate_current_density(current, -10.0)
+
+    def test_cslow_value_validation(self):
+        """Test validation of Cslow values."""
+        cd_service = CurrentDensityService()
+
+        cslow_mapping = {
+            "file1": 20.0,    # Valid
+            "file2": 0.0,     # Invalid - zero
+            "file3": -5.0,    # Invalid - negative
+            "file4": 15000.0, # Invalid - too large
+            "file5": "abc",   # Invalid - not numeric
+        }
+
+        file_names = set(cslow_mapping.keys())
+        errors = cd_service.validate_cslow_values(cslow_mapping, file_names)
+
+        assert "file1" not in errors
+        assert "file2" in errors and "must be positive" in errors["file2"]
+        assert "file3" in errors and "must be positive" in errors["file3"]
+        assert "file4" in errors and "unreasonably large" in errors["file4"]
+        assert "file5" in errors and "must be numeric" in errors["file5"]
 
 
-def test_cslow_validation():
-    """Test Cslow validation functionality."""
-    cd_service = CurrentDensityService()
-    
-    # Test valid values
-    current = np.array([100.0, 200.0, 300.0])
-    cslow = 20.0
-    cd = cd_service.calculate_current_density(current, cslow)
-    
-    expected = np.array([5.0, 10.0, 15.0])
-    np.testing.assert_allclose(cd, expected)
-    
-    # Test invalid Cslow
-    with pytest.raises(ValueError, match="Cslow must be positive"):
-        cd_service.calculate_current_density(current, 0.0)
-    
-    with pytest.raises(ValueError, match="Cslow must be positive"):
-        cd_service.calculate_current_density(current, -10.0)
+class TestCurrentDensityABF(CurrentDensityTestBase):
+    """Test current density workflow with ABF files."""
+    FILE_TYPE = 'abf'
+    FILE_EXTENSION = '*.abf'
 
 
-def test_cslow_value_validation():
-    """Test validation of Cslow values."""
-    cd_service = CurrentDensityService()
-    
-    cslow_mapping = {
-        "file1": 20.0,    # Valid
-        "file2": 0.0,     # Invalid - zero
-        "file3": -5.0,    # Invalid - negative
-        "file4": 15000.0, # Invalid - too large
-        "file5": "abc",   # Invalid - not numeric
-    }
-    
-    file_names = set(cslow_mapping.keys())
-    errors = cd_service.validate_cslow_values(cslow_mapping, file_names)
-    
-    assert "file1" not in errors
-    assert "file2" in errors and "must be positive" in errors["file2"]
-    assert "file3" in errors and "must be positive" in errors["file3"]
-    assert "file4" in errors and "unreasonably large" in errors["file4"]
-    assert "file5" in errors and "must be numeric" in errors["file5"]
+class TestCurrentDensityMAT(CurrentDensityTestBase):
+    """Test current density workflow with MAT files."""
+    FILE_TYPE = 'mat'
+    FILE_EXTENSION = '*.mat'
 
 
 if __name__ == "__main__":

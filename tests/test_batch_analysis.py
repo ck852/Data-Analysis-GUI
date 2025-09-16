@@ -2,7 +2,7 @@
 Test script to validate the batch analysis workflow from file loading through CSV export.
 
 This test mimics the exact user workflow for batch analysis:
-1. Select multiple ABF files for batch processing
+1. Select multiple ABF/MAT files for batch processing
 2. Set analysis parameters (same as single file test)
 3. Run batch analysis on all files
 4. Export individual CSVs for each file
@@ -10,7 +10,7 @@ This test mimics the exact user workflow for batch analysis:
 
 The test runs headless without GUI components but follows the same logic paths.
 
-REFACTORED: Updated to work with simplified service architecture
+REFACTORED: Base class implementation for testing both ABF and MAT file formats
 """
 
 import pytest
@@ -19,6 +19,7 @@ import tempfile
 import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any
+from abc import ABC, abstractmethod
 
 # Import core components following the actual application architecture
 from data_analysis_gui.core.app_controller import ApplicationController
@@ -27,21 +28,32 @@ from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 from data_analysis_gui.core.models import BatchAnalysisResult
 
 
-class TestBatchAnalysisWorkflow:
-    """Test class for validating the complete batch analysis workflow."""
+class TestBatchAnalysisWorkflowBase(ABC):
+    """Base test class for validating the complete batch analysis workflow."""
+    
+    @property
+    @abstractmethod
+    def file_format(self) -> str:
+        """Return the file format being tested ('abf' or 'mat')."""
+        pass
+    
+    @property
+    @abstractmethod
+    def file_extension(self) -> str:
+        """Return the file extension pattern for glob ('*.abf' or '*.mat')."""
+        pass
     
     @pytest.fixture
     def test_data_path(self):
         """Get the path to test data files."""
         current_dir = Path(__file__).parent
-        # Note: The actual path is IV+CD not IV_CD
-        return current_dir / "fixtures" / "sample_data" / "IV+CD" / "abf"
+        return current_dir / "fixtures" / "sample_data" / "IV+CD" / self.file_format
     
     @pytest.fixture
     def golden_data_path(self):
         """Get the path to golden reference files."""
         current_dir = Path(__file__).parent
-        return current_dir / "fixtures" / "golden_data" / "golden_IV" / "abf"
+        return current_dir / "fixtures" / "golden_data" / "golden_IV" / self.file_format
     
     @pytest.fixture
     def controller(self):
@@ -87,10 +99,10 @@ class TestBatchAnalysisWorkflow:
             channel_config=controller.get_channel_configuration()
         )
     
-    def get_all_abf_files(self, directory: Path) -> List[str]:
-        """Get all ABF files from the test data directory."""
-        abf_files = sorted(directory.glob("*.abf"))
-        return [str(f) for f in abf_files]
+    def get_all_test_files(self, directory: Path) -> List[str]:
+        """Get all test files from the test data directory."""
+        test_files = sorted(directory.glob(self.file_extension))
+        return [str(f) for f in test_files]
     
     def compare_csv_files(self, output_path: str, reference_path: str, 
                          tolerance: float = 1e-6) -> None:
@@ -140,18 +152,18 @@ class TestBatchAnalysisWorkflow:
         4. Export individual CSVs (clicking "Export Individual CSVs" in results window)
         5. Validate outputs against golden references
         """
-        # ========== STEP 1: Get all ABF files for batch processing ==========
+        # ========== STEP 1: Get all test files for batch processing ==========
         # This mimics user selecting multiple files in the batch dialog
-        input_files = self.get_all_abf_files(test_data_path)
+        input_files = self.get_all_test_files(test_data_path)
         
         # Verify we have the expected number of files
-        assert len(input_files) == 12, f"Expected 12 ABF files, found {len(input_files)}"
+        assert len(input_files) == 12, f"Expected 12 {self.file_format.upper()} files, found {len(input_files)}"
         
         # Verify all input files exist
         for file_path in input_files:
             assert Path(file_path).exists(), f"Input file not found: {file_path}"
         
-        print(f"Found {len(input_files)} files for batch processing")
+        print(f"Found {len(input_files)} {self.file_format.upper()} files for batch processing")
         
         # ========== STEP 2: Set Analysis Parameters (mimics control panel) ==========
         # This mimics the user setting values in the control panel
@@ -190,7 +202,7 @@ class TestBatchAnalysisWorkflow:
         # ========== STEP 3: Run Batch Analysis (mimics "Start Analysis" button) ==========
         # This mimics clicking the "Start Analysis" button in BatchAnalysisDialog
         
-        print("Starting batch analysis...")
+        print(f"Starting batch analysis for {self.file_format.upper()} files...")
         
         # Track progress (optional - mimics the progress callbacks in GUI)
         processed_files = []
@@ -268,7 +280,7 @@ class TestBatchAnalysisWorkflow:
         This ensures that batch processing produces the same results as individual processing.
         """
         # Get just first 3 files for a quicker integrity test
-        input_files = sorted(self.get_all_abf_files(test_data_path))[:3]
+        input_files = sorted(self.get_all_test_files(test_data_path))[:3]
         
         # Set up parameters
         gui_state = {
@@ -321,7 +333,7 @@ class TestBatchAnalysisWorkflow:
             
             print(f"  Verified data integrity for {Path(file_path).name}")
         
-        print("Data integrity verified: batch and individual processing produce identical results")
+        print(f"Data integrity verified: batch and individual {self.file_format.upper()} processing produce identical results")
     
     def test_batch_export_file_naming(self, batch_service, test_data_path):
         """
@@ -329,7 +341,7 @@ class TestBatchAnalysisWorkflow:
         Files should be named based on the input file stem, not with brackets.
         """
         # Get just one file for testing
-        input_files = self.get_all_abf_files(test_data_path)[:1]
+        input_files = self.get_all_test_files(test_data_path)[:1]
         
         # Simple parameters
         params = AnalysisParameters(
@@ -355,13 +367,13 @@ class TestBatchAnalysisWorkflow:
             exported_files = list(Path(temp_dir).glob("*.csv"))
             assert len(exported_files) == 1, f"Expected 1 exported file, found {len(exported_files)}"
             
-            # The input file is like "250514_001[1-11].abf"
+            # The input file is like "250514_001[1-11].{abf|mat}"
             # The output should be "250514_001.csv" (without brackets)
             exported_name = exported_files[0].name
             assert exported_name == "250514_001.csv", \
                 f"Expected filename '250514_001.csv', got '{exported_name}'"
             
-            print(f"File naming verified: {exported_name}")
+            print(f"File naming verified for {self.file_format.upper()}: {exported_name}")
     
     def test_using_controller_batch_methods(self, controller, test_data_path):
         """
@@ -369,7 +381,7 @@ class TestBatchAnalysisWorkflow:
         This ensures the controller properly wraps batch service functionality.
         """
         # Get a couple of test files
-        input_files = self.get_all_abf_files(test_data_path)[:2]
+        input_files = self.get_all_test_files(test_data_path)[:2]
         
         # Create parameters
         params = AnalysisParameters(
@@ -406,7 +418,31 @@ class TestBatchAnalysisWorkflow:
             exported_files = list(Path(temp_dir).glob("*.csv"))
             assert len(exported_files) == 2
         
-        print("Controller batch methods working correctly")
+        print(f"Controller batch methods working correctly for {self.file_format.upper()} files")
+
+
+class TestBatchAnalysisWorkflowABF(TestBatchAnalysisWorkflowBase):
+    """Test batch analysis workflow for ABF files."""
+    
+    @property
+    def file_format(self) -> str:
+        return "abf"
+    
+    @property
+    def file_extension(self) -> str:
+        return "*.abf"
+
+
+class TestBatchAnalysisWorkflowMAT(TestBatchAnalysisWorkflowBase):
+    """Test batch analysis workflow for MAT files."""
+    
+    @property
+    def file_format(self) -> str:
+        return "mat"
+    
+    @property
+    def file_extension(self) -> str:
+        return "*.mat"
 
 
 if __name__ == "__main__":

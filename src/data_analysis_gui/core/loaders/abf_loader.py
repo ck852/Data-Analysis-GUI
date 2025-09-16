@@ -7,11 +7,12 @@ ABF1 and ABF2 file formats through the pyabf library.
 
 Features:
     - Automatic channel detection and labeling
-    - Unit conversion (V→mV, nA→pA, µA→pA)
+    - Unit conversion (V→mV, nA→pA, µA→pA) with sanity checking
     - Sweep indexing compatible with existing MAT file structure
     - Metadata preservation (protocols, comments, tags)
     - Performance optimizations for large files
     - Comprehensive error handling
+    - Robust handling of incorrect unit metadata
 
 Author: Data Analysis GUI Contributors
 License: MIT
@@ -41,11 +42,17 @@ LARGE_FILE_SWEEP_THRESHOLD = 100  # Warn if more than this many sweeps
 LARGE_FILE_SAMPLE_THRESHOLD = 1e7  # Warn if more than this many total samples
 MAX_REASONABLE_SWEEPS = 1000  # Error if more than this many sweeps
 
+# Reasonable range thresholds for sanity checking
+# These are based on typical patch-clamp recordings
+REASONABLE_CURRENT_RANGE_PA = 50000  # ±50 nA is a reasonable maximum for most patch-clamp
+REASONABLE_VOLTAGE_RANGE_MV = 500    # ±500 mV is a reasonable maximum
+
 
 def load_abf(file_path: Union[str, Path], 
              channel_map: Optional[Any] = None,
              validate_data: bool = True,
-             lazy_load: bool = False) -> 'ElectrophysiologyDataset':
+             lazy_load: bool = False,
+             trust_metadata: bool = False) -> 'ElectrophysiologyDataset':
     """
     Load an ABF (Axon Binary Format) file into a standardized dataset.
     
@@ -57,6 +64,8 @@ def load_abf(file_path: Union[str, Path],
         channel_map: Optional ChannelDefinitions instance for custom channel mapping
         validate_data: If True, check for NaN/Inf values and warn about anomalies
         lazy_load: If True, return a lazy-loading dataset (future feature)
+        trust_metadata: If True, always trust unit metadata. If False (default),
+                       apply sanity checks and skip conversion if values seem wrong
     
     Returns:
         ElectrophysiologyDataset containing all sweeps from the ABF file
@@ -77,8 +86,8 @@ def load_abf(file_path: Union[str, Path],
         - Voltage units are automatically converted to mV
         - Current units are automatically converted to pA
         - Large files (>100 sweeps) will trigger a performance warning
+        - Sanity checks are applied to detect incorrect unit metadata
     """
-    
     
     # Check pyabf availability
     if not PYABF_AVAILABLE:
@@ -153,11 +162,6 @@ def load_abf(file_path: Union[str, Path],
     dataset.metadata['data_point_count'] = abf.dataPointCount
     dataset.metadata['data_seconds_total'] = abf.dataSecPerPoint * abf.dataPointCount
     
-    # Store acquisition mode
-    #acquisition_modes = {0: 'gap-free', 1: 'event-driven', 2: 'oscilloscope', 
-    #                    3: 'episodic', 4: 'episodic-stimulation', 5: 'event-driven-fixed-length'}
-    #dataset.metadata['acquisition_mode'] = acquisition_modes.get(abf.abfFileHeader.nOperationMode, 'unknown')
-    
     # Extract channel information
     channel_count = abf.channelCount
     dataset.metadata['channel_count'] = channel_count
@@ -177,7 +181,7 @@ def load_abf(file_path: Union[str, Path],
             # Load sweep data using original units every time
             sweep_data = _load_single_sweep(abf, sweep_idx, channel_count,
                                            channel_labels, channel_units,
-                                           validate_data)
+                                           validate_data, trust_metadata)
             
             # Add to dataset with 1-based indexing
             sweep_index = str(sweep_idx + 1)
@@ -243,12 +247,14 @@ def _process_channel_info(abf: 'pyabf.ABF',
             unit = abf.adcUnits[ch_idx].strip()
             
             # Comprehensive unit normalization map
+            # Map all variations to a standard representation
             unit_map = {
                 # Voltage units
                 'mV': 'mV',
                 'V': 'V',
                 'uV': 'µV',
                 'µV': 'µV',
+                'μV': 'µV',  # Greek mu to micro sign
                 'mv': 'mV',
                 'v': 'V',
                 
@@ -257,6 +263,7 @@ def _process_channel_info(abf: 'pyabf.ABF',
                 'nA': 'nA',
                 'uA': 'µA',
                 'µA': 'µA',
+                'μA': 'µA',  # Greek mu to micro sign
                 'mA': 'mA',
                 'A': 'A',
                 'pa': 'pA',
@@ -285,7 +292,8 @@ def _load_single_sweep(abf: 'pyabf.ABF',
                        channel_count: int,
                        channel_labels: list,
                        channel_units: list,
-                       validate_data: bool) -> Dict[str, Union[np.ndarray, list]]:
+                       validate_data: bool,
+                       trust_metadata: bool = False) -> Dict[str, Union[np.ndarray, list]]:
     """
     Load a single sweep from the ABF file.
 
@@ -296,6 +304,7 @@ def _load_single_sweep(abf: 'pyabf.ABF',
         channel_labels: List of channel labels
         channel_units: List of original channel units
         validate_data: Whether to validate data for NaN/Inf
+        trust_metadata: If True, always trust unit metadata
 
     Returns:
         Dictionary with 'time_ms', 'data_matrix', and 'converted_units'
@@ -320,7 +329,8 @@ def _load_single_sweep(abf: 'pyabf.ABF',
         channel_data, new_unit = _convert_units(
             channel_data,
             channel_units[ch_idx],  # Always use the original unit for conversion
-            channel_labels[ch_idx]
+            channel_labels[ch_idx],
+            trust_metadata
         )
         converted_units[ch_idx] = new_unit
         data_matrix[:, ch_idx] = channel_data
@@ -344,18 +354,24 @@ def _load_single_sweep(abf: 'pyabf.ABF',
 
 def _convert_units(data: np.ndarray, 
                    unit: str, 
-                   channel_label: str) -> Tuple[np.ndarray, str]:
+                   channel_label: str,
+                   trust_metadata: bool = False) -> Tuple[np.ndarray, str]:
     """
-    Convert data to standard units based on channel type.
+    Convert data to standard units based on channel type with sanity checking.
     
     Standard units:
         - Voltage: mV
         - Current: pA
     
+    This function includes sanity checks to detect when ABF metadata is incorrect.
+    For example, if data is already in pA but metadata says µA, the conversion
+    would result in unreasonably large values.
+    
     Args:
         data: Data array to convert
-        unit: Current unit
+        unit: Current unit (from file metadata)
         channel_label: Channel label for type detection
+        trust_metadata: If True, skip sanity checks and always convert
     
     Returns:
         Tuple of (converted_data, new_unit)
@@ -363,31 +379,77 @@ def _convert_units(data: np.ndarray,
     # Determine channel type from label
     label_lower = channel_label.lower()
     is_voltage = any(v in label_lower for v in ['volt', 'potential', 'vm', 'v_m', 'membrane'])
-    is_current = any(c in label_lower for c in ['curr', 'i_', 'im', 'i_m', 'amp'])
+    is_current = any(c in label_lower for c in ['curr', 'i_', 'im', 'i_m', 'amp', 'pa'])
     
     # Voltage conversions to mV
-    if is_voltage or unit in ['V', 'v']:
+    if is_voltage or unit in ['V', 'v', 'mV', 'mv', 'µV', 'uV', 'μV']:
         if unit in ['V', 'v']:
-            return data * 1000.0, 'mV'  # V to mV
+            converted = data * 1000.0
+            new_unit = 'mV'
         elif unit in ['uV', 'µV', 'μV']:
-            return data / 1000.0, 'mV'  # µV to mV
+            converted = data / 1000.0
+            new_unit = 'mV'
         elif unit in ['mV', 'mv']:
             return data, 'mV'  # Already in mV
+        else:
+            return data, unit  # Unknown voltage unit, keep as-is
+            
+        # Sanity check for voltage if not trusting metadata
+        if not trust_metadata and new_unit == 'mV':
+            max_abs_value = np.abs(converted).max()
+            # if max_abs_value > REASONABLE_VOLTAGE_RANGE_MV:
+                # logger.warning(
+                #     f"Voltage values after conversion exceed ±{REASONABLE_VOLTAGE_RANGE_MV} mV "
+                #     f"(max: {max_abs_value:.0f} mV). "
+                #     f"Data may already be in {new_unit}. Skipping conversion."
+                # )
+                # return data, unit  # Return original data and unit
+        
+        return converted, new_unit
     
     # Current conversions to pA
-    elif is_current or unit in ['A', 'mA', 'µA', 'uA', 'nA', 'a', 'ma', 'ua', 'na']:
+    # Include all possible current units in the condition check
+    elif is_current or unit in ['A', 'mA', 'µA', 'uA', 'μA', 'nA', 'pA', 'a', 'ma', 'ua', 'na', 'pa']:
         if unit in ['A', 'a']:
-            return data * 1e12, 'pA'  # A to pA
+            converted = data * 1e12
+            new_unit = 'pA'
         elif unit in ['mA', 'ma']:
-            return data * 1e9, 'pA'  # mA to pA
+            converted = data * 1e9
+            new_unit = 'pA'
         elif unit in ['µA', 'uA', 'μA', 'ua']:
-            return data * 1e6, 'pA'  # µA to pA
+            converted = data * 1e6
+            new_unit = 'pA'
         elif unit in ['nA', 'na']:
-            return data * 1000.0, 'pA'  # nA to pA
+            converted = data * 1000.0
+            new_unit = 'pA'
         elif unit in ['pA', 'pa']:
             return data, 'pA'  # Already in pA
+        else:
+            return data, unit  # Unknown current unit, keep as-is
+        
+        # Sanity check for current if not trusting metadata
+        if not trust_metadata and new_unit == 'pA':
+            max_abs_value = np.abs(converted).max()
+            if max_abs_value > REASONABLE_CURRENT_RANGE_PA:
+                # Check if the data might already be in pA
+                # Common case: metadata says µA but data is actually pA
+                if unit in ['µA', 'uA', 'μA', 'ua'] and np.abs(data).max() < REASONABLE_CURRENT_RANGE_PA:
+                    logger.warning(
+                        f"Current metadata indicates {unit} but values suggest data is already in pA. "
+                        f"Skipping conversion (max value: {np.abs(data).max():.0f})."
+                    )
+                    return data, 'pA'  # Data is already in pA, just fix the unit label
+                else:
+                    logger.warning(
+                        f"Current values after conversion exceed ±{REASONABLE_CURRENT_RANGE_PA/1000:.0f} nA "
+                        f"(max: {max_abs_value:.0f} pA). "
+                        f"Check if conversion is correct."
+                    )
+                    # Still return converted data but with warning
+        
+        return converted, new_unit
     
-    # No conversion needed or unknown unit
+    # No conversion needed or unknown unit type
     return data, unit
 
 
@@ -428,29 +490,11 @@ def _apply_channel_mapping_abf(dataset: 'ElectrophysiologyDataset',
                          if ch_id < len(dataset.metadata['channel_labels']) 
                          else f'Channel {ch_id}')
         
-        # Determine units
-        if hasattr(channel_map, 'get_type_for_channel'):
-            try:
-                ch_type = channel_map.get_type_for_channel(ch_id)
-                if ch_type == 'voltage':
-                    units.append('mV')
-                elif ch_type == 'current':
-                    units.append('pA')
-                else:
-                    # Keep original units
-                    units.append(dataset.metadata['channel_units'][ch_id] 
-                               if ch_id < len(dataset.metadata['channel_units']) 
-                               else '')
-            except Exception as e:
-                logger.warning(f"Failed to get type for channel {ch_id} from channel_map: {e}")
-                units.append(dataset.metadata['channel_units'][ch_id] 
-                           if ch_id < len(dataset.metadata['channel_units']) 
-                           else '')
+        # Determine units - use the already converted units
+        if ch_id < len(dataset.metadata['channel_units']):
+            units.append(dataset.metadata['channel_units'][ch_id])
         else:
-            # Keep original units
-            units.append(dataset.metadata['channel_units'][ch_id] 
-                       if ch_id < len(dataset.metadata['channel_units']) 
-                       else '')
+            units.append('')
     
     dataset.metadata['channel_labels'] = labels
     dataset.metadata['channel_units'] = units
@@ -486,7 +530,6 @@ def _store_extended_metadata(dataset: 'ElectrophysiologyDataset',
     # Holding values for voltage clamp
     if hasattr(abf, 'holdingCommand'):
         dataset.metadata['holding_command'] = abf.holdingCommand
-
     
     # Data quality metrics
     dataset.metadata['data_byte_start'] = abf.dataByteStart if hasattr(abf, 'dataByteStart') else None
