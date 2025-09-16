@@ -30,6 +30,7 @@ from data_analysis_gui.core.plot_formatter import PlotFormatter
 # Widget imports
 from data_analysis_gui.widgets.control_panel import ControlPanel
 from data_analysis_gui.plot_manager import PlotManager
+from data_analysis_gui.widgets.channel_toggle import ChannelToggleSwitch
 
 # Dialog imports
 from data_analysis_gui.dialogs.analysis_plot_dialog import AnalysisPlotDialog
@@ -228,13 +229,6 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(self.sweep_count_label)
 
         toolbar.addSeparator()
-
-        # Swap Channels Button with theme styling
-        self.swap_channels_btn = create_styled_button("Swap Channels", "secondary")
-        self.swap_channels_btn.setToolTip("Swap voltage and current channel assignments (Ctrl+Shift+S)")
-        self.swap_channels_btn.setEnabled(False)
-        self.swap_channels_btn.clicked.connect(self._swap_channels)
-        toolbar.addWidget(self.swap_channels_btn)
         
         # Center Cursor Button with theme styling
         self.center_cursor_btn = create_styled_button("Center Nearest Cursor", "secondary")
@@ -244,6 +238,13 @@ class MainWindow(QMainWindow):
         )
         self.center_cursor_btn.setEnabled(False)
         toolbar.addWidget(self.center_cursor_btn)
+
+        toolbar.addSeparator()
+
+        self.channel_toggle = ChannelToggleSwitch()
+        self.channel_toggle.set_enabled(False)
+        self.channel_toggle.toggled.connect(self._on_channel_toggle)
+        toolbar.addWidget(self.channel_toggle)
 
         toolbar.addSeparator()
         
@@ -300,11 +301,11 @@ class MainWindow(QMainWindow):
         
         # Enable UI elements
         self.swap_action.setEnabled(True)
-        self.swap_channels_btn.setEnabled(True)
+        self.channel_toggle.set_enabled(True)  # Enable the toggle switch
 
-        # Initialize swap button state
+        # Initialize toggle state
         if hasattr(self.channel_definitions, 'is_swapped'):
-            self._update_swap_button_state(self.channel_definitions.is_swapped())
+            self.channel_toggle.set_swapped(self.channel_definitions.is_swapped())
 
         self.center_cursor_btn.setEnabled(True)
         self.prev_btn.setEnabled(True)
@@ -323,6 +324,36 @@ class MainWindow(QMainWindow):
         # Show first sweep
         if file_info.sweep_names:
             self.sweep_combo.setCurrentIndex(0)
+
+    def _on_channel_toggle(self, is_swapped):
+        """
+        Handle channel toggle switch state changes.
+        
+        Args:
+            is_swapped: True if toggle is in swapped position, False otherwise
+        """
+        # Get current state from channel definitions
+        current_swapped = self.channel_definitions.is_swapped() if hasattr(self.channel_definitions, 'is_swapped') else False
+        
+        # Only perform swap if state actually changed
+        if is_swapped != current_swapped:
+            result = self.controller.swap_channels()
+            
+            if result['success']:
+                # Update current plot
+                self._update_plot()
+                
+                # Switch displayed channel to show the effect
+                current = self.channel_combo.currentText()
+                self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
+                
+                self.status_bar.showMessage(
+                    f"Channel assignments updated", 3000
+                )
+            else:
+                # Revert toggle if swap failed
+                self.channel_toggle.set_swapped(current_swapped)
+                QMessageBox.warning(self, "Cannot Update Channels", result['reason'])
 
     def _on_sweep_changed(self):
         """Update plot when sweep selection changes"""
@@ -447,12 +478,12 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export Failed", result.error_message)
 
     def _swap_channels(self):
-        """Swap channels using controller"""
+        """Swap channels using controller - called by menu action"""
         result = self.controller.swap_channels()
         
         if result['success']:
-            # Update UI
-            self._update_swap_button_state(result['is_swapped'])
+            # Update toggle to reflect new state
+            self.channel_toggle.set_swapped(result['is_swapped'])
             
             # Update current plot
             self._update_plot()
@@ -462,23 +493,10 @@ class MainWindow(QMainWindow):
             self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
             
             self.status_bar.showMessage(
-                f"Channels {'swapped' if result['is_swapped'] else 'restored'}", 3000
+                f"Channel assignments updated", 3000
             )
         else:
-            QMessageBox.warning(self, "Cannot Swap", result['reason'])
-
-    def _update_swap_button_state(self, is_swapped: bool):
-        """Update the swap channels button appearance based on swap state."""
-        if is_swapped:
-            # Use theme's warning button style when swapped
-            style_button(self.swap_channels_btn, "warning")
-            self.swap_channels_btn.setText("Channels Swapped ⇄")
-            self.swap_channels_btn.setToolTip("Click to restore default channel assignments (Ctrl+Shift+S)")
-        else:
-            # Use standard secondary style when not swapped
-            style_button(self.swap_channels_btn, "secondary")
-            self.swap_channels_btn.setText("Swap Channels")
-            self.swap_channels_btn.setToolTip("Swap voltage and current channel assignments (Ctrl+Shift+S)")
+            QMessageBox.warning(self, "Cannot Update Channels", result['reason'])
 
     def _batch_analyze(self):
         """Open batch analysis dialog"""

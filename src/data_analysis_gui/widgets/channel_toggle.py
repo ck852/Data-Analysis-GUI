@@ -1,0 +1,184 @@
+"""
+Channel Toggle Switch Widget
+A simple toggle switch for swapping channel assignments.
+Place this file in: widgets/channel_toggle.py
+"""
+
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QMouseEvent
+
+from data_analysis_gui.config.themes import MODERN_COLORS, TYPOGRAPHY
+
+
+class ToggleSlider(QSlider):
+    """
+    Custom QSlider subclass that toggles between two positions on click.
+    Properly overrides mousePressEvent to handle toggle behavior.
+    """
+    
+    def __init__(self, orientation=Qt.Horizontal):
+        super().__init__(orientation)
+        self.setRange(0, 1)
+        self.setValue(0)
+        self.setPageStep(1)
+        self.setSingleStep(1)
+        self.setTickPosition(QSlider.NoTicks)
+        self.setCursor(Qt.PointingHandCursor)
+        
+    def mousePressEvent(self, event: QMouseEvent):
+        """
+        Override mouse press to toggle between states instead of jumping to position.
+        """
+        if self.isEnabled() and event.button() == Qt.LeftButton:
+            # Toggle between 0 and 1
+            current_value = self.value()
+            new_value = 1 - current_value
+            self.setValue(new_value)
+            event.accept()
+        else:
+            # For other buttons or if disabled, use default behavior
+            super().mousePressEvent(event)
+
+
+class ChannelToggleSwitch(QWidget):
+    """
+    A simple toggle switch widget for channel assignment.
+    Shows channel definitions stacked vertically next to the slider.
+    """
+    
+    # Signal emitted when toggle state changes
+    toggled = pyqtSignal(bool)  # True = swapped, False = normal
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.is_swapped = False
+        self._init_ui()
+        
+    def _init_ui(self):
+        """Initialize the UI components."""
+        # Main horizontal layout
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(8)
+        
+        # Create the custom toggle slider
+        self.slider = ToggleSlider(Qt.Horizontal)
+        self.slider.setFixedWidth(50)
+        self.slider.setFixedHeight(24)
+        
+        # Style the slider to look like a toggle switch
+        self._style_slider()
+        
+        # Create channel labels container
+        label_container = QWidget()
+        label_layout = QVBoxLayout(label_container)
+        label_layout.setContentsMargins(0, 0, 0, 0)
+        label_layout.setSpacing(2)
+        
+        # Create channel labels
+        self.ch0_label = QLabel("Ch. 0: Voltage")
+        self.ch1_label = QLabel("Ch. 1: Current")
+        
+        # Style labels
+        label_style = f"""
+            QLabel {{
+                color: {MODERN_COLORS['text']};
+                font-family: {TYPOGRAPHY['font_family']};
+                font-size: 14px;
+                font-weight: 500;
+            }}
+        """
+        self.ch0_label.setStyleSheet(label_style)
+        self.ch1_label.setStyleSheet(label_style)
+        
+        # Add labels to container
+        label_layout.addWidget(self.ch0_label)
+        label_layout.addWidget(self.ch1_label)
+        
+        # Add components to main layout
+        layout.addWidget(self.slider)
+        layout.addWidget(label_container)
+        layout.addStretch()
+        
+        # Connect slider signal
+        self.slider.valueChanged.connect(self._on_slider_changed)
+        
+    def _style_slider(self):
+        """Apply custom styling to make the slider look like a toggle switch."""
+        slider_style = f"""
+            QSlider::groove:horizontal {{
+                background: {MODERN_COLORS['secondary']};
+                height: 20px;
+                border-radius: 10px;
+                border: 1px solid {MODERN_COLORS['border']};
+            }}
+            
+            QSlider::handle:horizontal {{
+                background: {MODERN_COLORS['primary']};
+                border: 1px solid {MODERN_COLORS['primary_hover']};
+                width: 18px;
+                height: 18px;
+                margin: -1px 0;
+                border-radius: 9px;
+            }}
+            
+            QSlider::handle:horizontal:hover {{
+                background: {MODERN_COLORS['primary_hover']};
+                border: 1px solid {MODERN_COLORS['primary_pressed']};
+            }}
+            
+            QSlider::handle:horizontal:pressed {{
+                background: {MODERN_COLORS['primary_pressed']};
+            }}
+            
+            QSlider:disabled {{
+                opacity: 0.5;
+            }}
+        """
+        self.slider.setStyleSheet(slider_style)
+        
+    def _on_slider_changed(self, value):
+        """Handle slider value changes."""
+        self.is_swapped = (value == 1)
+        self._update_labels()
+        self.toggled.emit(self.is_swapped)
+        
+    def _update_labels(self):
+        """Update channel labels based on current state."""
+        if self.is_swapped:
+            self.ch0_label.setText("Ch. 0: Current")
+            self.ch1_label.setText("Ch. 1: Voltage")
+        else:
+            self.ch0_label.setText("Ch. 0: Voltage")
+            self.ch1_label.setText("Ch. 1: Current")
+            
+    def set_swapped(self, swapped):
+        """
+        Set the toggle state programmatically.
+        
+        Args:
+            swapped: True if channels should be swapped, False otherwise
+        """
+        self.slider.setValue(1 if swapped else 0)
+        # Note: This will trigger _on_slider_changed via signal
+        
+    def set_enabled(self, enabled):
+        """Enable or disable the toggle switch."""
+        self.slider.setEnabled(enabled)
+        # Update label appearance when disabled
+        if enabled:
+            color = MODERN_COLORS['text']
+        else:
+            color = MODERN_COLORS['disabled_text']
+            
+        label_style = f"""
+            QLabel {{
+                color: {color};
+                font-family: {TYPOGRAPHY['font_family']};
+                font-size: 14px;
+                font-weight: 500;
+            }}
+        """
+        self.ch0_label.setStyleSheet(label_style)
+        self.ch1_label.setStyleSheet(label_style)
