@@ -77,7 +77,7 @@ class ControlPanel(QWidget):
         # Create scroll area for the controls
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMaximumWidth(400)
+        scroll_area.setMinimumWidth(420)
         
         # Apply theme styling to scroll area
         style_scroll_area(scroll_area)

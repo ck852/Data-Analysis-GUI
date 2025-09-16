@@ -99,15 +99,17 @@ class MainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         
-        # Main layout with theme spacing
+        # Main layout with NO spacing or margins for seamless appearance
         main_layout = QHBoxLayout(central)
-        apply_compact_layout(central, spacing=0, margin=0)
+        main_layout.setSpacing(0)  # Remove spacing between elements
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove all margins
         
         # Main splitter
         splitter = QSplitter(Qt.Horizontal)
+        splitter.setHandleWidth(1)  # Minimal splitter handle
         main_layout.addWidget(splitter)
         
-        # Control panel (left)
+        # Control panel (left) - no maximum width constraint
         self.control_panel = ControlPanel()
         splitter.addWidget(self.control_panel)
         
@@ -115,7 +117,8 @@ class MainWindow(QMainWindow):
         self.plot_manager = PlotManager()
         splitter.addWidget(self.plot_manager.get_plot_widget())
         
-        splitter.setSizes([400, 1000])
+        # Adjust splitter sizes - wider control panel to prevent scrollbar
+        splitter.setSizes([450, 950])  # Increased control panel width
         
         # Menus and toolbar
         self._create_menus()
