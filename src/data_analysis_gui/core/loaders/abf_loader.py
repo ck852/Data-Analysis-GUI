@@ -165,7 +165,6 @@ def load_abf(file_path: Union[str, Path],
     # Process channel labels and units
     channel_labels, channel_units = _process_channel_info(abf, channel_count)
     dataset.metadata['channel_labels'] = channel_labels
-    dataset.metadata['channel_units'] = channel_units
     
     # Store original units for reference
     dataset.metadata['original_channel_units'] = abf.adcUnits[:channel_count] if hasattr(abf, 'adcUnits') else []
@@ -175,14 +174,18 @@ def load_abf(file_path: Union[str, Path],
     
     for sweep_idx in range(abf.sweepCount):
         try:
-            # Load sweep data
-            sweep_data = _load_single_sweep(abf, sweep_idx, channel_count, 
+            # Load sweep data using original units every time
+            sweep_data = _load_single_sweep(abf, sweep_idx, channel_count,
                                            channel_labels, channel_units,
                                            validate_data)
             
-            # Add to dataset with 1-based indexing (matching MAT convention)
+            # Add to dataset with 1-based indexing
             sweep_index = str(sweep_idx + 1)
             dataset.add_sweep(sweep_index, sweep_data['time_ms'], sweep_data['data_matrix'])
+
+            # After the first sweep, set the final converted units in metadata
+            if sweep_idx == 0:
+                dataset.metadata['channel_units'] = sweep_data['converted_units']
             
         except Exception as e:
             logger.error(f"Failed to load sweep {sweep_idx}: {e}")
@@ -277,88 +280,65 @@ def _process_channel_info(abf: 'pyabf.ABF',
     return channel_labels, channel_units
 
 
-def _load_single_sweep(abf: 'pyabf.ABF', 
+def _load_single_sweep(abf: 'pyabf.ABF',
                        sweep_idx: int,
                        channel_count: int,
                        channel_labels: list,
                        channel_units: list,
-                       validate_data: bool) -> Dict[str, np.ndarray]:
+                       validate_data: bool) -> Dict[str, Union[np.ndarray, list]]:
     """
     Load a single sweep from the ABF file.
-    
+
     Args:
         abf: PyABF object
         sweep_idx: Sweep index (0-based)
         channel_count: Number of channels
         channel_labels: List of channel labels
-        channel_units: List of channel units (will be modified for conversions)
+        channel_units: List of original channel units
         validate_data: Whether to validate data for NaN/Inf
-    
+
     Returns:
-        Dictionary with 'time_ms' and 'data_matrix' arrays
+        Dictionary with 'time_ms', 'data_matrix', and 'converted_units'
     """
-    # Set sweep for ABF object
     abf.setSweep(sweep_idx)
-    
-    # Get time vector in milliseconds
-    time_s = abf.sweepX  # Time in seconds
+    time_s = abf.sweepX
     time_ms = time_s * 1000.0
-    
-    # Validate time vector
+
     if validate_data:
         if np.any(np.isnan(time_ms)) or np.any(np.isinf(time_ms)):
             raise ValueError(f"Sweep {sweep_idx} contains invalid time values")
-    
-    # Prepare data matrix for all channels
-    if channel_count == 1:
-        # Single channel - simple case
-        data_matrix = abf.sweepY.reshape(-1, 1)
-        
-        # Apply unit conversion if needed
-        data_matrix[:, 0], channel_units[0] = _convert_units(
-            data_matrix[:, 0], 
-            channel_units[0], 
-            channel_labels[0]
-        )
-    else:
-        # Multiple channels - collect data for each
-        data_matrix = np.zeros((len(time_ms), channel_count), dtype=np.float32)
-        
-        for ch_idx in range(channel_count):
+
+    data_matrix = np.zeros((len(time_ms), channel_count), dtype=np.float32)
+    converted_units = list(channel_units)  # Create a copy for modification
+
+    for ch_idx in range(channel_count):
+        if channel_count > 1:
             abf.setSweep(sweep_idx, channel=ch_idx)
-            channel_data = abf.sweepY.astype(np.float32)
-            
-            # Apply unit conversion
-            channel_data, channel_units[ch_idx] = _convert_units(
-                channel_data,
-                channel_units[ch_idx],
-                channel_labels[ch_idx]
-            )
-            
-            data_matrix[:, ch_idx] = channel_data
-    
-    # Validate data if requested
+        
+        channel_data = abf.sweepY.astype(np.float32)
+        
+        channel_data, new_unit = _convert_units(
+            channel_data,
+            channel_units[ch_idx],  # Always use the original unit for conversion
+            channel_labels[ch_idx]
+        )
+        converted_units[ch_idx] = new_unit
+        data_matrix[:, ch_idx] = channel_data
+
     if validate_data:
         nan_count = np.sum(np.isnan(data_matrix))
-        inf_count = np.sum(np.isinf(data_matrix))
-        
         if nan_count > 0:
             warnings.warn(
-                f"Sweep {sweep_idx} contains {nan_count} NaN values. "
-                "This may affect analysis results.",
-                UserWarning
-            )
-        
+                f"Sweep {sweep_idx} contains {nan_count} NaN values.", UserWarning)
+        inf_count = np.sum(np.isinf(data_matrix))
         if inf_count > 0:
             warnings.warn(
-                f"Sweep {sweep_idx} contains {inf_count} infinite values. "
-                "This may affect analysis results.",
-                UserWarning
-            )
-    
+                f"Sweep {sweep_idx} contains {inf_count} infinite values.", UserWarning)
+
     return {
         'time_ms': time_ms,
-        'data_matrix': data_matrix
+        'data_matrix': data_matrix,
+        'converted_units': converted_units
     }
 
 
