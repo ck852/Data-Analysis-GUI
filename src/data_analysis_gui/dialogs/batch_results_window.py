@@ -3,12 +3,12 @@
 from pathlib import Path
 import re
 from typing import Set
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QMessageBox, QTableWidget, QTableWidgetItem,
                              QCheckBox, QLabel, QSplitter, QHeaderView, QApplication,
                              QGroupBox)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QPixmap, QPainter, QBrush
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
 
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.plot_formatter import PlotFormatter
@@ -74,7 +74,7 @@ class BatchResultsWindow(QMainWindow):
         main_layout = QVBoxLayout(central)
         
         # Create splitter for file list and plot
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # Left panel: File list with controls
         left_panel = self._create_file_list_panel()

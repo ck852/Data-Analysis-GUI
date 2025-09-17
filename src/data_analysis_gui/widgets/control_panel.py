@@ -4,10 +4,10 @@ Handles all control settings and communicates via signals.
 Controls are always active regardless of file loading state.
 """
 
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, QGroupBox,
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, QGroupBox,
                              QLabel, QPushButton, QCheckBox,
                              QGridLayout)
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtCore import Signal
 
 # Import custom widgets that handle scrolling properly
 from data_analysis_gui.widgets.custom_inputs import SelectAllSpinBox, NoScrollComboBox
@@ -31,11 +31,11 @@ class ControlPanel(QWidget):
     """
 
     # Define signals for communication with main window
-    analysis_requested = pyqtSignal()  # User wants to generate analysis plot
-    export_requested = pyqtSignal()  # User wants to export data
+    analysis_requested = Signal()  # User wants to generate analysis plot
+    export_requested = Signal()  # User wants to export data
 
-    dual_range_toggled = pyqtSignal(bool)  # Dual range checkbox changed
-    range_values_changed = pyqtSignal()  # Any range spinbox value changed
+    dual_range_toggled = Signal(bool)  # Dual range checkbox changed
+    range_values_changed = Signal()  # Any range spinbox value changed
 
     def __init__(self, parent=None):
         super().__init__(parent)

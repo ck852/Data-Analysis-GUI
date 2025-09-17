@@ -8,7 +8,7 @@ Part of the presentation layer - handles user interaction for file selection.
 
 import os
 from typing import Optional, List, Tuple
-from PyQt5.QtWidgets import QFileDialog, QWidget
+from PySide6.QtWidgets import QFileDialog, QWidget
 
 
 class FileDialogService:
@@ -132,7 +132,7 @@ class FileDialogService:
             parent,
             title,
             default_directory or "",
-            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
         )
         
         return directory if directory else None

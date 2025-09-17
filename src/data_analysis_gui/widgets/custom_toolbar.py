@@ -4,23 +4,23 @@ Streamlined navigation toolbar for matplotlib plots.
 Provides essential zoom/pan functionality with a modern appearance.
 """
 
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
-from PyQt5.QtWidgets import QToolBar, QAction, QWidget, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt, pyqtSignal, QSize
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from PySide6.QtWidgets import QToolBar, QWidget, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor, QFont
 
 # Import centralized configuration from plot_style
 from data_analysis_gui.config.plot_style import TOOLBAR_CONFIG, get_toolbar_style
 
 
-class StreamlinedNavigationToolbar(NavigationToolbar2QT):
+class StreamlinedNavigationToolbar(NavigationToolbar):
     """
     A cleaner, more modern navigation toolbar for matplotlib plots.
     Keeps only essential functions and matches GUI styling.
     """
     
     # Signal for when zoom/pan state changes
-    mode_changed = pyqtSignal(str)  # 'zoom', 'pan', or 'none'
+    mode_changed = Signal(str)  # 'zoom', 'pan', or 'none'
     
     def __init__(self, canvas, parent=None):
         """
@@ -72,7 +72,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
     
     def _add_streamlined_tools(self):
         """Add only essential navigation tools with custom icons."""
-        from PyQt5.QtGui import QFont
+        from PySide6.QtGui import QFont
         
         # Create font for toolbar actions
         toolbar_font = QFont()
@@ -146,10 +146,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         
         # Create a pixmap for the icon
         pixmap = QPixmap(icon_size, icon_size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Icon color
         color = QColor('#606060')
@@ -188,7 +188,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         
         elif icon_type == 'zoom':
             # Magnifying glass (scaled)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawEllipse(int(4*scale), int(4*scale), int(7*scale), int(7*scale))
             painter.drawLine(int(10*scale), int(10*scale), int(13*scale), int(13*scale))
         
@@ -212,7 +212,7 @@ class StreamlinedNavigationToolbar(NavigationToolbar2QT):
         self.setMovable(False)
         
         # Set toolbar button style to show text beside icons
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
     
     def pan(self, *args):
         """Override pan to update mode indicator."""
@@ -287,12 +287,12 @@ class MinimalNavigationToolbar(QWidget):
     For use in dialogs and secondary windows.
     """
     
-    mode_changed = pyqtSignal(str)
+    mode_changed = Signal(str)
     
     def __init__(self, canvas, parent=None):
         super().__init__(parent)
         self.canvas = canvas
-        self.toolbar = NavigationToolbar2QT(canvas, self)
+        self.toolbar = NavigationToolbar(canvas, self)
         self.toolbar.setVisible(False)  # Hide the actual toolbar
         
         # Create minimal UI
@@ -324,7 +324,7 @@ class MinimalNavigationToolbar(QWidget):
     
     def _create_tool_button(self, text: str, mode: str):
         """Create a styled tool button with proper font size."""
-        from PyQt5.QtWidgets import QPushButton
+        from PySide6.QtWidgets import QPushButton
         
         btn = QPushButton(text)
         btn.setCheckable(mode != 'reset')

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PySide6.QtCore import Qt
 
 # Default analysis parameters
 DEFAULT_SETTINGS = {
@@ -16,7 +16,7 @@ DEFAULT_SETTINGS = {
 ANALYSIS_CONSTANTS = {
     'hold_timer_interval': 150,
     'zoom_scale_factor': 1.1,
-    'pan_cursor': Qt.ClosedHandCursor,
+    'pan_cursor': Qt.CursorShape.ClosedHandCursor,
     'line_picker_tolerance': 5,
     'range_colors': {
         'analysis': {'line': '#2E7D32', 'fill': (0.18, 0.49, 0.20, 0.2)},

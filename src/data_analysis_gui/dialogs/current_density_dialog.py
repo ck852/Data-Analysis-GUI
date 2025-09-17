@@ -10,9 +10,9 @@ License: MIT
 import re
 from typing import Dict
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QDoubleValidator
-from PyQt5.QtWidgets import (QApplication, QDialog, QDialogButtonBox,
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QDoubleValidator
+from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox,
                              QHBoxLayout, QHeaderView, QLabel, QLineEdit,
                              QMessageBox, QPushButton, QTableWidget,
                              QTableWidgetItem, QVBoxLayout)
@@ -68,9 +68,9 @@ class CurrentDensityDialog(QDialog):
 
         # Configure table geometry (layout, not style)
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.Fixed)
-        header.setSectionResizeMode(2, QHeaderView.Fixed)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
         self.table.setColumnWidth(1, 120)
         self.table.setColumnWidth(2, 80)
 
@@ -98,7 +98,7 @@ class CurrentDensityDialog(QDialog):
 
         # Dialog buttons
         button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         button_box.accepted.connect(self._validate_and_accept)
         button_box.rejected.connect(self.reject)
@@ -118,7 +118,7 @@ class CurrentDensityDialog(QDialog):
         for row, result in enumerate(results):
             # File name (read-only)
             file_item = QTableWidgetItem(result.base_name)
-            file_item.setFlags(file_item.flags() & ~Qt.ItemIsEditable)
+            file_item.setFlags(file_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row, 0, file_item)
 
             # Cslow input
@@ -131,7 +131,7 @@ class CurrentDensityDialog(QDialog):
 
             # Status (initially empty)
             status_item = QTableWidgetItem("")
-            status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
+            status_item.setFlags(status_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row, 2, status_item)
 
     def _extract_number(self, filename: str) -> int:

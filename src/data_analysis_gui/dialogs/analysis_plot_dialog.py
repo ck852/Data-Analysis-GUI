@@ -7,12 +7,13 @@ Updated for refactored themes.py
 """
 
 import os
-from PyQt5.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                               QFileDialog, QMessageBox)
 from pathlib import Path
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 
 # Core imports - all data processing is delegated to these
 from data_analysis_gui.core.analysis_plot import AnalysisPlotter, AnalysisPlotData

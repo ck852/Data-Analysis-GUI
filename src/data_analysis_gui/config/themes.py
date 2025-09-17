@@ -5,12 +5,12 @@ Simplified for maintainability while preserving modern appearance.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import (QWidget, QPushButton, QApplication, QListWidget, 
+from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QListWidget, 
                             QTableWidget, QProgressBar, QLabel, QCheckBox,
                             QGroupBox, QComboBox, QSpinBox, QDoubleSpinBox,
                             QLineEdit, QDialog, QMainWindow, QSplitter)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette, QColor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPalette, QColor
 
 # ============================================================================
 # SIMPLIFIED COLOR PALETTE - Only essential colors
@@ -456,15 +456,15 @@ def _get_base_stylesheet() -> str:
 def _apply_palette(widget: QWidget) -> None:
     """Apply color palette to application or widget."""
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(MODERN_COLORS['background']))
-    palette.setColor(QPalette.WindowText, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.Base, QColor(MODERN_COLORS['background']))
-    palette.setColor(QPalette.AlternateBase, QColor(MODERN_COLORS['surface']))
-    palette.setColor(QPalette.Text, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.Button, QColor(MODERN_COLORS['surface']))
-    palette.setColor(QPalette.ButtonText, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.Highlight, QColor(MODERN_COLORS['selected']))
-    palette.setColor(QPalette.HighlightedText, QColor(MODERN_COLORS['text']))
+    palette.setColor(QPalette.ColorRole.Window, QColor(MODERN_COLORS['background']))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor(MODERN_COLORS['text']))
+    palette.setColor(QPalette.ColorRole.Base, QColor(MODERN_COLORS['background']))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor(MODERN_COLORS['surface']))
+    palette.setColor(QPalette.ColorRole.Text, QColor(MODERN_COLORS['text']))
+    palette.setColor(QPalette.ColorRole.Button, QColor(MODERN_COLORS['surface']))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor(MODERN_COLORS['text']))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor(MODERN_COLORS['selected']))
+    palette.setColor(QPalette.ColorRole.HighlightedText, QColor(MODERN_COLORS['text']))
     
     if hasattr(widget, 'setPalette'):
         widget.setPalette(palette)

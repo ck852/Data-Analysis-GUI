@@ -14,15 +14,15 @@ from typing import Dict, List, Set, Optional, Tuple, Callable
 import numpy as np
 from pathlib import Path
 
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, 
                              QTableWidgetItem, QCheckBox, QHeaderView, QLabel,
                              QPushButton)
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-from PyQt5.QtGui import QColor, QPixmap, QPainter, QBrush
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 
@@ -107,7 +107,7 @@ class DynamicBatchPlotWidget(QWidget):
     """
     
     # Signals
-    plot_updated = pyqtSignal()
+    plot_updated = Signal()
     
     def __init__(self, parent=None):
         """Initialize the plot widget with modern styling."""
@@ -141,7 +141,7 @@ class DynamicBatchPlotWidget(QWidget):
         
         # Initialize with styled empty message
         self.empty_label = QLabel("No data to display")
-        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet("""
             QLabel {
                 color: #808080;
@@ -524,8 +524,8 @@ class BatchFileListWidget(QTableWidget):
     """
     
     # Signals
-    selection_changed = pyqtSignal()
-    cslow_value_changed = pyqtSignal(str, float)  # filename, new_value
+    selection_changed = Signal()
+    cslow_value_changed = Signal(str, float)  # filename, new_value
     
     def __init__(self, selection_state: Optional[FileSelectionState] = None,
                  show_cslow: bool = False, parent=None):
@@ -563,15 +563,15 @@ class BatchFileListWidget(QTableWidget):
             self.setHorizontalHeaderLabels(["", "Color", "File"])
         
         # Column sizing
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         
         self.setColumnWidth(0, 30)  # Checkbox
         self.setColumnWidth(1, 40)  # Color
         
         if self.show_cslow:
-            self.horizontalHeader().setSectionResizeMode(3, QHeaderView.Fixed)
+            self.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
             self.setColumnWidth(3, 100)
         
         # Appearance
@@ -603,7 +603,7 @@ class BatchFileListWidget(QTableWidget):
         checkbox_widget = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_widget)
         checkbox_layout.addWidget(checkbox)
-        checkbox_layout.setAlignment(Qt.AlignCenter)
+        checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         checkbox_layout.setContentsMargins(0, 0, 0, 0)
         self.setCellWidget(row, 0, checkbox_widget)
         
@@ -612,7 +612,7 @@ class BatchFileListWidget(QTableWidget):
         
         # File name
         file_item = QTableWidgetItem(file_name)
-        file_item.setFlags(file_item.flags() & ~Qt.ItemIsEditable)
+        file_item.setFlags(file_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.setItem(row, 2, file_item)
         
         # Cslow value (if applicable)
@@ -635,23 +635,23 @@ class BatchFileListWidget(QTableWidget):
         layout = QHBoxLayout(widget)
         
         pixmap = QPixmap(20, 20)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
         
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
         # Convert to QColor
         qcolor = QColor(int(color[0]*255), int(color[1]*255), int(color[2]*255))
         
         painter.setBrush(QBrush(qcolor))
-        painter.setPen(Qt.black)
+        painter.setPen(Qt.GlobalColor.black)
         painter.drawRect(2, 2, 16, 16)
         painter.end()
         
         label = QLabel()
         label.setPixmap(pixmap)
         layout.addWidget(label)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         
         return widget

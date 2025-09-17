@@ -7,8 +7,8 @@ import json
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-from PyQt5.QtCore import QStandardPaths
-from PyQt5.QtWidgets import QSplitter
+from PySide6.QtCore import QStandardPaths
+from PySide6.QtWidgets import QSplitter
 
 
 SETTINGS_VERSION = "1.0"
@@ -16,7 +16,7 @@ SETTINGS_VERSION = "1.0"
 
 def get_settings_dir() -> Path:
     """Get the application settings directory, creating if needed."""
-    app_config = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
+    app_config = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation)
     settings_dir = Path(app_config) / "data_analysis_gui"
     settings_dir.mkdir(parents=True, exist_ok=True)
     return settings_dir
@@ -172,7 +172,7 @@ def apply_settings_to_main_window(main_window, settings: Dict[str, Any]):
         
         # Apply splitter sizes
         if 'splitter_sizes' in window_settings:
-            from PyQt5.QtWidgets import QSplitter
+            from PySide6.QtWidgets import QSplitter
             splitter = main_window.findChild(QSplitter)
             if splitter:
                 splitter.setSizes(window_settings['splitter_sizes'])

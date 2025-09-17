@@ -13,13 +13,13 @@ from typing import Optional, List, Tuple, Dict, Any
 
 import numpy as np
 from matplotlib.axes import Axes
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 
-from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 
 from data_analysis_gui.config.plot_style import (
     apply_plot_style, format_sweep_plot, get_line_styles
@@ -43,10 +43,10 @@ class PlotManager(QObject):
     # Define signals for plot interactions
     # Signal: (action, line_id, value)
     # Actions: 'dragged', 'added', 'removed', 'centered'
-    line_state_changed = pyqtSignal(str, str, float)
+    line_state_changed = Signal(str, str, float)
     
     # Signal for plot updates
-    plot_updated = pyqtSignal()
+    plot_updated = Signal()
 
     def __init__(self, figure_size: Tuple[int, int] = (8, 6)):
         """

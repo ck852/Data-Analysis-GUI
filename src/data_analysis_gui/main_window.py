@@ -7,11 +7,11 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                             QMessageBox, QSplitter, QAction, QToolBar, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+                             QMessageBox, QSplitter, QToolBar, 
                              QStatusBar, QLabel, QPushButton, QComboBox)
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-from PyQt5.QtGui import QKeySequence
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QKeySequence, QAction
 
 # Import refactored theme functions
 from data_analysis_gui.config.themes import (
@@ -56,8 +56,8 @@ class MainWindow(QMainWindow):
     """
     
     # Application events
-    file_loaded = pyqtSignal(str)
-    analysis_completed = pyqtSignal()
+    file_loaded = Signal(str)
+    analysis_completed = Signal()
     
     def __init__(self):
         super().__init__()
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         
         # Main splitter
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setHandleWidth(1)
         main_layout.addWidget(splitter)
         
@@ -158,14 +158,14 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("&File")
         
         self.open_action = QAction("&Open...", self)
-        self.open_action.setShortcut(QKeySequence.Open)
+        self.open_action.setShortcut(QKeySequence.StandardKey.Open)
         self.open_action.triggered.connect(self._open_file)
         file_menu.addAction(self.open_action)
         
         file_menu.addSeparator()
         
         exit_action = QAction("E&xit", self)
-        exit_action.setShortcut(QKeySequence.Quit)
+        exit_action.setShortcut(QKeySequence.StandardKey.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         

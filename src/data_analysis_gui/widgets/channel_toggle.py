@@ -4,9 +4,9 @@ A simple toggle switch for swapping channel assignments.
 Place this file in: widgets/channel_toggle.py
 """
 
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QMouseEvent
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QMouseEvent
 
 from data_analysis_gui.config.themes import MODERN_COLORS, BASE_FONT
 
@@ -17,20 +17,20 @@ class ToggleSlider(QSlider):
     Properly overrides mousePressEvent to handle toggle behavior.
     """
     
-    def __init__(self, orientation=Qt.Horizontal):
+    def __init__(self, orientation=Qt.Orientation.Horizontal):
         super().__init__(orientation)
         self.setRange(0, 1)
         self.setValue(0)
         self.setPageStep(1)
         self.setSingleStep(1)
-        self.setTickPosition(QSlider.NoTicks)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setTickPosition(QSlider.TickPosition.NoTicks)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         
     def mousePressEvent(self, event: QMouseEvent):
         """
         Override mouse press to toggle between states instead of jumping to position.
         """
-        if self.isEnabled() and event.button() == Qt.LeftButton:
+        if self.isEnabled() and event.button() == Qt.MouseButton.LeftButton:
             # Toggle between 0 and 1
             current_value = self.value()
             new_value = 1 - current_value
@@ -48,7 +48,7 @@ class ChannelToggleSwitch(QWidget):
     """
     
     # Signal emitted when toggle state changes
-    toggled = pyqtSignal(bool)  # True = swapped, False = normal
+    toggled = Signal(bool)  # True = swapped, False = normal
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -63,7 +63,7 @@ class ChannelToggleSwitch(QWidget):
         layout.setSpacing(8)
         
         # Create the custom toggle slider
-        self.slider = ToggleSlider(Qt.Horizontal)
+        self.slider = ToggleSlider(Qt.Orientation.Horizontal)
         self.slider.setFixedWidth(50)
         self.slider.setFixedHeight(24)
         

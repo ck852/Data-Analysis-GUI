@@ -19,8 +19,8 @@ from pathlib import Path
 from typing import Dict
 
 import numpy as np
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
                              QMessageBox, QPushButton, QSplitter, QVBoxLayout,
                              QWidget)
 
@@ -85,11 +85,11 @@ class CurrentDensityResultsWindow(QMainWindow):
         main_layout = QVBoxLayout(central)
 
         info_label = QLabel("(Click Cslow values to edit)")
-        info_label.setAlignment(Qt.AlignCenter)
+        info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         style_label(info_label, "caption") # Use themed label style
         main_layout.addWidget(info_label)
 
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         style_splitter(splitter) # Use themed splitter style
         splitter.addWidget(self._create_left_panel())
 

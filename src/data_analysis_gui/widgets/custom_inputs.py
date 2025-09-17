@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox
-from PyQt5.QtCore import QTimer
+from PySide6.QtWidgets import QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox
+from PySide6.QtCore import QTimer
 
 class SelectAllLineEdit(QLineEdit):
     """

@@ -1,8 +1,8 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from data_analysis_gui.main_window import MainWindow
 
 # Import from refactored themes module
@@ -11,9 +11,9 @@ from data_analysis_gui.config.themes import apply_theme_to_application
 def main():
     # Enable high DPI scaling BEFORE creating QApplication
    # if hasattr(Qt, 'AA_EnableHighDpiScaling'):
-       # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+       # QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
     # if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
-    #     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    #     QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
 
@@ -37,7 +37,7 @@ def main():
     window = MainWindow()
 
     # Ensure we are not starting maximized
-    window.setWindowState(Qt.WindowNoState)
+    window.setWindowState(Qt.WindowState.WindowNoState)
 
     # Constrain window size to a fraction of the available screen
     screen = app.primaryScreen()

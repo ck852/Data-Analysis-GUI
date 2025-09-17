@@ -2,11 +2,11 @@
 
 from pathlib import Path
 from typing import List, Optional
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
                              QListWidget, QProgressBar, QLabel,
                              QDialogButtonBox, QMessageBox,
                              QAbstractItemView, QGroupBox)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PySide6.QtCore import Qt, QThread, Signal
 
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult
@@ -23,10 +23,10 @@ logger = get_logger(__name__)
 
 class BatchAnalysisWorker(QThread):
     """Worker thread for batch analysis."""
-    progress = pyqtSignal(int, int, str)
-    file_complete = pyqtSignal(object)  # FileAnalysisResult
-    finished = pyqtSignal(object)  # BatchAnalysisResult
-    error = pyqtSignal(str)
+    progress = Signal(int, int, str)
+    file_complete = Signal(object)  # FileAnalysisResult
+    finished = Signal(object)  # BatchAnalysisResult
+    error = Signal(str)
     
     def __init__(self, batch_service, file_paths, params):
         super().__init__()
@@ -94,7 +94,7 @@ class BatchAnalysisDialog(QDialog):
         file_group_layout = QVBoxLayout(file_group)
         
         self.file_list = QListWidget()
-        self.file_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.file_list.setSelectionMode(QAbstractItemView.SelectionBehavior.ExtendedSelection)
         style_list_widget(self.file_list)
         file_group_layout.addWidget(self.file_list)
         
