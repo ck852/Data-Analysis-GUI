@@ -13,11 +13,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QKeySequence
 
-# Import comprehensive theme functions
+# Import refactored theme functions
 from data_analysis_gui.config.themes import (
-    style_main_window, style_button, create_styled_button, 
-    style_combo_box, style_label, style_toolbar, 
-    apply_compact_layout, WIDGET_SIZES
+    apply_modern_theme, style_button, create_styled_button, 
+    style_combo_box, style_label, apply_compact_layout, WIDGET_SIZES
 )
 
 from data_analysis_gui.core.session_settings import (
@@ -108,8 +107,8 @@ class MainWindow(QMainWindow):
         if saved_settings:
             apply_settings_to_main_window(self, saved_settings)
         
-        # Apply comprehensive theme styling (handles everything)
-        style_main_window(self)
+        # Apply modern theme to the main window (handles everything including toolbars and menus)
+        apply_modern_theme(self)
 
     def _init_ui(self):
         """Initialize the complete UI with full theme integration"""
@@ -152,7 +151,7 @@ class MainWindow(QMainWindow):
         self._connect_signals()
 
     def _create_menus(self):
-        """Create application menus (styling handled by style_main_window)"""
+        """Create application menus (styling handled by apply_modern_theme)"""
         menubar = self.menuBar()
         
         # File menu

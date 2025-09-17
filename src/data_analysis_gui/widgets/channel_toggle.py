@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 
-from data_analysis_gui.config.themes import MODERN_COLORS, TYPOGRAPHY
+from data_analysis_gui.config.themes import MODERN_COLORS, BASE_FONT
 
 
 class ToggleSlider(QSlider):
@@ -84,7 +84,7 @@ class ChannelToggleSwitch(QWidget):
         label_style = f"""
             QLabel {{
                 color: {MODERN_COLORS['text']};
-                font-family: {TYPOGRAPHY['font_family']};
+                {BASE_FONT}
                 font-size: 14px;
                 font-weight: 500;
             }}
@@ -106,9 +106,13 @@ class ChannelToggleSwitch(QWidget):
         
     def _style_slider(self):
         """Apply custom styling to make the slider look like a toggle switch."""
+        # Define hover and pressed colors as slightly darker shades of primary
+        primary_hover = '#0066CC'  # Darker blue for hover
+        primary_pressed = '#0052A3'  # Even darker for pressed
+        
         slider_style = f"""
             QSlider::groove:horizontal {{
-                background: {MODERN_COLORS['secondary']};
+                background: {MODERN_COLORS['surface']};
                 height: 20px;
                 border-radius: 10px;
                 border: 1px solid {MODERN_COLORS['border']};
@@ -116,7 +120,7 @@ class ChannelToggleSwitch(QWidget):
             
             QSlider::handle:horizontal {{
                 background: {MODERN_COLORS['primary']};
-                border: 1px solid {MODERN_COLORS['primary_hover']};
+                border: 1px solid {primary_hover};
                 width: 18px;
                 height: 18px;
                 margin: -1px 0;
@@ -124,12 +128,12 @@ class ChannelToggleSwitch(QWidget):
             }}
             
             QSlider::handle:horizontal:hover {{
-                background: {MODERN_COLORS['primary_hover']};
-                border: 1px solid {MODERN_COLORS['primary_pressed']};
+                background: {primary_hover};
+                border: 1px solid {primary_pressed};
             }}
             
             QSlider::handle:horizontal:pressed {{
-                background: {MODERN_COLORS['primary_pressed']};
+                background: {primary_pressed};
             }}
             
             QSlider:disabled {{
@@ -170,12 +174,12 @@ class ChannelToggleSwitch(QWidget):
         if enabled:
             color = MODERN_COLORS['text']
         else:
-            color = MODERN_COLORS['disabled_text']
+            color = MODERN_COLORS['text_muted']
             
         label_style = f"""
             QLabel {{
                 color: {color};
-                font-family: {TYPOGRAPHY['font_family']};
+                {BASE_FONT}
                 font-size: 14px;
                 font-weight: 500;
             }}

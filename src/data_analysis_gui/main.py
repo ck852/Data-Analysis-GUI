@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from data_analysis_gui.main_window import MainWindow
 
+# Import from refactored themes module
 from data_analysis_gui.config.themes import apply_theme_to_application
 
 def main():
@@ -16,7 +17,7 @@ def main():
 
     app = QApplication(sys.argv)
 
-    # Apply modern theme globally
+    # Apply modern theme globally (handles style, palette, and base stylesheet)
     apply_theme_to_application(app)
 
     # Set application properties
@@ -30,8 +31,7 @@ def main():
         font.setPointSize(7)  # Set to readable size
         app.setFont(font)
 
-    # Apply modern theme
-    app.setStyle('Fusion')
+    # No need to set style again - apply_theme_to_application handles it
 
     # Create main window
     window = MainWindow()

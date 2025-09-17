@@ -3,6 +3,7 @@
 GUI dialog for displaying analysis plots.
 Phase 3: Updated to use stateless AnalysisPlotter methods.
 FIXED: Window positioning bug and full theme integration.
+Updated for refactored themes.py
 """
 
 import os
@@ -18,7 +19,8 @@ from data_analysis_gui.core.analysis_plot import AnalysisPlotter, AnalysisPlotDa
 from data_analysis_gui.core.plot_formatter import PlotFormatter  # Import the formatter
 from data_analysis_gui.gui_services import FileDialogService
 
-from data_analysis_gui.config.themes import apply_modern_style, style_button, create_styled_button
+# Updated theme imports for refactored version
+from data_analysis_gui.config.themes import apply_modern_theme, style_button, create_styled_button
 
 
 class AnalysisPlotDialog(QDialog):
@@ -60,8 +62,8 @@ class AnalysisPlotDialog(QDialog):
         self.setGeometry(200, 200, int(screen.width() * 0.6), int(screen.height() * 0.7))
         self.init_ui()
 
-        # Apply modern theme
-        apply_modern_style(self)
+        # Apply modern theme (refactored version uses single function)
+        apply_modern_theme(self)
     
     def init_ui(self):
         """Initialize the user interface"""
@@ -84,14 +86,8 @@ class AnalysisPlotDialog(QDialog):
         self.figure.tight_layout()
         self.canvas.draw()
         
-        # Add export buttons
-        button_layout = QHBoxLayout()
-        export_data_btn = QPushButton("Export Data")
-        style_button(export_data_btn, "primary")
-        export_data_btn.clicked.connect(self.export_data)
-        button_layout.addWidget(export_data_btn)
-        button_layout.addStretch()
-        layout.addLayout(button_layout)
+        # Add export buttons using the proper method
+        self._add_export_controls(layout)
     
     def _add_export_controls(self, parent_layout):
         """Add export control buttons with full theme integration."""

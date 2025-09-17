@@ -11,10 +11,11 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult
 from data_analysis_gui.config.logging import get_logger
+# Updated imports for refactored themes.py
 from data_analysis_gui.config.themes import (
-    style_dialog, apply_compact_layout, style_list_widget, 
+    apply_modern_theme, apply_compact_layout, style_list_widget, 
     style_progress_bar, style_group_box, 
-    style_status_label, get_file_count_color, create_styled_button
+    style_label, get_file_count_color, create_styled_button
 )
 
 logger = get_logger(__name__)
@@ -74,10 +75,13 @@ class BatchAnalysisDialog(QDialog):
         # Initialize services
         self.file_dialog_service = FileDialogService()
         
+        # Set window title before applying theme
+        self.setWindowTitle("Batch Analysis")
+        
         self.init_ui()
         
-        # Apply theme and layout helpers from themes.py
-        style_dialog(self, "Batch Analysis")
+        # Apply theme and layout helpers from refactored themes.py
+        apply_modern_theme(self)  # Only takes 1 argument now
         apply_compact_layout(self)
     
     def init_ui(self):
@@ -95,7 +99,7 @@ class BatchAnalysisDialog(QDialog):
         file_group_layout.addWidget(self.file_list)
         
         self.file_count_label = QLabel("0 files selected")
-        style_status_label(self.file_count_label, 'muted')
+        style_label(self.file_count_label, 'muted')  # Updated to use style_label with type
         file_group_layout.addWidget(self.file_count_label)
         
         layout.addWidget(file_group)
@@ -122,7 +126,7 @@ class BatchAnalysisDialog(QDialog):
         progress_layout.addWidget(self.progress_bar)
         
         self.status_label = QLabel("Ready")
-        style_status_label(self.status_label, 'muted')
+        style_label(self.status_label, 'muted')  # Updated to use style_label with type
         progress_layout.addWidget(self.status_label)
         
         layout.addWidget(progress_group)
@@ -239,7 +243,7 @@ class BatchAnalysisDialog(QDialog):
         # Reset progress
         self.progress_bar.setMaximum(len(self.file_paths))
         self.progress_bar.setValue(0)
-        style_status_label(self.status_label, 'info')
+        style_label(self.status_label, 'info')  # Updated to use style_label with type
         self.status_label.setText("Starting analysis...")
         
         # Create and start worker thread
@@ -265,14 +269,14 @@ class BatchAnalysisDialog(QDialog):
         if self.worker and self.worker.isRunning():
             self.worker.quit()
             self.worker.wait()
-            style_status_label(self.status_label, 'warning')
+            style_label(self.status_label, 'warning')  # Updated to use style_label with type
             self.status_label.setText("Analysis cancelled")
             self.update_button_states()
     
     def on_progress(self, completed, total, current_file):
         """Handle progress updates from worker."""
         self.progress_bar.setValue(completed)
-        style_status_label(self.status_label, 'info')
+        style_label(self.status_label, 'info')  # Updated to use style_label with type
         self.status_label.setText(f"Processing {current_file} ({completed}/{total})")
     
     def on_file_complete(self, result: FileAnalysisResult):
@@ -290,10 +294,10 @@ class BatchAnalysisDialog(QDialog):
         
         if fail_count > 0:
             status_msg = f"Complete: {success_count} succeeded, {fail_count} failed in {total_time:.1f}s"
-            style_status_label(self.status_label, 'warning')
+            style_label(self.status_label, 'warning')  # Updated to use style_label with type
         else:
             status_msg = f"Complete: {success_count} files analyzed in {total_time:.1f}s"
-            style_status_label(self.status_label, 'success')
+            style_label(self.status_label, 'success')  # Updated to use style_label with type
         
         self.status_label.setText(status_msg)
         self.update_button_states()
@@ -302,7 +306,7 @@ class BatchAnalysisDialog(QDialog):
     def on_error(self, error_msg):
         """Handle errors from worker."""
         QMessageBox.critical(self, "Analysis Error", f"Batch analysis failed:\n{error_msg}")
-        style_status_label(self.status_label, 'error')
+        style_label(self.status_label, 'error')  # Updated to use style_label with type
         self.status_label.setText("Analysis failed")
         self.update_button_states()
     

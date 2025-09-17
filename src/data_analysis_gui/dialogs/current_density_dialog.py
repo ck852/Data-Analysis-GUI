@@ -1,6 +1,7 @@
 # data_analysis_gui/dialogs/current_density_dialog.py
 """
 Dialog for entering slow capacitance values for current density calculations.
+Updated for refactored themes.py
 
 Author: Data Analysis GUI Contributors
 License: MIT
@@ -17,8 +18,9 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QDialogButtonBox,
                              QTableWidgetItem, QVBoxLayout)
 
 from data_analysis_gui.config.logging import get_logger
+# Updated imports for refactored themes.py
 from data_analysis_gui.config.themes import (MODERN_COLORS, apply_compact_layout,
-                                             style_button, style_dialog,
+                                             style_button, apply_modern_theme,
                                              style_input_field,
                                              style_table_widget)
 from data_analysis_gui.core.models import BatchAnalysisResult
@@ -35,10 +37,14 @@ class CurrentDensityDialog(QDialog):
         self.cslow_inputs = {}  # filename -> QLineEdit
 
         self.setModal(True)
+        
+        # Set window title before applying theme
+        self.setWindowTitle("Current Density Analysis - Enter Cslow Values")
+        
         self.init_ui()
 
-        # Apply centralized styling from themes.py
-        style_dialog(self, title="Current Density Analysis - Enter Cslow Values")
+        # Apply centralized styling from refactored themes.py
+        apply_modern_theme(self)  # Only takes 1 argument now
         apply_compact_layout(self)
 
     def init_ui(self):
@@ -144,7 +150,7 @@ class CurrentDensityDialog(QDialog):
         if cslow_input and status_item:
             text = cslow_input.text().strip()
             if text and self._is_valid_number(text):
-                status_item.setText("✓")
+                status_item.setText("✔")
                 # Use theme color for success status
                 status_item.setForeground(QColor(MODERN_COLORS['success']))
             else:
