@@ -117,7 +117,7 @@ def configure_module_levels(root_logger: logging.Logger) -> None:
     logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
     
     # Reduce noise from PyQt
-    logging.getLogger('PyQt5').setLevel(logging.WARNING)
+    logging.getLogger('PySide6').setLevel(logging.WARNING)
     
     # Our modules get full logging based on root level
     logging.getLogger('data_analysis_gui').setLevel(root_logger.level)

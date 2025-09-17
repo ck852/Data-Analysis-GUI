@@ -6,7 +6,7 @@ Author-email: "Charlie K." <your_email@example.com>
 License: MIT
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
-Requires-Dist: PyQt5>=5.15
+Requires-Dist: PySide6>=6.0.0
 Requires-Dist: matplotlib>=3.6
 Requires-Dist: numpy>=1.23
 Requires-Dist: pandas>=1.5

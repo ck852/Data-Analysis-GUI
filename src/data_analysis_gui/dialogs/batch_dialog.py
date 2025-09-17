@@ -94,7 +94,7 @@ class BatchAnalysisDialog(QDialog):
         file_group_layout = QVBoxLayout(file_group)
         
         self.file_list = QListWidget()
-        self.file_list.setSelectionMode(QAbstractItemView.SelectionBehavior.ExtendedSelection)
+        self.file_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         style_list_widget(self.file_list)
         file_group_layout.addWidget(self.file_list)
         
