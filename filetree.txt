@@ -120,6 +120,8 @@ streamlining/
 |   |   |   |       |-- 250514_012_CD.csv
 |   |   |   |       `-- Current_Density_Summary.csv
 |   |   |   |-- golden_dual_range/
+|   |   |   |   |-- abf/
+|   |   |   |   |   `-- 250202_007.csv
 |   |   |   |   `-- mat/
 |   |   |   |       `-- 250202_007.csv
 |   |   |   |-- golden_IV/
@@ -188,7 +190,24 @@ streamlining/
 |   |   |   |       |-- 250514_012_peak-peak.csv
 |   |   |   |       `-- 250514_012_positive.csv
 |   |   |   |-- golden_swapped_peaks_IV/
-|   |   |   |   `-- abf/
+|   |   |   |   |-- abf/
+|   |   |   |   |   |-- absolute/
+|   |   |   |   |   |   |-- 240809_001.csv
+|   |   |   |   |   |   |-- 240809_002.csv
+|   |   |   |   |   |   `-- 240809_003.csv
+|   |   |   |   |   |-- negative/
+|   |   |   |   |   |   |-- 240809_001.csv
+|   |   |   |   |   |   |-- 240809_002.csv
+|   |   |   |   |   |   `-- 240809_003.csv
+|   |   |   |   |   |-- peak-peak/
+|   |   |   |   |   |   |-- 240809_001.csv
+|   |   |   |   |   |   |-- 240809_002.csv
+|   |   |   |   |   |   `-- 240809_003.csv
+|   |   |   |   |   `-- positive/
+|   |   |   |   |       |-- 240809_001.csv
+|   |   |   |   |       |-- 240809_002.csv
+|   |   |   |   |       `-- 240809_003.csv
+|   |   |   |   `-- mat/
 |   |   |   |       |-- absolute/
 |   |   |   |       |   |-- 240809_001.csv
 |   |   |   |       |   |-- 240809_002.csv
@@ -259,8 +278,8 @@ streamlining/
 |   |               `-- 240809_003[1-12].mat
 |   |-- test_batch_analysis.py
 |   |-- test_current_density.py
+|   |-- test_dual_range.py
 |   |-- test_peak.py
-|   |-- test_single_export.py
 |   `-- test_swapped.py
 |-- filetree.txt
 |-- filetree_full.py

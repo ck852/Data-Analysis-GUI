@@ -96,7 +96,7 @@ class PlotFormatter:
         params: AnalysisParameters,
         peak_types: List[str]
     ) -> Dict[str, Any]:
-        """Format peak analysis data."""
+        """Format peak analysis data with robust peak type handling."""
         if not metrics:
             return {}
         
@@ -108,24 +108,42 @@ class PlotFormatter:
         for peak_type in peak_types:
             logger.debug(f"Processing peak analysis for type: {peak_type}")
             
+            # Normalize the peak type for consistent handling
+            normalized_peak = peak_type.lower().replace(" ", "").replace("-", "").replace("_", "")
+            
+            # Map normalized strings to canonical peak types
+            normalized_map = {
+                "absolute": "Absolute",
+                "positive": "Positive",
+                "negative": "Negative",
+                "peakpeak": "Peak-Peak",
+                "peaktopeak": "Peak-Peak",
+                "p2p": "Peak-Peak",
+                "pp": "Peak-Peak"
+            }
+            
+            # Get the canonical peak type
+            canonical_peak = normalized_map.get(normalized_peak, peak_type)
+            
             # Create modified y-axis config for this peak type
             y_axis_config = AxisConfig(
                 measure="Peak",
                 channel=params.y_axis.channel,
-                peak_type=peak_type
+                peak_type=canonical_peak
             )
             
             # Extract data for both ranges if dual range is enabled
             y_data_r1, y_label_r1 = self._extract_axis_data(metrics, y_axis_config, 1)
             
-            peak_data[peak_type] = {
+            # Use canonical peak type as the key
+            peak_data[canonical_peak] = {
                 'data': np.array(y_data_r1),
                 'label': y_label_r1
             }
             
             if params.use_dual_range:
                 y_data_r2, y_label_r2 = self._extract_axis_data(metrics, y_axis_config, 2)
-                peak_data[f"{peak_type}_Range2"] = {
+                peak_data[f"{canonical_peak}_Range2"] = {
                     'data': np.array(y_data_r2),
                     'label': f"{y_label_r2} (Range 2)"
                 }
@@ -158,7 +176,7 @@ class PlotFormatter:
         """
         Extract data for specific axis with proper peak mode handling.
         
-        FIXED: Added validation and logging for peak type handling.
+        FIXED: Added case-insensitive and flexible peak type matching.
         """
         if axis_config.measure == "Time":
             return [m.time_s for m in metrics], "Time (s)"
@@ -173,15 +191,36 @@ class PlotFormatter:
             logger.debug(f"Extracting average data from metric: {metric_name}")
             
         elif axis_config.measure == "Peak":
-            # FIXED: Validate peak_type is set and valid
+            # FIXED: Make peak type matching case-insensitive and more flexible
             if axis_config.peak_type is None:
                 logger.warning(f"Peak type not specified for {axis_config.channel}, defaulting to Absolute")
                 peak_type = "Absolute"
             else:
-                peak_type = axis_config.peak_type
+                # Normalize the peak type string for robust matching
+                normalized_peak = axis_config.peak_type.lower().replace(" ", "").replace("-", "").replace("_", "")
+                
+                # Map normalized strings to canonical peak types
+                normalized_map = {
+                    "absolute": "Absolute",
+                    "positive": "Positive",
+                    "negative": "Negative",
+                    "peakpeak": "Peak-Peak",
+                    "peaktopeak": "Peak-Peak",  # Also accept "peak to peak" variations
+                    "p2p": "Peak-Peak",          # Also accept abbreviations
+                    "pp": "Peak-Peak"
+                }
+                
+                # Get the canonical peak type, defaulting to original if not found
+                canonical_peak = normalized_map.get(normalized_peak, axis_config.peak_type)
+                
+                # Log if we're using a normalized version
+                if canonical_peak != axis_config.peak_type:
+                    logger.debug(f"Normalized peak type '{axis_config.peak_type}' to '{canonical_peak}'")
+                
+                peak_type = canonical_peak
                 logger.debug(f"Using peak type: {peak_type} for {axis_config.channel}")
             
-            # Map user-friendly names to metric field names
+            # Map canonical names to metric field names
             peak_map = {
                 "Absolute": "absolute",
                 "Positive": "positive",
@@ -189,9 +228,9 @@ class PlotFormatter:
                 "Peak-Peak": "peakpeak"
             }
             
-            # FIXED: Validate peak_type is in our map
+            # Validate peak_type is in our canonical map
             if peak_type not in peak_map:
-                logger.error(f"Invalid peak type: {peak_type}. Using Absolute as fallback.")
+                logger.error(f"Invalid peak type: {peak_type} (original: {axis_config.peak_type}). Using Absolute as fallback.")
                 peak_type = "Absolute"
             
             metric_base = peak_map[peak_type]
@@ -365,15 +404,35 @@ class PlotFormatter:
             return f"Average {axis_config.channel} ({unit})"
         
         elif axis_config.measure == "Peak":
-            # Create descriptive label based on peak type
+            # Normalize peak type for consistent handling
+            if axis_config.peak_type:
+                # Normalize the peak type string for robust matching
+                normalized_peak = axis_config.peak_type.lower().replace(" ", "").replace("-", "").replace("_", "")
+                
+                # Map normalized strings to canonical peak types
+                normalized_map = {
+                    "absolute": "Absolute",
+                    "positive": "Positive",
+                    "negative": "Negative",
+                    "peakpeak": "Peak-Peak",
+                    "peaktopeak": "Peak-Peak",
+                    "p2p": "Peak-Peak",
+                    "pp": "Peak-Peak"
+                }
+                
+                # Get the canonical peak type
+                canonical_peak = normalized_map.get(normalized_peak, axis_config.peak_type)
+            else:
+                canonical_peak = "Absolute"
+            
+            # Create descriptive label based on canonical peak type
             peak_labels = {
                 "Absolute": "Peak",
                 "Positive": "Peak (+)",
                 "Negative": "Peak (-)",
                 "Peak-Peak": "Peak-Peak"
             }
-            peak_type = axis_config.peak_type or "Absolute"
-            peak_label = peak_labels.get(peak_type, "Peak")
+            peak_label = peak_labels.get(canonical_peak, "Peak")
             return f"{peak_label} {axis_config.channel} ({unit})"
         
         else:
