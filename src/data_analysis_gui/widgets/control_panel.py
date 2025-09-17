@@ -40,6 +40,7 @@ class ControlPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._is_swapped = False
+        self._current_units = 'pA'
         
         # Dictionary to track previous valid values
         self._previous_valid_values = {}
@@ -108,6 +109,24 @@ class ControlPanel(QWidget):
         main_layout.addWidget(scroll_area)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+    def set_current_units(self, units: str):
+        """
+        Set the current units for display and export.
+        
+        Args:
+            units: Current units ('pA', 'nA', or 'μA')
+        """
+        self._current_units = units
+
+    def get_current_units(self) -> str:
+        """
+        Get the current units setting.
+        
+        Returns:
+            Current units string
+        """
+        return self._current_units
 
     def _create_analysis_settings_group(self):
         """Create the analysis settings group with full theme styling"""
@@ -434,7 +453,7 @@ class ControlPanel(QWidget):
             peak_type=peak_mode if y_measure == "Peak" else None
         )
         
-        # Return clean parameters object
+        # Return clean parameters object with current units
         return AnalysisParameters(
             range1_start=self.start_spin.value(),
             range1_end=self.end_spin.value(),
@@ -444,7 +463,10 @@ class ControlPanel(QWidget):
             stimulus_period=self.period_spin.value(),
             x_axis=x_axis,
             y_axis=y_axis,
-            channel_config={'channels_swapped': self._is_swapped}
+            channel_config={
+                'channels_swapped': self._is_swapped,
+                'current_units': self._current_units  # Include current units
+            }
         )
 
     # --- Public methods for data access and updates ---
@@ -550,6 +572,10 @@ class ControlPanel(QWidget):
             # Set stimulus period
             if 'stimulus_period' in params:
                 self.period_spin.setValue(params['stimulus_period'])
+            
+            # Set current units if present
+            if 'current_units' in params:
+                self._current_units = params['current_units']
                 
         finally:
             # Restore signal states
@@ -641,6 +667,7 @@ class ControlPanel(QWidget):
                 'range2_start': self.start_spin2.value() if self.dual_range_cb.isChecked() else None,
                 'range2_end': self.end_spin2.value() if self.dual_range_cb.isChecked() else None,
                 'stimulus_period': self.period_spin.value(),
+                'current_units': self._current_units,  # Add current units to saved settings
             },
             'plot': {
                 'x_measure': self.x_measure_combo.currentText(),

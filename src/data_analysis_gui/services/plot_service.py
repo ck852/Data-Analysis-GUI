@@ -206,24 +206,29 @@ class PlotService:
         Returns:
             Tuple of (x_label, y_label)
         """
+        # Get current units from params if available
+        current_units = 'pA'  # default
+        if hasattr(params, 'channel_config') and params.channel_config:
+            current_units = params.channel_config.get('current_units', 'pA')
+        
         # X-axis label
         if params.x_axis.measure == "Time":
             x_label = "Time (s)"
         elif params.x_axis.measure == "Average":
-            unit = "mV" if params.x_axis.channel == "Voltage" else "pA"
+            unit = "mV" if params.x_axis.channel == "Voltage" else current_units
             x_label = f"Average {params.x_axis.channel} ({unit})"
         else:  # Peak
-            unit = "mV" if params.x_axis.channel == "Voltage" else "pA"
+            unit = "mV" if params.x_axis.channel == "Voltage" else current_units
             x_label = f"Peak {params.x_axis.channel} ({unit})"
         
         # Y-axis label
         if params.y_axis.measure == "Time":
             y_label = "Time (s)"
         elif params.y_axis.measure == "Average":
-            unit = "mV" if params.y_axis.channel == "Voltage" else "pA"
+            unit = "mV" if params.y_axis.channel == "Voltage" else current_units
             y_label = f"Average {params.y_axis.channel} ({unit})"
         else:  # Peak
-            unit = "mV" if params.y_axis.channel == "Voltage" else "pA"
+            unit = "mV" if params.y_axis.channel == "Voltage" else current_units
             y_label = f"Peak {params.y_axis.channel} ({unit})"
         
         return x_label, y_label

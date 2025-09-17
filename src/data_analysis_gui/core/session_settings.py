@@ -78,139 +78,95 @@ def load_session_settings() -> Optional[Dict[str, Any]]:
     return None
 
 
-def extract_settings_from_main_window(main_window) -> Dict[str, Any]:
+def extract_settings_from_main_window(main_window) -> dict:
     """
-    Extract all relevant settings from the main window.
+    Extract current settings from MainWindow for saving.
     
     Args:
-        main_window: The MainWindow instance
+        main_window: MainWindow instance
         
     Returns:
-        Dictionary of all settings
+        Dictionary of current settings
     """
     settings = {}
     
-    # Get control panel parameters
+    # Get control panel settings
     if hasattr(main_window, 'control_panel'):
-        params = main_window.control_panel.get_parameters()
-        
-        # Analysis settings
-        settings['analysis'] = {
-            'range1_start': params.range1_start,
-            'range1_end': params.range1_end,
-            'use_dual_range': params.use_dual_range,
-            'range2_start': params.range2_start,
-            'range2_end': params.range2_end,
-            'stimulus_period': params.stimulus_period,
-        }
-        
-        # Plot settings
-        settings['plot'] = {
-            'x_measure': params.x_axis.measure,
-            'x_channel': params.x_axis.channel,
-            'y_measure': params.y_axis.measure,
-            'y_channel': params.y_axis.channel,
-            'peak_mode': params.x_axis.peak_type or params.y_axis.peak_type or 'Absolute'
-        }
+        settings.update(main_window.control_panel.get_all_settings_dict())
     
-    # Channel configuration - always save current toggle state
-    if hasattr(main_window, 'channel_toggle'):
-        settings['channel'] = {
-            'is_swapped': main_window.channel_toggle.is_swapped
-        }
+    # Add window-level settings
+    if hasattr(main_window, 'channel_combo'):
+        settings['last_channel_view'] = main_window.channel_combo.currentText()
     
-    # Current view settings (if a file is loaded)
-    if main_window.current_file_path:
-        settings['view'] = {
-            'last_directory': str(Path(main_window.current_file_path).parent),
-            'channel_view': main_window.channel_combo.currentText() if hasattr(main_window, 'channel_combo') else 'Voltage'
-        }
+    # Add current units preference
+    if hasattr(main_window, 'current_units_combo'):
+        settings['current_units'] = main_window.current_units_combo.currentText()
+    elif hasattr(main_window, 'current_units'):
+        settings['current_units'] = main_window.current_units
     
-    # Window geometry
-    settings['window'] = {
-        'geometry': {
-            'x': main_window.x(),
-            'y': main_window.y(),
-            'width': main_window.width(),
-            'height': main_window.height()
-        },
-        'maximized': main_window.isMaximized()
-    }
+    # Add channel swap state
+    if hasattr(main_window, 'channel_definitions'):
+        settings['channels_swapped'] = main_window.channel_definitions.is_swapped()
     
-    # Splitter position
-    if hasattr(main_window, 'splitter'):
-        splitter = main_window.findChild(QSplitter)
-        if splitter:
-            settings['window']['splitter_sizes'] = splitter.sizes()
+    # Add last directory
+    if hasattr(main_window, 'current_file_path') and main_window.current_file_path:
+        from pathlib import Path
+        settings['last_directory'] = str(Path(main_window.current_file_path).parent)
     
     return settings
 
 
-def apply_settings_to_main_window(main_window, settings: Dict[str, Any]):
+
+def apply_settings_to_main_window(main_window, settings: dict):
     """
-    Apply settings to the main window.
-    Simplified version - all settings are applied directly without pending states.
+    Apply loaded settings to MainWindow.
     
     Args:
-        main_window: The MainWindow instance
-        settings: Settings dictionary
+        main_window: MainWindow instance
+        settings: Dictionary of settings to apply
     """
-    if not settings:
-        return
-    
-    # Window geometry - always applied first
-    if 'window' in settings:
-        window_settings = settings['window']
-        
-        # Apply geometry if not maximized
-        if not window_settings.get('maximized', False):
-            if 'geometry' in window_settings:
-                geo = window_settings['geometry']
-                main_window.setGeometry(geo['x'], geo['y'], geo['width'], geo['height'])
-        else:
-            main_window.showMaximized()
-        
-        # Apply splitter sizes
-        if 'splitter_sizes' in window_settings:
-            from PySide6.QtWidgets import QSplitter
-            splitter = main_window.findChild(QSplitter)
-            if splitter:
-                splitter.setSizes(window_settings['splitter_sizes'])
-    
-    # Apply analysis settings to control panel immediately
+    # Apply analysis settings
     if 'analysis' in settings and hasattr(main_window, 'control_panel'):
         main_window.control_panel.set_parameters_from_dict(settings['analysis'])
+        
+        # Set current units in control panel if present
+        if 'current_units' in settings['analysis']:
+            main_window.control_panel.set_current_units(settings['analysis']['current_units'])
     
-    # Apply plot settings immediately
+    # Apply plot settings
     if 'plot' in settings and hasattr(main_window, 'control_panel'):
         main_window.control_panel.set_plot_settings_from_dict(settings['plot'])
     
-    # Apply channel swap state directly
-    if 'channel' in settings and hasattr(main_window, 'channel_toggle'):
-        is_swapped = settings['channel'].get('is_swapped', False)
-        # Set the toggle switch state
-        main_window.channel_toggle.set_swapped(is_swapped)
-        # Set the control panel state
-        if hasattr(main_window, 'control_panel'):
-            main_window.control_panel.set_swap_state(is_swapped)
-        # Also update the controller's channel definitions if they exist
-        if hasattr(main_window, 'channel_definitions'):
-            try:
-                # If the channel definitions support being set directly
-                if is_swapped != main_window.channel_definitions.is_swapped():
-                    main_window.controller.swap_channels()
-            except:
-                # If channel_definitions doesn't exist yet or doesn't support is_swapped,
-                # that's fine - the state will be synced when a file is loaded
-                pass
+    # Apply window-level settings
+    if 'last_channel_view' in settings and hasattr(main_window, 'channel_combo'):
+        idx = main_window.channel_combo.findText(settings['last_channel_view'])
+        if idx >= 0:
+            main_window.channel_combo.setCurrentIndex(idx)
+        # Store for later use
+        main_window.last_channel_view = settings['last_channel_view']
     
-    # Store view settings for later use (when file is loaded)
-    if 'view' in settings:
-        if hasattr(main_window, 'channel_combo'):
-            channel_view = settings['view'].get('channel_view', 'Voltage')
-            main_window.channel_combo.setCurrentText(channel_view)
-
-        main_window.last_directory = settings['view'].get('last_directory')
+    # Apply current units preference
+    if 'current_units' in settings:
+        if hasattr(main_window, 'current_units_combo'):
+            idx = main_window.current_units_combo.findText(settings['current_units'])
+            if idx >= 0:
+                main_window.current_units_combo.setCurrentIndex(idx)
+        # Store in main window
+        if hasattr(main_window, 'current_units'):
+            main_window.current_units = settings['current_units']
+    
+    # Apply channel swap state
+    if 'channels_swapped' in settings and settings['channels_swapped']:
+        if hasattr(main_window, 'channel_definitions'):
+            main_window.channel_definitions.swap_channels()
+            if hasattr(main_window, 'channel_toggle'):
+                main_window.channel_toggle.set_swapped(True)
+            if hasattr(main_window, 'control_panel'):
+                main_window.control_panel.set_swap_state(True)
+    
+    # Apply last directory
+    if 'last_directory' in settings:
+        main_window.last_directory = settings['last_directory']
 
 
 def revalidate_ranges_for_file(main_window, max_sweep_time: float):

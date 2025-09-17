@@ -92,6 +92,12 @@ class MainWindow(QMainWindow):
         self.hold_timer.timeout.connect(self._continue_navigation)
         self.navigation_direction = None
         
+        # Initialize default values for settings that may be loaded
+        self.last_channel_view = 'Voltage'
+        self.last_directory = None
+
+        self.current_units = 'pA'  # Default current units
+
         # Build UI
         self._init_ui()
 
@@ -101,6 +107,8 @@ class MainWindow(QMainWindow):
         # Initialize default values for settings that may be loaded
         self.last_channel_view = 'Voltage'
         self.last_directory = None
+
+        self.current_units = 'pA'  # Default current units
         
         # Load and apply settings immediately (shows user's last configuration)
         saved_settings = load_session_settings()
@@ -232,6 +240,22 @@ class MainWindow(QMainWindow):
         self.channel_combo.currentTextChanged.connect(self._on_channel_changed)
         style_combo_box(self.channel_combo)
         toolbar.addWidget(self.channel_combo)
+        
+        toolbar.addSeparator()
+
+        # Add Current Units dropdown
+        units_label = QLabel("Current Units:")
+        style_label(units_label, 'normal')
+        toolbar.addWidget(units_label)
+        
+        self.current_units_combo = QComboBox()
+        self.current_units_combo.addItems(["pA", "nA", "μA"])  # Using Greek mu (μ)
+        self.current_units_combo.setCurrentText(self.current_units)
+        self.current_units_combo.setEnabled(True)
+        self.current_units_combo.setToolTip("Select the units for current measurements")
+        self.current_units_combo.currentTextChanged.connect(self._on_current_units_changed)
+        style_combo_box(self.current_units_combo)
+        toolbar.addWidget(self.current_units_combo)
         
         toolbar.addSeparator()
 
@@ -385,48 +409,66 @@ class MainWindow(QMainWindow):
         """Update plot when channel selection changes"""
         self._update_plot()
 
+    def _on_current_units_changed(self):
+        """Handle current units selection change"""
+        self.current_units = self.current_units_combo.currentText()
+        
+        # Update the control panel with new units
+        self.control_panel.set_current_units(self.current_units)
+        
+        # Update current plot if we have data and showing current
+        if self.controller.has_data() and self.channel_combo.currentText() == "Current":
+            self._update_plot()
+        
+        # Auto-save settings after units change
+        settings = extract_settings_from_main_window(self)
+        save_session_settings(settings)
+        
+        self.status_bar.showMessage(f"Current units set to {self.current_units}", 3000)
+
     def _update_plot(self):
-        """Update the sweep plot using controller and centralized formatter"""
-        if not self.controller.has_data():
-            return
+            """Update the sweep plot using controller and centralized formatter"""
+            if not self.controller.has_data():
+                return
+                
+            sweep = self.sweep_combo.currentText()
+            if not sweep:
+                return
             
-        sweep = self.sweep_combo.currentText()
-        if not sweep:
-            return
-        
-        channel_type = self.channel_combo.currentText()
-        
-        # Get plot data from controller
-        result = self.controller.get_sweep_plot_data(sweep, channel_type)
-        
-        if result.success:
-            plot_data = result.data
+            channel_type = self.channel_combo.currentText()
             
-            # Use centralized formatter for consistent labels
-            sweep_info = {
-                'sweep_index': int(sweep) if sweep.isdigit() else 0,
-                'channel_type': channel_type
-            }
-            plot_labels = self.plot_formatter.get_plot_titles_and_labels(
-                'sweep', 
-                sweep_info=sweep_info
-            )
+            # Get plot data from controller
+            result = self.controller.get_sweep_plot_data(sweep, channel_type)
             
-            # Update plot with formatted labels
-            self.plot_manager.update_sweep_plot(
-                t=plot_data.time_ms,
-                y=plot_data.data_matrix,
-                channel=plot_data.channel_id,
-                sweep_index=sweep_info['sweep_index'],
-                channel_type=channel_type,
-                title=plot_labels['title'],
-                x_label=plot_labels['x_label'],
-                y_label=plot_labels['y_label'],
-                channel_config=None
-            )
-            self._sync_cursors_to_plot()
-        else:
-            logger.debug(f"Could not load sweep {sweep}: {result.error_message}")
+            if result.success:
+                plot_data = result.data
+                
+                # Use centralized formatter for consistent labels
+                sweep_info = {
+                    'sweep_index': int(sweep) if sweep.isdigit() else 0,
+                    'channel_type': channel_type,
+                    'current_units': self.current_units  # Pass current units
+                }
+                plot_labels = self.plot_formatter.get_plot_titles_and_labels(
+                    'sweep', 
+                    sweep_info=sweep_info
+                )
+                
+                # Update plot with formatted labels
+                self.plot_manager.update_sweep_plot(
+                    t=plot_data.time_ms,
+                    y=plot_data.data_matrix,
+                    channel=plot_data.channel_id,
+                    sweep_index=sweep_info['sweep_index'],
+                    channel_type=channel_type,
+                    title=plot_labels['title'],
+                    x_label=plot_labels['x_label'],
+                    y_label=plot_labels['y_label'],
+                    channel_config=None
+                )
+                self._sync_cursors_to_plot()
+            else:
+                logger.debug(f"Could not load sweep {sweep}: {result.error_message}")
 
     def _generate_analysis(self):
         """Generate analysis plot using controller"""
@@ -435,6 +477,12 @@ class MainWindow(QMainWindow):
             return
         
         params = self.control_panel.get_parameters()
+        
+        # Add current units to parameters
+        params = params.with_updates(
+            channel_config={**params.channel_config, 'current_units': self.current_units}
+        )
+        
         result = self.controller.perform_analysis(params)
         
         if not result.success:
@@ -468,7 +516,7 @@ class MainWindow(QMainWindow):
         if self.analysis_dialog:
             self.analysis_dialog.close()
         
-        # Pass the parameters and file path to the dialog
+        # Pass the parameters with units and file path to the dialog
         self.analysis_dialog = AnalysisPlotDialog(
             self, plot_data, params, self.current_file_path, self.controller
         )
