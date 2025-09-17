@@ -75,7 +75,7 @@ class ControlPanel(QWidget):
         # Create scroll area for the controls
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMinimumWidth(420)
+        scroll_area.setMinimumWidth(280)
         
         # Apply theme styling to scroll area
         style_scroll_area(scroll_area)
@@ -86,7 +86,7 @@ class ControlPanel(QWidget):
 
         # Layout for control widget with theme-based compact spacing
         layout = QVBoxLayout(control_widget)
-        apply_compact_layout(control_widget, spacing=8, margin=8)
+        apply_compact_layout(control_widget, spacing=4, margin=6)
 
         # Add all control groups
         layout.addWidget(self._create_analysis_settings_group())
@@ -101,7 +101,7 @@ class ControlPanel(QWidget):
         layout.addWidget(self.export_plot_btn)
 
         # Small spacing at bottom
-        layout.addSpacing(10)
+        layout.addSpacing(5)
 
         # Set main layout for this widget
         main_layout = QVBoxLayout(self)
@@ -115,7 +115,7 @@ class ControlPanel(QWidget):
         style_group_box(analysis_group)
         
         analysis_layout = QGridLayout(analysis_group)
-        apply_compact_layout(analysis_group, spacing=6, margin=8)
+        apply_compact_layout(analysis_group, spacing=4, margin=6)
 
         # Range 1 settings
         self._add_range1_settings(analysis_layout)
@@ -212,7 +212,7 @@ class ControlPanel(QWidget):
         style_group_box(plot_group)
         
         plot_layout = QGridLayout(plot_group)
-        apply_compact_layout(plot_group, spacing=6, margin=8)
+        apply_compact_layout(plot_group, spacing=4, margin=6)
 
         # X-axis settings with NoScrollComboBox
         x_label = QLabel("X-Axis:")

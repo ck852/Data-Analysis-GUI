@@ -37,12 +37,12 @@ COLOR_CYCLE = [
 
 # TOOLBAR CONFIGURATION - Centralized here for single source of truth
 TOOLBAR_CONFIG = {
-    'button_font_size': 14,      # Increased from 11px for better readability
-    'button_padding': '8px 16px', # Increased padding to accommodate larger text
+    'button_font_size': 10,
+    'button_padding': '2px 4px',
     'icon_size_multiplier': 1.0,  
-    'mode_label_font_size': 14,   # Increased from 11px to match button font
-    'button_min_height': 36,      # Increased from 32 to accommodate larger fonts
-    'icon_size': 22,              # Slightly increased from 20 for proportion
+    'mode_label_font_size': 10,
+    'button_min_height': 22,
+    'icon_size': 16,
 }
 
 def get_plot_style() -> Dict[str, Any]:
@@ -60,10 +60,10 @@ def get_plot_style() -> Dict[str, Any]:
     
     # INCREASED FONT SIZES FOR BETTER READABILITY
     plot_font_sizes = {
-        'tick_size': 12,      # Increased from 10
-        'label_size': 14,     # Increased from 11
-        'title_size': 16,     # Increased from 12
-        'legend_size': 12,    # Increased from 10
+        'tick_size': 9,
+        'label_size': 10,
+        'title_size': 12,
+        'legend_size': 9,
     }
     
     return {
@@ -198,14 +198,14 @@ def style_axis(ax, title: str = None, xlabel: str = None, ylabel: str = None,
     """
     # Use the increased font sizes
     plot_font_sizes = {
-        'tick_size': 12,
-        'label_size': 14,
-        'title_size': 16,
-        'legend_size': 12,
+        'tick_size': 9,
+        'label_size': 10,
+        'title_size': 12,
+        'legend_size': 9,
     }
     
     if title:
-        ax.set_title(title, fontsize=plot_font_sizes['title_size'], fontweight='normal', pad=14)
+        ax.set_title(title, fontsize=plot_font_sizes['title_size'], fontweight='normal', pad=10)
     if xlabel:
         ax.set_xlabel(xlabel, fontsize=plot_font_sizes['label_size'], fontweight='normal')
     if ylabel:

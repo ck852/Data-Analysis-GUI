@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
         # Set the plot manager to expand and leave the control panel at its minimum size
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
+        # splitter.setMinimumWidth(600)
         
         # Menus and toolbar
         self._create_menus()
@@ -197,7 +198,7 @@ class MainWindow(QMainWindow):
         
         # Navigation buttons - start disabled until file is loaded
         self.prev_btn = create_styled_button("◀", "secondary")
-        self.prev_btn.setMaximumWidth(40)
+        self.prev_btn.setMaximumWidth(10)
         self.prev_btn.setEnabled(False)
         self.prev_btn.pressed.connect(lambda: self._start_navigation(self._prev_sweep))
         self.prev_btn.released.connect(self._stop_navigation)
@@ -205,14 +206,14 @@ class MainWindow(QMainWindow):
         
         # Sweep combo - disabled until file is loaded
         self.sweep_combo = QComboBox()
-        self.sweep_combo.setMinimumWidth(120)
+        self.sweep_combo.setMinimumWidth(80)
         self.sweep_combo.setEnabled(True)
         self.sweep_combo.currentTextChanged.connect(self._on_sweep_changed)
         style_combo_box(self.sweep_combo)
         toolbar.addWidget(self.sweep_combo)
         
         self.next_btn = create_styled_button("▶", "secondary")
-        self.next_btn.setMaximumWidth(40)
+        self.next_btn.setMaximumWidth(10)
         self.next_btn.setEnabled(False)
         self.next_btn.pressed.connect(lambda: self._start_navigation(self._next_sweep))
         self.next_btn.released.connect(self._stop_navigation)
@@ -226,6 +227,7 @@ class MainWindow(QMainWindow):
         
         self.channel_combo = QComboBox()
         self.channel_combo.addItems(["Voltage", "Current"])
+        self.channel_combo.setMaximumWidth(80)
         self.channel_combo.setEnabled(True)
         self.channel_combo.currentTextChanged.connect(self._on_channel_changed)
         style_combo_box(self.channel_combo)
@@ -239,6 +241,7 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(self.file_label)
         
         self.sweep_count_label = QLabel("")
+        self.sweep_count_label.setMaximumWidth(80)
         style_label(self.sweep_count_label, 'muted')
         toolbar.addWidget(self.sweep_count_label)
 

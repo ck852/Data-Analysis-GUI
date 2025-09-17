@@ -106,9 +106,9 @@ class PlotManager(QObject):
         self.ax.tick_params(
             axis='both',
             which='major',
-            labelsize=12,  # Increased from 9
+            labelsize=9,
             colors='#606060',
-            length=5,      # Increased from 4
+            length=4,
             width=0.8
         )
         
@@ -205,8 +205,7 @@ class PlotManager(QObject):
         self.ax.autoscale_view(tight=True)
         self.ax.margins(x=0.02, y=0.05)
 
-        # Adjust layout with more padding for larger fonts
-        self.figure.tight_layout(pad=2.0)  # Increased from 1.5
+        self.figure.tight_layout(pad=1.0)
         self.redraw()
         self.plot_updated.emit()
         logger.info(f"Updated plot for sweep {sweep_index}, channel {channel}.")

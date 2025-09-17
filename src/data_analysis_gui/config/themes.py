@@ -40,16 +40,16 @@ MODERN_COLORS = {
 
 # Simple sizing constants
 WIDGET_SIZES = {
-    'button_height': 30,
-    'input_height': 30,
-    'button_min_width': 80,
+    'button_height': 20,
+    'input_height': 20,
+    'button_min_width': 40,
 }
 
 # Simple spacing values
 SPACING = {
     'border_radius': '3px',
-    'padding': '6px 12px',
-    'margin': '4px'
+    'padding': '4px 8px',
+    'margin': '2px'
 }
 
 # Base font settings

@@ -59,13 +59,13 @@ class ChannelToggleSwitch(QWidget):
         """Initialize the UI components."""
         # Main horizontal layout
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        layout.setContentsMargins(4, 2, 4, 2)  # Reduced from (8, 4, 8, 4)
+        layout.setSpacing(4)  # Reduced from 8
         
         # Create the custom toggle slider
-        self.slider = ToggleSlider(Qt.Orientation.Horizontal)
-        self.slider.setFixedWidth(50)
-        self.slider.setFixedHeight(24)
+        self.slider = ToggleSlider(Qt.Horizontal)
+        self.slider.setFixedWidth(40)  # Reduced from 50
+        self.slider.setFixedHeight(20)  # Reduced from 24
         
         # Style the slider to look like a toggle switch
         self._style_slider()
@@ -74,18 +74,18 @@ class ChannelToggleSwitch(QWidget):
         label_container = QWidget()
         label_layout = QVBoxLayout(label_container)
         label_layout.setContentsMargins(0, 0, 0, 0)
-        label_layout.setSpacing(2)
+        label_layout.setSpacing(1)  # Reduced from 2
         
-        # Create channel labels
-        self.ch0_label = QLabel("Ch. 0: Voltage")
-        self.ch1_label = QLabel("Ch. 1: Current")
+        # Create channel labels with shorter text
+        self.ch0_label = QLabel("Ch0: V")  # Shortened from "Ch. 0: Voltage"
+        self.ch1_label = QLabel("Ch1: I")   # Shortened from "Ch. 1: Current"
         
-        # Style labels
+        # Style labels with smaller font
         label_style = f"""
             QLabel {{
                 color: {MODERN_COLORS['text']};
                 {BASE_FONT}
-                font-size: 14px;
+                font-size: 9px;  
                 font-weight: 500;
             }}
         """
@@ -99,7 +99,7 @@ class ChannelToggleSwitch(QWidget):
         # Add components to main layout
         layout.addWidget(self.slider)
         layout.addWidget(label_container)
-        layout.addStretch()
+        # Don't add stretch here to keep it compact
         
         # Connect slider signal
         self.slider.valueChanged.connect(self._on_slider_changed)
@@ -180,7 +180,7 @@ class ChannelToggleSwitch(QWidget):
             QLabel {{
                 color: {color};
                 {BASE_FONT}
-                font-size: 14px;
+                font-size: 11px;
                 font-weight: 500;
             }}
         """
