@@ -326,34 +326,38 @@ class MainWindow(QMainWindow):
         self.plot_manager.line_state_changed.connect(self._on_cursor_moved)
 
     def _open_file(self):
-        """Open file using controller"""
-        file_types = (
-            "Data files (*.mat *.abf);;"
-            "MAT files (*.mat);;"
-            "ABF files (*.abf);;"
-            "All files (*.*)"
-        )
-        
-        # Determine default directory
-        default_dir = None
-        if self.current_file_path:
-            default_dir = str(Path(self.current_file_path).parent)
-        elif hasattr(self, 'last_directory') and self.last_directory:
-            # Use last directory from loaded settings
-            default_dir = self.last_directory
-        
-        file_path = self.file_dialog_service.get_import_path(
-            self, "Open Data File", default_dir, file_types
-        )
-        
-        if file_path:
-            # Use controller to load file
-            result = self.controller.load_file(file_path)
+            """Open file using controller"""
+            file_types = (
+                "Data files (*.mat *.abf);;"
+                "MAT files (*.mat);;"
+                "ABF files (*.abf);;"
+                "All files (*.*)"
+            )
             
-            if result.success:
-                self.current_file_path = file_path
-                self.file_loaded.emit(file_path)
-            # Error handling is done by controller callbacks
+            # Determine default directory
+            default_dir = None
+            if self.current_file_path:
+                default_dir = str(Path(self.current_file_path).parent)
+            elif hasattr(self, 'last_directory') and self.last_directory:
+                # Use last directory from loaded settings
+                default_dir = self.last_directory
+            
+            file_path = self.file_dialog_service.get_import_path(
+                parent=self,
+                title="Open Data File", 
+                default_directory=default_dir, 
+                file_types=file_types,
+                dialog_type="import_data"  # Specific dialog type for data files
+            )
+            
+            if file_path:
+                # Use controller to load file
+                result = self.controller.load_file(file_path)
+                
+                if result.success:
+                    self.current_file_path = file_path
+                    self.file_loaded.emit(file_path)
+                # Error handling is done by controller callbacks
 
     def _on_file_loaded(self, file_info: FileInfo):
         """Handle successful file load"""
@@ -553,7 +557,10 @@ class MainWindow(QMainWindow):
         suggested = self.controller.get_suggested_export_filename(params)
         
         file_path = self.file_dialog_service.get_export_path(
-            self, suggested, file_types="CSV files (*.csv);;All files (*.*)"
+            parent=self,
+            suggested_name=suggested, 
+            file_types="CSV files (*.csv);;All files (*.*)",
+            dialog_type="export_analysis"  # Specific dialog type for analysis exports
         )
         
         if not file_path:

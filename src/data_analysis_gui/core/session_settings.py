@@ -104,19 +104,18 @@ def extract_settings_from_main_window(main_window) -> dict:
     elif hasattr(main_window, 'current_units'):
         settings['current_units'] = main_window.current_units
     
-    # Add channel swap state - check both sources for robustness
-    channels_swapped = False
+    # Add channel swap state
     if hasattr(main_window, 'channel_definitions'):
-        channels_swapped = main_window.channel_definitions.is_swapped()
-    elif hasattr(main_window, 'channel_toggle'):
-        # Fallback to toggle state if channel_definitions not available
-        channels_swapped = main_window.channel_toggle.is_swapped() if hasattr(main_window.channel_toggle, 'is_swapped') else False
-    settings['channels_swapped'] = channels_swapped
+        settings['channels_swapped'] = main_window.channel_definitions.is_swapped()
     
     # Add last directory
     if hasattr(main_window, 'current_file_path') and main_window.current_file_path:
         from pathlib import Path
         settings['last_directory'] = str(Path(main_window.current_file_path).parent)
+    
+    # Add file dialog directory memory
+    if hasattr(main_window, 'file_dialog_service'):
+        settings['file_dialog_directories'] = main_window.file_dialog_service.get_last_directories()
     
     return settings
 
@@ -159,28 +158,22 @@ def apply_settings_to_main_window(main_window, settings: dict):
         if hasattr(main_window, 'current_units'):
             main_window.current_units = settings['current_units']
     
-    # Apply channel swap state - do this in the correct order
+    # Apply channel swap state
     if 'channels_swapped' in settings and settings['channels_swapped']:
         if hasattr(main_window, 'channel_definitions'):
-            # Only swap if not already swapped
-            if not main_window.channel_definitions.is_swapped():
-                main_window.channel_definitions.swap_channels()
-            
-            # Update UI components to reflect swapped state
+            main_window.channel_definitions.swap_channels()
             if hasattr(main_window, 'channel_toggle'):
                 main_window.channel_toggle.set_swapped(True)
             if hasattr(main_window, 'control_panel'):
                 main_window.control_panel.set_swap_state(True)
-    else:
-        # Ensure toggle reflects non-swapped state
-        if hasattr(main_window, 'channel_toggle'):
-            main_window.channel_toggle.set_swapped(False)
-        if hasattr(main_window, 'control_panel'):
-            main_window.control_panel.set_swap_state(False)
     
     # Apply last directory
     if 'last_directory' in settings:
         main_window.last_directory = settings['last_directory']
+    
+    # Apply file dialog directory memory
+    if 'file_dialog_directories' in settings and hasattr(main_window, 'file_dialog_service'):
+        main_window.file_dialog_service.set_last_directories(settings['file_dialog_directories'])
 
 
 def revalidate_ranges_for_file(main_window, max_sweep_time: float):

@@ -1,31 +1,99 @@
 """
-GUI Service for file dialog operations.
+GUI Service for file dialog operations with directory memory.
 
-This service encapsulates all file dialog interactions, keeping them separate
-from business logic while providing a clean interface for the GUI layer.
-Part of the presentation layer - handles user interaction for file selection.
+This service encapsulates all file dialog interactions and remembers the last 
+used directory for each dialog type, keeping them separate.
 """
 
 import os
-from typing import Optional, List, Tuple
+from typing import Optional, List, Dict
+from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QWidget
 
 
 class FileDialogService:
     """
-    Centralized service for all file dialog operations.
+    Centralized service for all file dialog operations with directory memory.
     
-    This service maintains separation of concerns by handling all file dialog
-    UI interactions in one place, making the main window cleaner and the
-    file operations more testable and maintainable.
+    Each dialog type remembers its last used directory independently:
+    - 'import_data' - for opening data files
+    - 'export_analysis' - for exporting analysis results  
+    - 'export_batch' - for batch exports
+    - 'import_batch' - for batch file selection
+    - 'select_directory' - for directory selection
     """
     
-    @staticmethod
+    def __init__(self):
+        """Initialize with empty directory memory."""
+        # Dictionary to track last used directories by dialog type
+        self._last_directories: Dict[str, str] = {}
+    
+    def set_last_directories(self, directories: Dict[str, str]) -> None:
+        """
+        Set the last used directories (typically loaded from session settings).
+        
+        Args:
+            directories: Dictionary mapping dialog types to directory paths
+        """
+        # Only set directories that actually exist
+        self._last_directories = {}
+        for dialog_type, directory in directories.items():
+            if directory and os.path.isdir(directory):
+                self._last_directories[dialog_type] = directory
+    
+    def get_last_directories(self) -> Dict[str, str]:
+        """
+        Get the current last used directories for saving to session settings.
+        
+        Returns:
+            Dictionary mapping dialog types to directory paths
+        """
+        return self._last_directories.copy()
+    
+    def _get_default_directory(self, dialog_type: str, fallback: Optional[str] = None) -> Optional[str]:
+        """
+        Get the default directory for a dialog type.
+        
+        Args:
+            dialog_type: Type of dialog (e.g., 'import_data', 'export_analysis')
+            fallback: Fallback directory if no stored directory exists
+            
+        Returns:
+            Directory path to use as default, or None
+        """
+        # First try the stored directory for this dialog type
+        if dialog_type in self._last_directories:
+            stored_dir = self._last_directories[dialog_type]
+            if os.path.isdir(stored_dir):
+                return stored_dir
+        
+        # Then try the fallback
+        if fallback and os.path.isdir(fallback):
+            return fallback
+        
+        # No valid directory found
+        return None
+    
+    def _remember_directory(self, dialog_type: str, file_path: str) -> None:
+        """
+        Remember the directory from a selected file path.
+        
+        Args:
+            dialog_type: Type of dialog
+            file_path: Full path to the selected file
+        """
+        if file_path:
+            directory = str(Path(file_path).parent)
+            if os.path.isdir(directory):
+                self._last_directories[dialog_type] = directory
+    
     def get_export_path(
+        self,
         parent: QWidget,
         suggested_name: str,
         default_directory: Optional[str] = None,
-        file_types: str = "CSV files (*.csv);;All files (*.*)"
+        file_types: str = "CSV files (*.csv);;All files (*.*)",
+        dialog_type: str = "export_analysis"
     ) -> Optional[str]:
         """
         Show a save file dialog and return the selected path.
@@ -33,19 +101,26 @@ class FileDialogService:
         Args:
             parent: Parent widget for the dialog
             suggested_name: Suggested filename (without path)
-            default_directory: Directory to open dialog in (defaults to last used)
+            default_directory: Directory to open dialog in (overrides remembered directory)
             file_types: File type filter string
+            dialog_type: Type of dialog for directory memory (default: 'export_analysis')
             
         Returns:
             Selected file path or None if cancelled
         """
-        # Construct the suggested full path
+        # Determine the default directory
         if default_directory and os.path.isdir(default_directory):
-            suggested_path = os.path.join(default_directory, suggested_name)
+            start_dir = default_directory
+        else:
+            start_dir = self._get_default_directory(dialog_type)
+        
+        # Construct the suggested full path
+        if start_dir:
+            suggested_path = os.path.join(start_dir, suggested_name)
         else:
             suggested_path = suggested_name
         
-        # Show the dialog and return result
+        # Show the dialog
         file_path, _ = QFileDialog.getSaveFileName(
             parent,
             "Export Analysis Data",
@@ -53,14 +128,20 @@ class FileDialogService:
             file_types
         )
         
-        return file_path if file_path else None
+        # Remember the directory if a file was selected
+        if file_path:
+            self._remember_directory(dialog_type, file_path)
+            return file_path
+        
+        return None
     
-    @staticmethod
     def get_import_path(
+        self,
         parent: QWidget,
         title: str = "Open File",
         default_directory: Optional[str] = None,
-        file_types: str = "All files (*.*)"
+        file_types: str = "All files (*.*)",
+        dialog_type: str = "import_data"
     ) -> Optional[str]:
         """
         Show an open file dialog and return the selected path.
@@ -68,27 +149,37 @@ class FileDialogService:
         Args:
             parent: Parent widget for the dialog
             title: Dialog window title
-            default_directory: Directory to open dialog in
+            default_directory: Directory to open dialog in (overrides remembered directory)
             file_types: File type filter string
+            dialog_type: Type of dialog for directory memory (default: 'import_data')
             
         Returns:
             Selected file path or None if cancelled
         """
+        # Determine the default directory
+        start_dir = self._get_default_directory(dialog_type, default_directory)
+        
         file_path, _ = QFileDialog.getOpenFileName(
             parent,
             title,
-            default_directory or "",
+            start_dir or "",
             file_types
         )
         
-        return file_path if file_path else None
+        # Remember the directory if a file was selected
+        if file_path:
+            self._remember_directory(dialog_type, file_path)
+            return file_path
+        
+        return None
     
-    @staticmethod
     def get_import_paths(
+        self,
         parent: QWidget,
         title: str = "Select Files",
         default_directory: Optional[str] = None,
-        file_types: str = "All files (*.*)"
+        file_types: str = "All files (*.*)",
+        dialog_type: str = "import_batch"
     ) -> List[str]:
         """
         Show a multi-file selection dialog and return selected paths.
@@ -96,26 +187,36 @@ class FileDialogService:
         Args:
             parent: Parent widget for the dialog
             title: Dialog window title
-            default_directory: Directory to open dialog in
+            default_directory: Directory to open dialog in (overrides remembered directory)
             file_types: File type filter string
+            dialog_type: Type of dialog for directory memory (default: 'import_batch')
             
         Returns:
             List of selected file paths (empty if cancelled)
         """
+        # Determine the default directory
+        start_dir = self._get_default_directory(dialog_type, default_directory)
+        
         file_paths, _ = QFileDialog.getOpenFileNames(
             parent,
             title,
-            default_directory or "",
+            start_dir or "",
             file_types
         )
         
-        return file_paths if file_paths else []
+        # Remember the directory if files were selected
+        if file_paths:
+            self._remember_directory(dialog_type, file_paths[0])
+            return file_paths
+        
+        return []
     
-    @staticmethod
     def get_directory(
+        self,
         parent: QWidget,
         title: str = "Select Directory",
-        default_directory: Optional[str] = None
+        default_directory: Optional[str] = None,
+        dialog_type: str = "select_directory"
     ) -> Optional[str]:
         """
         Show a directory selection dialog and return the selected path.
@@ -123,16 +224,25 @@ class FileDialogService:
         Args:
             parent: Parent widget for the dialog
             title: Dialog window title
-            default_directory: Directory to open dialog in
+            default_directory: Directory to open dialog in (overrides remembered directory)
+            dialog_type: Type of dialog for directory memory (default: 'select_directory')
             
         Returns:
             Selected directory path or None if cancelled
         """
+        # Determine the default directory
+        start_dir = self._get_default_directory(dialog_type, default_directory)
+        
         directory = QFileDialog.getExistingDirectory(
             parent,
             title,
-            default_directory or "",
+            start_dir or "",
             QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
         )
         
-        return directory if directory else None
+        # Remember the directory if one was selected
+        if directory:
+            self._last_directories[dialog_type] = directory
+            return directory
+        
+        return None
