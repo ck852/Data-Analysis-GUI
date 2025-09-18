@@ -104,9 +104,14 @@ def extract_settings_from_main_window(main_window) -> dict:
     elif hasattr(main_window, 'current_units'):
         settings['current_units'] = main_window.current_units
     
-    # Add channel swap state
+    # Add channel swap state - check both sources for robustness
+    channels_swapped = False
     if hasattr(main_window, 'channel_definitions'):
-        settings['channels_swapped'] = main_window.channel_definitions.is_swapped()
+        channels_swapped = main_window.channel_definitions.is_swapped()
+    elif hasattr(main_window, 'channel_toggle'):
+        # Fallback to toggle state if channel_definitions not available
+        channels_swapped = main_window.channel_toggle.is_swapped() if hasattr(main_window.channel_toggle, 'is_swapped') else False
+    settings['channels_swapped'] = channels_swapped
     
     # Add last directory
     if hasattr(main_window, 'current_file_path') and main_window.current_file_path:
@@ -114,7 +119,6 @@ def extract_settings_from_main_window(main_window) -> dict:
         settings['last_directory'] = str(Path(main_window.current_file_path).parent)
     
     return settings
-
 
 
 def apply_settings_to_main_window(main_window, settings: dict):
@@ -155,14 +159,24 @@ def apply_settings_to_main_window(main_window, settings: dict):
         if hasattr(main_window, 'current_units'):
             main_window.current_units = settings['current_units']
     
-    # Apply channel swap state
+    # Apply channel swap state - do this in the correct order
     if 'channels_swapped' in settings and settings['channels_swapped']:
         if hasattr(main_window, 'channel_definitions'):
-            main_window.channel_definitions.swap_channels()
+            # Only swap if not already swapped
+            if not main_window.channel_definitions.is_swapped():
+                main_window.channel_definitions.swap_channels()
+            
+            # Update UI components to reflect swapped state
             if hasattr(main_window, 'channel_toggle'):
                 main_window.channel_toggle.set_swapped(True)
             if hasattr(main_window, 'control_panel'):
                 main_window.control_panel.set_swap_state(True)
+    else:
+        # Ensure toggle reflects non-swapped state
+        if hasattr(main_window, 'channel_toggle'):
+            main_window.channel_toggle.set_swapped(False)
+        if hasattr(main_window, 'control_panel'):
+            main_window.control_panel.set_swap_state(False)
     
     # Apply last directory
     if 'last_directory' in settings:

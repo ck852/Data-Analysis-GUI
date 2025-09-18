@@ -109,6 +109,10 @@ class MainWindow(QMainWindow):
         self.last_directory = None
 
         self.current_units = 'pA'  # Default current units
+
+        # Initialize channel toggle to prevent signal loops during settings loading
+        if hasattr(self, 'channel_toggle'):
+            self.channel_toggle.set_swapped(False)
         
         # Load and apply settings immediately (shows user's last configuration)
         saved_settings = load_session_settings()
@@ -290,6 +294,10 @@ class MainWindow(QMainWindow):
         self.channel_toggle.toggled.connect(self._on_channel_toggle)
         toolbar.addWidget(self.channel_toggle)
 
+        # Connect toolbar controls to auto-save
+        self.channel_combo.currentTextChanged.connect(self._auto_save_settings)
+        self.current_units_combo.currentTextChanged.connect(self._auto_save_settings)
+
         toolbar.addSeparator()
 
     def _connect_signals(self):
@@ -299,6 +307,20 @@ class MainWindow(QMainWindow):
         self.control_panel.export_requested.connect(self._export_data)
         self.control_panel.dual_range_toggled.connect(self._toggle_dual_range)
         self.control_panel.range_values_changed.connect(self._sync_cursors_to_plot)
+        
+        # Auto-save settings when they change
+        self.control_panel.dual_range_toggled.connect(self._auto_save_settings)
+        self.control_panel.range_values_changed.connect(self._auto_save_settings)
+        
+        # Connect to plot setting combo boxes for auto-save
+        self.control_panel.x_measure_combo.currentTextChanged.connect(self._auto_save_settings)
+        self.control_panel.x_channel_combo.currentTextChanged.connect(self._auto_save_settings)
+        self.control_panel.y_measure_combo.currentTextChanged.connect(self._auto_save_settings)
+        self.control_panel.y_channel_combo.currentTextChanged.connect(self._auto_save_settings)
+        self.control_panel.peak_mode_combo.currentTextChanged.connect(self._auto_save_settings)
+
+        # Connect channel toggle to auto-save
+        self.channel_toggle.toggled.connect(self._auto_save_settings)
         
         # Plot manager
         self.plot_manager.line_state_changed.connect(self._on_cursor_moved)
@@ -389,6 +411,9 @@ class MainWindow(QMainWindow):
                 # Switch displayed channel to show the effect
                 current = self.channel_combo.currentText()
                 self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
+
+            # Auto-save settings after swap
+                self._auto_save_settings()
             
             self.status_bar.showMessage(
                 f"Channel assignments {'swapped' if result['is_swapped'] else 'normal'}", 3000
@@ -419,10 +444,6 @@ class MainWindow(QMainWindow):
         # Update current plot if we have data and showing current
         if self.controller.has_data() and self.channel_combo.currentText() == "Current":
             self._update_plot()
-        
-        # Auto-save settings after units change
-        settings = extract_settings_from_main_window(self)
-        save_session_settings(settings)
         
         self.status_bar.showMessage(f"Current units set to {self.current_units}", 3000)
 
@@ -489,10 +510,6 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Analysis Failed", 
                                f"Analysis failed:\n{result.error_message}")
             return
-        
-        # Auto-save settings after successful analysis
-        settings = extract_settings_from_main_window(self)
-        save_session_settings(settings)
         
         analysis_result = result.data
         
@@ -568,7 +585,10 @@ class MainWindow(QMainWindow):
                 # Switch displayed channel
                 current = self.channel_combo.currentText()
                 self.channel_combo.setCurrentText("Current" if current == "Voltage" else "Voltage")
-            
+
+            # Auto-save settings after channel swap
+                self._auto_save_settings()
+
             self.status_bar.showMessage(
                 f"Channel assignments {'swapped' if result['is_swapped'] else 'normal'}", 3000
             )
@@ -603,6 +623,19 @@ class MainWindow(QMainWindow):
             vals['use_dual_range'],
             vals.get('range2_start'), vals.get('range2_end')
         )
+
+    def _auto_save_settings(self):
+        """
+        Automatically save current settings whenever they change.
+        This ensures user preferences are preserved even if they don't generate an analysis.
+        """
+        try:
+            settings = extract_settings_from_main_window(self)
+            save_session_settings(settings)
+            logger.debug("Auto-saved settings")
+        except Exception as e:
+            logger.warning(f"Failed to auto-save settings: {e}")
+            # Don't show error to user for auto-save failures
 
     def _sync_cursor_to_control(self, line_id, position):
         """Sync cursor position from plot to control panel"""
