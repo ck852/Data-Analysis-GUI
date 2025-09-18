@@ -211,7 +211,13 @@ class CurrentDensityDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle keyboard events for copy/paste support."""
-        if event.matches(event.StandardKey.Paste):
+        # Check for paste shortcut: Ctrl+V on Windows/Linux, Cmd+V on Mac
+        is_paste = (
+            (event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_V) or
+            (event.modifiers() == Qt.KeyboardModifier.MetaModifier and event.key() == Qt.Key.Key_V)
+        )
+        
+        if is_paste:
             self._handle_paste()
         else:
             super().keyPressEvent(event)

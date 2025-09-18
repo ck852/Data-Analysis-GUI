@@ -75,9 +75,16 @@ class IVSummaryExporter:
     @staticmethod
     def prepare_summary_table(iv_data: Dict[float, list], 
                              iv_file_mapping: Dict[str, str],
-                             included_files: set = None) -> Dict[str, Any]:
+                             included_files: set = None,
+                             current_units: str = 'pA') -> Dict[str, Any]:
         """
-        Prepare IV summary data for export.
+        Prepare IV summary data for export with unit-aware headers.
+        
+        Args:
+            iv_data: Dictionary mapping voltages to current values
+            iv_file_mapping: Dictionary mapping recording IDs to file names
+            included_files: Set of file names to include (None = all)
+            current_units: Units for current measurements ('pA', 'nA', or 'μA')
         
         Returns:
             Dictionary with 'headers', 'data', and 'format_spec' for CSV export.
@@ -87,8 +94,8 @@ class IVSummaryExporter:
         # Get sorted voltages
         voltages = sorted(iv_data.keys())
         
-        # Build headers
-        headers = ["Voltage (mV)"]
+        # Build headers with units
+        headers = ["Voltage (mV)"]  # Voltage header already includes units
         data_columns = [voltages]
         
         # Sort recordings
@@ -102,7 +109,8 @@ class IVSummaryExporter:
             if included_files and base_name not in included_files:
                 continue
             
-            headers.append(base_name)
+            # Add header with current units
+            headers.append(f"{base_name} ({current_units})")
             recording_index = int(recording_id.split()[-1]) - 1
             
             # Extract current values

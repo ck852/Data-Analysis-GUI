@@ -266,16 +266,25 @@ class BatchResultsWindow(QMainWindow):
             batch_data, self.batch_result.parameters
         )
         
+        # Extract current units from parameters
+        current_units = 'pA'  # default
+        if hasattr(self.batch_result.parameters, 'channel_config') and self.batch_result.parameters.channel_config:
+            current_units = self.batch_result.parameters.channel_config.get('current_units', 'pA')
+        
+        # Generate filename
+        suggested_filename = f"IV_Summary.csv"
+        
         file_path = self.file_dialog_service.get_export_path(
-            self, "IV_Summary.csv",
+            self, suggested_filename,
             file_types="CSV files (*.csv)"
         )
         
         if file_path:
             try:
                 selected_set = set(r.base_name for r in filtered_results)
+                # Pass current_units to prepare_summary_table
                 table = IVSummaryExporter.prepare_summary_table(
-                    iv_data_r1, mapping, selected_set
+                    iv_data_r1, mapping, selected_set, current_units
                 )
                 
                 result = self.data_service.export_to_csv(table, file_path)
@@ -283,7 +292,7 @@ class BatchResultsWindow(QMainWindow):
                 if result.success:
                     QMessageBox.information(
                         self, "Export Complete",
-                        f"Exported IV summary with {len(filtered_results)} files"
+                        f"Exported IV summary ({current_units}) with {len(filtered_results)} files"
                     )
                 else:
                     QMessageBox.warning(self, "Export Failed", result.error_message)

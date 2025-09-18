@@ -215,11 +215,38 @@ class CurrentDensityResultsWindow(QMainWindow):
             return
 
         new_y_data = np.array(original_result.y_data) / new_cslow
-        updated_result = replace(results_list[target_index], y_data=new_y_data)
+        
+        # Update export_table with new current density values
+        new_export_table = None
+        if original_result.export_table:
+            new_export_table = deepcopy(original_result.export_table)
+            if 'data' in new_export_table:
+                # Update y_data column(s) in export table
+                data_array = np.array(new_export_table['data'])
+                if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
+                    # Column 1 is typically y_data (column 0 is x_data)
+                    data_array[:, 1] = new_y_data
+                    new_export_table['data'] = data_array
+            
+            # Update headers to reflect current density units
+            self._update_export_table_headers(new_export_table, is_current_density=True)
+        
+        updated_result = replace(results_list[target_index], 
+                                y_data=new_y_data,
+                                export_table=new_export_table)
 
         if self.active_batch_result.parameters.use_dual_range and original_result.y_data2 is not None:
             new_y_data2 = np.array(original_result.y_data2) / new_cslow
-            updated_result = replace(updated_result, y_data2=new_y_data2)
+            
+            # Update second y_data column in export table for dual range
+            if new_export_table and 'data' in new_export_table:
+                data_array = np.array(new_export_table['data'])
+                if data_array.shape[1] >= 3:
+                    # Column 2 is y_data2 for dual range
+                    data_array[:, 2] = new_y_data2
+                    new_export_table['data'] = data_array
+            
+            updated_result = replace(updated_result, y_data2=new_y_data2, export_table=new_export_table)
 
         results_list[target_index] = updated_result
         self.cslow_mapping[file_name] = new_cslow
@@ -261,10 +288,34 @@ class CurrentDensityResultsWindow(QMainWindow):
             if cslow > 0 and file_name in original_results:
                 original_result = original_results[file_name]
                 new_y_data = np.array(original_result.y_data) / cslow
-                updated_result = replace(result, y_data=new_y_data)
+                
+                # Update export_table with current density values
+                new_export_table = None
+                if original_result.export_table:
+                    new_export_table = deepcopy(original_result.export_table)
+                    if 'data' in new_export_table:
+                        data_array = np.array(new_export_table['data'])
+                        if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
+                            data_array[:, 1] = new_y_data
+                            new_export_table['data'] = data_array
+                    
+                    # Update headers to reflect current density units
+                    self._update_export_table_headers(new_export_table, is_current_density=True)
+                
+                updated_result = replace(result, y_data=new_y_data, export_table=new_export_table)
+                
                 if self.active_batch_result.parameters.use_dual_range and original_result.y_data2 is not None:
                     new_y_data2 = np.array(original_result.y_data2) / cslow
-                    updated_result = replace(updated_result, y_data2=new_y_data2)
+                    
+                    # Update second y_data column in export table for dual range
+                    if new_export_table and 'data' in new_export_table:
+                        data_array = np.array(new_export_table['data'])
+                        if data_array.shape[1] >= 3:
+                            data_array[:, 2] = new_y_data2
+                            new_export_table['data'] = data_array
+                    
+                    updated_result = replace(updated_result, y_data2=new_y_data2, export_table=new_export_table)
+                
                 self.active_batch_result.successful_results[i] = updated_result
         logger.debug(f"Applied initial current density calculations.")
 
@@ -289,24 +340,65 @@ class CurrentDensityResultsWindow(QMainWindow):
                 QMessageBox.warning(self, "No Data", "No valid results to export.")
                 return
 
+            # Add "_CD" suffix to filenames for current density exports
+            cd_results = []
+            for result in filtered_results:
+                cd_result = replace(result, base_name=f"{result.base_name}_CD")
+                cd_results.append(cd_result)
+
             filtered_batch = replace(
                 self.active_batch_result,
-                successful_results=filtered_results,
+                successful_results=cd_results,
                 failed_results=[],
                 selected_files=selected_files
             )
-            cd_output_dir = os.path.join(output_dir, "current_density")
-            os.makedirs(cd_output_dir, exist_ok=True)
-            export_result = self.batch_service.export_results(filtered_batch, cd_output_dir)
+            
+            export_result = self.batch_service.export_results(filtered_batch, output_dir)
             success_count = sum(1 for r in export_result.export_results if r.success)
 
             if success_count > 0:
-                QMessageBox.information(self, "Export Complete", f"Exported {success_count} files to {cd_output_dir}")
+                QMessageBox.information(self, "Export Complete", f"Exported {success_count} current density files")
             else:
                 QMessageBox.warning(self, "Export Failed", "No files were exported successfully.")
         except Exception as e:
             logger.error(f"CSV export failed: {e}", exc_info=True)
             QMessageBox.critical(self, "Export Failed", f"Export failed: {str(e)}")
+
+    def _update_export_table_headers(self, export_table, is_current_density=True):
+        """
+        Update export table headers to reflect current density units.
+        
+        Args:
+            export_table: The export table dictionary to update
+            is_current_density: If True, update to current density units (pA/pF)
+        """
+        if not export_table or 'headers' not in export_table:
+            return
+        
+        # Get current units from parameters
+        current_units = 'pA'  # default
+        if hasattr(self.original_batch_result.parameters, 'channel_config'):
+            config = self.original_batch_result.parameters.channel_config
+            if config:
+                current_units = config.get('current_units', 'pA')
+        
+        # Determine the unit to use
+        if is_current_density:
+            unit = f"{current_units}/pF"
+        else:
+            unit = current_units
+        
+        # Update headers that contain current measurements
+        updated_headers = []
+        for header in export_table['headers']:
+            if 'Current' in header and '(' in header and ')' in header:
+                # Replace the unit in parentheses
+                base_label = header.split('(')[0].strip()
+                updated_headers.append(f"{base_label} ({unit})")
+            else:
+                updated_headers.append(header)
+        
+        export_table['headers'] = updated_headers
 
     def _export_summary(self):
         """Export current density summary after validating inputs."""
