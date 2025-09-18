@@ -1,30 +1,21 @@
-"""
-PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
-"""
-
 # data_analysis_gui/dialogs/current_density_results_window.py
 """
 Window for displaying and interacting with current density analysis results.
 
-This module provides a window that allows for dynamic recalculation of current
-density by editing Cslow values directly in the results table. It includes
-features like live plot updates, input validation, and enhanced user experience
-for streamlined data analysis.
+This module provides a UI window for viewing and editing current density
+calculations. All business logic is delegated to CurrentDensityService.
 
 Author: Data Analysis GUI Contributors
 License: MIT
 """
 
-import os
 import re
+import numpy as np
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 from typing import Dict
 
-import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
                              QMessageBox, QPushButton, QSplitter, QVBoxLayout,
@@ -92,11 +83,11 @@ class CurrentDensityResultsWindow(QMainWindow):
 
         info_label = QLabel("(Click Cslow values to edit)")
         info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        style_label(info_label, "caption") # Use themed label style
+        style_label(info_label, "caption")
         main_layout.addWidget(info_label)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        style_splitter(splitter) # Use themed splitter style
+        style_splitter(splitter)
         splitter.addWidget(self._create_left_panel())
 
         self.plot_widget = DynamicBatchPlotWidget()
@@ -130,8 +121,8 @@ class CurrentDensityResultsWindow(QMainWindow):
         controls_layout = QHBoxLayout()
         select_all_btn = QPushButton("Select All")
         select_none_btn = QPushButton("Select None")
-        style_button(select_all_btn, "secondary") # Use themed button style
-        style_button(select_none_btn, "secondary") # Use themed button style
+        style_button(select_all_btn, "secondary")
+        style_button(select_none_btn, "secondary")
         select_all_btn.clicked.connect(lambda: self.file_list.set_all_checked(True))
         select_none_btn.clicked.connect(lambda: self.file_list.set_all_checked(False))
         controls_layout.addWidget(select_all_btn)
@@ -187,75 +178,60 @@ class CurrentDensityResultsWindow(QMainWindow):
 
         self._update_summary()
 
+    def _apply_initial_current_density(self):
+        """Apply initial current density calculations to all files."""
+        original_results = {r.base_name: r for r in self.original_batch_result.successful_results}
+        
+        for i, result in enumerate(self.active_batch_result.successful_results):
+            file_name = result.base_name
+            cslow = self.cslow_mapping.get(file_name, 0.0)
+            
+            if cslow > 0 and file_name in original_results:
+                # Use service for the calculation
+                updated_result = self.cd_service.recalculate_cd_for_file(
+                    file_name,
+                    cslow,
+                    self.active_batch_result,
+                    self.original_batch_result
+                )
+                self.active_batch_result.successful_results[i] = updated_result
+        
+        logger.debug(f"Applied initial current density calculations.")
+
     def _on_cslow_changed(self, file_name: str, new_cslow: float):
         """Handle live recalculation when a Cslow value is changed."""
         try:
-            self._recalculate_cd_for_file(file_name, new_cslow)
-            result = next((r for r in self.active_batch_result.successful_results
-                           if r.base_name == file_name), None)
-            if result:
-                self.plot_widget.update_line_data(
-                    file_name,
-                    result.y_data,
-                    result.y_data2 if self.active_batch_result.parameters.use_dual_range else None
-                )
-                self.plot_widget.auto_scale_to_data()
+            # Find the index
+            target_index = next(
+                (i for i, r in enumerate(self.active_batch_result.successful_results)
+                 if r.base_name == file_name),
+                None
+            )
+            
+            if target_index is None:
+                return
+            
+            # Use service to recalculate
+            updated_result = self.cd_service.recalculate_cd_for_file(
+                file_name,
+                new_cslow,
+                self.active_batch_result,
+                self.original_batch_result
+            )
+            
+            # Update our batch result
+            self.active_batch_result.successful_results[target_index] = updated_result
+            self.cslow_mapping[file_name] = new_cslow
+            
+            # Update plot
+            self.plot_widget.update_line_data(
+                file_name,
+                updated_result.y_data,
+                updated_result.y_data2 if self.active_batch_result.parameters.use_dual_range else None
+            )
+            self.plot_widget.auto_scale_to_data()
         except (ValueError, ZeroDivisionError) as e:
             logger.warning(f"Invalid Cslow value for {file_name}: {e}")
-
-    def _recalculate_cd_for_file(self, file_name: str, new_cslow: float):
-        """Recalculate current density for a single file by creating a new result object."""
-        results_list = self.active_batch_result.successful_results
-        original_result = next(
-            (r for r in self.original_batch_result.successful_results if r.base_name == file_name), None)
-
-        try:
-            target_index = next(
-                (i for i, r in enumerate(results_list) if r.base_name == file_name))
-        except StopIteration:
-            logger.error(f"Could not find result for {file_name} in active list.")
-            return
-
-        if original_result is None:
-            logger.error(f"Could not find original result for {file_name}.")
-            return
-
-        new_y_data = np.array(original_result.y_data) / new_cslow
-        
-        # Update export_table with new current density values
-        new_export_table = None
-        if original_result.export_table:
-            new_export_table = deepcopy(original_result.export_table)
-            if 'data' in new_export_table:
-                # Update y_data column(s) in export table
-                data_array = np.array(new_export_table['data'])
-                if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
-                    # Column 1 is typically y_data (column 0 is x_data)
-                    data_array[:, 1] = new_y_data
-                    new_export_table['data'] = data_array
-            
-            # Update headers to reflect current density units
-            self._update_export_table_headers(new_export_table, is_current_density=True)
-        
-        updated_result = replace(results_list[target_index], 
-                                y_data=new_y_data,
-                                export_table=new_export_table)
-
-        if self.active_batch_result.parameters.use_dual_range and original_result.y_data2 is not None:
-            new_y_data2 = np.array(original_result.y_data2) / new_cslow
-            
-            # Update second y_data column in export table for dual range
-            if new_export_table and 'data' in new_export_table:
-                data_array = np.array(new_export_table['data'])
-                if data_array.shape[1] >= 3:
-                    # Column 2 is y_data2 for dual range
-                    data_array[:, 2] = new_y_data2
-                    new_export_table['data'] = data_array
-            
-            updated_result = replace(updated_result, y_data2=new_y_data2, export_table=new_export_table)
-
-        results_list[target_index] = updated_result
-        self.cslow_mapping[file_name] = new_cslow
 
     def _update_plot(self):
         """Update the plot based on the current selections and data."""
@@ -280,50 +256,11 @@ class CurrentDensityResultsWindow(QMainWindow):
             cslow_widget = self.file_list.cellWidget(row, 3)
             if cslow_widget and hasattr(cslow_widget, 'text'):
                 try:
-                    if float(cslow_widget.text()) <= 0: return False
+                    if float(cslow_widget.text()) <= 0: 
+                        return False
                 except ValueError:
                     return False
         return True
-
-    def _apply_initial_current_density(self):
-        """Apply initial current density calculations to all files."""
-        original_results = {r.base_name: r for r in self.original_batch_result.successful_results}
-        for i, result in enumerate(self.active_batch_result.successful_results):
-            file_name = result.base_name
-            cslow = self.cslow_mapping.get(file_name, 0.0)
-            if cslow > 0 and file_name in original_results:
-                original_result = original_results[file_name]
-                new_y_data = np.array(original_result.y_data) / cslow
-                
-                # Update export_table with current density values
-                new_export_table = None
-                if original_result.export_table:
-                    new_export_table = deepcopy(original_result.export_table)
-                    if 'data' in new_export_table:
-                        data_array = np.array(new_export_table['data'])
-                        if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
-                            data_array[:, 1] = new_y_data
-                            new_export_table['data'] = data_array
-                    
-                    # Update headers to reflect current density units
-                    self._update_export_table_headers(new_export_table, is_current_density=True)
-                
-                updated_result = replace(result, y_data=new_y_data, export_table=new_export_table)
-                
-                if self.active_batch_result.parameters.use_dual_range and original_result.y_data2 is not None:
-                    new_y_data2 = np.array(original_result.y_data2) / cslow
-                    
-                    # Update second y_data column in export table for dual range
-                    if new_export_table and 'data' in new_export_table:
-                        data_array = np.array(new_export_table['data'])
-                        if data_array.shape[1] >= 3:
-                            data_array[:, 2] = new_y_data2
-                            new_export_table['data'] = data_array
-                    
-                    updated_result = replace(updated_result, y_data2=new_y_data2, export_table=new_export_table)
-                
-                self.active_batch_result.successful_results[i] = updated_result
-        logger.debug(f"Applied initial current density calculations.")
 
     def _export_individual_csvs(self):
         """Export individual CSVs for selected files with current density values."""
@@ -341,17 +278,23 @@ class CurrentDensityResultsWindow(QMainWindow):
             return
 
         try:
-            filtered_results = [r for r in self.active_batch_result.successful_results if r.base_name in selected_files]
+            # Filter results by selection
+            filtered_results = [
+                r for r in self.active_batch_result.successful_results 
+                if r.base_name in selected_files
+            ]
+            
             if not filtered_results:
                 QMessageBox.warning(self, "No Data", "No valid results to export.")
                 return
-
+            
             # Add "_CD" suffix to filenames for current density exports
             cd_results = []
             for result in filtered_results:
                 cd_result = replace(result, base_name=f"{result.base_name}_CD")
                 cd_results.append(cd_result)
-
+            
+            # Create batch for export
             filtered_batch = replace(
                 self.active_batch_result,
                 successful_results=cd_results,
@@ -370,42 +313,6 @@ class CurrentDensityResultsWindow(QMainWindow):
             logger.error(f"CSV export failed: {e}", exc_info=True)
             QMessageBox.critical(self, "Export Failed", f"Export failed: {str(e)}")
 
-    def _update_export_table_headers(self, export_table, is_current_density=True):
-        """
-        Update export table headers to reflect current density units.
-        
-        Args:
-            export_table: The export table dictionary to update
-            is_current_density: If True, update to current density units (pA/pF)
-        """
-        if not export_table or 'headers' not in export_table:
-            return
-        
-        # Get current units from parameters
-        current_units = 'pA'  # default
-        if hasattr(self.original_batch_result.parameters, 'channel_config'):
-            config = self.original_batch_result.parameters.channel_config
-            if config:
-                current_units = config.get('current_units', 'pA')
-        
-        # Determine the unit to use
-        if is_current_density:
-            unit = f"{current_units}/pF"
-        else:
-            unit = current_units
-        
-        # Update headers that contain current measurements
-        updated_headers = []
-        for header in export_table['headers']:
-            if 'Current' in header and '(' in header and ')' in header:
-                # Replace the unit in parentheses
-                base_label = header.split('(')[0].strip()
-                updated_headers.append(f"{base_label} ({unit})")
-            else:
-                updated_headers.append(header)
-        
-        export_table['headers'] = updated_headers
-
     def _export_summary(self):
         """Export current density summary after validating inputs."""
         if not self._validate_all_cslow_values():
@@ -420,8 +327,9 @@ class CurrentDensityResultsWindow(QMainWindow):
             selected_files = self.selection_state.get_selected_files()
             sorted_results = [r for r in self._sort_results(self.active_batch_result.successful_results)
                               if r.base_name in selected_files]
+            
+            # Prepare voltage data and file mapping
             voltage_data, file_mapping = {}, {}
-
             for idx, result in enumerate(sorted_results):
                 recording_id = f"Recording {idx + 1}"
                 file_mapping[recording_id] = result.base_name
@@ -431,10 +339,12 @@ class CurrentDensityResultsWindow(QMainWindow):
                         voltage_data[voltage_rounded] = [np.nan] * len(sorted_results)
                     if i < len(result.y_data):
                         voltage_data[voltage_rounded][idx] = result.y_data[i]
-
+            
+            # Use service to prepare export
             export_data = self.cd_service.prepare_summary_export(
                 voltage_data, file_mapping, self.cslow_mapping, selected_files, self.y_unit
             )
+            
             result = self.data_service.export_to_csv(export_data, file_path)
 
             if result.success:

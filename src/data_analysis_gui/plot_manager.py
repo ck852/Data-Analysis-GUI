@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
@@ -11,8 +12,6 @@ This version uses Qt signals for complete decoupling from the main window.
 PlotManager is now purely responsible for matplotlib visualization and
 emits neutral signals about plot interactions.
 """
-
-from __future__ import annotations
 
 import logging
 from typing import Optional, List, Tuple, Dict, Any

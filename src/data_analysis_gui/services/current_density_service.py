@@ -1,10 +1,4 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
-"""
-
-"""
 Service for current density calculations and data preparation.
 
 This module provides utility functions for current density analysis,
@@ -14,9 +8,12 @@ Author: Data Analysis GUI Contributors
 License: MIT
 """
 
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Set, Any, Optional, Tuple
+from dataclasses import replace
+from copy import deepcopy
 import numpy as np
 
+from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult
 from data_analysis_gui.config.logging import get_logger
 
 logger = get_logger(__name__)
@@ -24,6 +21,99 @@ logger = get_logger(__name__)
 
 class CurrentDensityService:
     """Service class for current density calculations and data preparation."""
+    
+    @staticmethod
+    def recalculate_cd_for_file(
+        file_name: str,
+        new_cslow: float,
+        active_batch_result: BatchAnalysisResult,
+        original_batch_result: BatchAnalysisResult
+    ) -> FileAnalysisResult:
+        """
+        Recalculate current density for a single file.
+        
+        Returns the updated FileAnalysisResult with new current density values.
+        """
+        # Find original result
+        original_result = next(
+            (r for r in original_batch_result.successful_results if r.base_name == file_name),
+            None
+        )
+        if not original_result:
+            raise ValueError(f"Could not find original result for {file_name}")
+        
+        # Find target in active results
+        target_index = next(
+            (i for i, r in enumerate(active_batch_result.successful_results) 
+             if r.base_name == file_name),
+            None
+        )
+        if target_index is None:
+            raise ValueError(f"Could not find {file_name} in active results")
+        
+        # Calculate new current density
+        new_y_data = np.array(original_result.y_data) / new_cslow
+        
+        # Update export table if present
+        new_export_table = None
+        if original_result.export_table:
+            new_export_table = deepcopy(original_result.export_table)
+            if 'data' in new_export_table:
+                data_array = np.array(new_export_table['data'])
+                if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
+                    data_array[:, 1] = new_y_data
+                    new_export_table['data'] = data_array
+            
+            # Update headers
+            CurrentDensityService.update_export_table_headers(new_export_table, is_current_density=True)
+        
+        # Create updated result
+        updated_result = replace(
+            active_batch_result.successful_results[target_index],
+            y_data=new_y_data,
+            export_table=new_export_table
+        )
+        
+        # Handle dual range
+        if active_batch_result.parameters.use_dual_range and original_result.y_data2 is not None:
+            new_y_data2 = np.array(original_result.y_data2) / new_cslow
+            
+            if new_export_table and 'data' in new_export_table:
+                data_array = np.array(new_export_table['data'])
+                if data_array.shape[1] >= 3:
+                    data_array[:, 2] = new_y_data2
+                    new_export_table['data'] = data_array
+            
+            updated_result = replace(updated_result, y_data2=new_y_data2, export_table=new_export_table)
+        
+        return updated_result
+    
+    @staticmethod
+    def update_export_table_headers(export_table: Dict[str, Any], is_current_density: bool = True):
+        """Update export table headers to reflect current density units."""
+        if not export_table or 'headers' not in export_table:
+            return
+        
+        updated_headers = []
+        for header in export_table['headers']:
+            if 'Current' in header and '(' in header and ')' in header:
+                base_label = header.split('(')[0].strip()
+                if is_current_density:
+                    # Detect original unit and convert
+                    if 'nA' in header:
+                        unit = 'nA/pF'
+                    elif 'μA' in header:
+                        unit = 'μA/pF'
+                    else:
+                        unit = 'pA/pF'
+                else:
+                    # Keep original units
+                    unit = header.split('(')[1].split(')')[0]
+                updated_headers.append(f"{base_label} ({unit})")
+            else:
+                updated_headers.append(header)
+        
+        export_table['headers'] = updated_headers
     
     @staticmethod
     def prepare_summary_export(
