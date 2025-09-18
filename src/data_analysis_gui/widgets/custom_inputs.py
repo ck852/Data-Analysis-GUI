@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 from PySide6.QtWidgets import QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox
 from PySide6.QtCore import QTimer
 

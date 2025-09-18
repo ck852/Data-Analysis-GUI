@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Test module for Swap Channels functionality with Peak Analysis across all peak modes.
 
 This test validates the channel swapping feature with peak analysis by:

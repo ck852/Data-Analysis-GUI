@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Test script to validate the batch analysis workflow from file loading through CSV export.
 
 This test mimics the exact user workflow for batch analysis:

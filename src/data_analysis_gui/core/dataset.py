@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Dataset abstraction for electrophysiology data.
 
 This module provides format-agnostic data structures for managing

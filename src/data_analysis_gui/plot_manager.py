@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Improved plot management module for MAT File Sweep Analyzer.
 
 This version uses Qt signals for complete decoupling from the main window.

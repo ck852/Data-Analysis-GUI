@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Extracts and validates data from electrophysiology datasets.
 PHASE 5: Fail-fast validation with proper error messages.
 """

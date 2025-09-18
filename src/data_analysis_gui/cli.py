@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Command-line interface for the MAT file analyzer.
 This demonstrates that the business logic works completely independently of the GUI.
 """

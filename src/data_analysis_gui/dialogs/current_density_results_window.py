@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 # data_analysis_gui/dialogs/current_density_results_window.py
 """
 Window for displaying and interacting with current density analysis results.

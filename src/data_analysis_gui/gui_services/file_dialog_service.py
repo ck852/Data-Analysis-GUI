@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 GUI Service for file dialog operations with directory memory.
 
 This service encapsulates all file dialog interactions and remembers the last 

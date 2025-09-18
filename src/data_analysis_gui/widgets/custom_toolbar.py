@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 # widgets/custom_toolbar.py
 """
 Streamlined navigation toolbar for matplotlib plots.

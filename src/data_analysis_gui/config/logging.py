@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Centralized logging configuration for the electrophysiology analysis application.
 
 This module provides consistent logging setup across all components, enabling

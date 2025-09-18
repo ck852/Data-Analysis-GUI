@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Formats analysis data for plots and exports.
 PHASE 5: Pure transformation logic with no side effects.
 FIXED: Corrected dual range export when X-axis is Time

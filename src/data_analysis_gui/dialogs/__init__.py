@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 from .batch_dialog import BatchAnalysisDialog
 from .analysis_plot_dialog import AnalysisPlotDialog
 from .batch_results_window import BatchResultsWindow

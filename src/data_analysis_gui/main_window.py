@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Main Window - Simplified Version with Always-Active Controls
 All controls and settings are adjustable at any time, regardless of file loading state.
 """

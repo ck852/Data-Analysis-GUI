@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Test peak analysis functionality with different peak modes.
 
 This test verifies that the analysis engine correctly calculates different

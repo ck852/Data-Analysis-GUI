@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 import sys
 import os
 from PySide6.QtWidgets import QApplication

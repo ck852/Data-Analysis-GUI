@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 ABF (Axon Binary Format) loader for electrophysiology data.
 
 This module provides functionality to load ABF files and convert them

@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Control Panel Widget - Simplified Version with Always-Active Controls
 Handles all control settings and communicates via signals.
 Controls are always active regardless of file loading state.

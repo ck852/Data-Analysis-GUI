@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Core analysis engine - pure orchestration of analysis workflow.
 
 PHASE 5 REFACTOR: Simplified to pure orchestration with dependency injection.

@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Channel Toggle Switch Widget
 A simple toggle switch for swapping channel assignments.
 Place this file in: widgets/channel_toggle.py

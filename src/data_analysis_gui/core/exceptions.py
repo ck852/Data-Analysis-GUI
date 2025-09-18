@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Standardized exception hierarchy for the electrophysiology analysis application.
 
 This module defines a comprehensive error hierarchy that enables consistent

@@ -1,3 +1,9 @@
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 # src/data_analysis_gui/core/analysis_plot.py
 """
 Core analysis plot functionality that can be used independently of GUI.

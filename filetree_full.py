@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
 # filetree.py
 import os, sys, argparse, fnmatch, ctypes
 

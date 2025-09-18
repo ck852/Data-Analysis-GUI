@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Unified data management for loading, validating, and exporting data.
 
 This module combines all data-related operations into a single, easy-to-understand

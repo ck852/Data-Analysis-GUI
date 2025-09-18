@@ -1,4 +1,10 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+
+"""
 Channel definitions for electrophysiology data analysis.
 
 This module provides a centralized way to manage channel assignments for voltage
