@@ -1,4 +1,18 @@
 streamlining/
+|-- images/
+|   |-- ba_results.PNG
+|   |-- batch_analysis.PNG
+|   |-- cd_cslow.PNG
+|   |-- cd_results.PNG
+|   |-- data_comparison.png
+|   |-- discrepancy.png
+|   |-- main_winwcp.PNG
+|   |-- mainwindow.PNG
+|   |-- prism_cd_summary.PNG
+|   |-- prism_import.PNG
+|   |-- repeat_period.PNG
+|   |-- summary_export.PNG
+|   `-- winwcp_export.PNG
 |-- src/
 |   `-- data_analysis_gui/
 |       |-- config/
@@ -280,9 +294,11 @@ streamlining/
 |   |-- test_current_density.py
 |   |-- test_dual_range.py
 |   |-- test_peak.py
-|   `-- test_swapped.py
+|   |-- test_swapped.py
+|   `-- test_swapped_peaks.py
 |-- filetree.txt
 |-- filetree_full.py
+|-- LICENSE.md
 |-- pyproject.toml
 |-- pytest.ini
 |-- README.md
