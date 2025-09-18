@@ -128,7 +128,7 @@ class DataManager:
             format_spec = data.get('format_spec', '%.6f')
             header_str = ','.join(headers)
             np.savetxt(filepath, data_array, delimiter=',', 
-                      fmt=format_spec, header=header_str, comments='')
+                      fmt=format_spec, header=header_str, comments='', encoding='utf-8')
             
             # Verify file was created
             if not os.path.exists(filepath):
