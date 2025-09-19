@@ -1,6 +1,6 @@
 Welcome to PatchBatch! The purpose of this program is to streamline electrophysiology data analysis workflows by enabling batch-analysis of data files that share the same analysis parameters. I developed this after growing impatient with the long, tedious workflows that require defining the same parameters repeatedly for every file. A full day of patch-clamp recordings could take an hour to extract a current density-voltage relationship from. This is typically a repetitive process that, while not technically complicated, requires significant mental energy to do reproducibly and without errors. I developed this program because I wanted to spend less time and focus on raw data extraction, and more time on data interpretation and further experiments. 
 
-================================== HOW TO USE ==================================
+================================= HOW TO USE =================================
 
 If you are starting with WCP files, start by converting them to .abf using the native export option in WinWCP. 
 
@@ -54,7 +54,7 @@ Similarly to the batch analysis, you have the option to export individual CSV fi
 
 This program includes full functionality for the same four peak modes (absolute, positive, negative, and peak-peak) available in WinWCP. The peak mode can be adjusted in the corresponding drop-down menu in the main window. **All peak modes have been functional in tests, but final validation is still in progress.**
 
-========================================= GENERAL ELECTROPHYSIOLOGY OVERVIEW =========================================
+===================== GENERAL ELECTROPHYSIOLOGY OVERVIEW =====================
 
 The program is designed to allow users to visualize electrophysiology data sweeps, define one or two analysis time ranges within the sweeps, and extract the measured current and voltage values from all sweeps from those time ranges. The user can measure average or peak values within the analysis ranges, with four different peak modes (absolute, positive, negative, and peak-peak). 
 
@@ -70,7 +70,7 @@ I-V analysis is commonly used in ion channel electrophysiology to assess determi
 
 For time-course experiments, the program allows the user to plot only one channel (typically on the Y-Axis) against the time within a recording that each sweep occurred. For example, a user may wish to plot how measured current changes with time, in conjunction with application of different drug concentrations. In this case, analyzed voltage values are not exlicitly used in the upstream analysis, but it is still important for the experimenter to verify that voltage values matched the values defined in the sweep protocol. This is because actual, measured voltages can differ significantly from command voltages for a multitude of reasons. While this is prudent for data viability, further details are beyond the scope of this software. For time-course analyses, the user must specify the Stimulus Repeat Period used in their voltage protocol. I was unable to parse sweep times from .wcp, .mat, or .abf (ABF1) metadata, so this is the most effective way to plot time-course data.
 
-================================================= STATEMENT OF NEED ==================================================
+============================= STATEMENT OF NEED ==============================
 
 I developed this program based on my data analysis workflow on WinWCP (Dempster, University of Strathclyde; https://spider.science.strath.ac.uk/sipbs/software_ses.htm), which follows the procedures explained above. WinWCP remains an excellent open-source software that I rely on for data acquisition. Thus, my raw data files are in the .wcp file format. Conveniently, WinWCP contains an export feature that enables conversion of one or multiple .wcp files to .mat and .abf file formats, both of which are supported by this program. However, this program does not support .wcp file import directly, so the initial conversion in WinWCP is necessary to use it for analyzing .wcp files. 
 
@@ -82,7 +82,7 @@ If the user has selected "Voltage" for the X-Axis and "Current" for the Y-Axis, 
 
 All output CSVs are designed for import into a larger, dedicating plotting software such as GraphPad Prism. See "HOW TO USE" for example of full workflow from raw .wcp file through plotting current density IVs in Prism.
 
-===================================================== VALIDATION =====================================================
+================================= VALIDATION =================================
 
 The following images demonstrate a comparison of analysis outputs by this software with ouputs by WinWCP. Both analyses used the same dataset of 12 patch-clamp recordings. However, WinWCP analyses used the original .wcp file, while this software used .abf conversions of the same files. File format conversions were performed in WinWCP. Each analysis used an analysis range of 150.1 ms - 649.2 ms, with the X-axis plotting Average Voltage and the Y-axis plotting Average Current. For current density analysis, the following Cslow values were used:
     250514_001: 34.4
