@@ -51,7 +51,6 @@ data_analysis_gui/
 |   |-- custom_toolbar.py
 |   `-- shared_widgets.py
 |-- __init__.py
-|-- cli.py
 |-- filetree.txt
 |-- filetree_full.py
 |-- main.py

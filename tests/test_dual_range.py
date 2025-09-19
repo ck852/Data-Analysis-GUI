@@ -221,7 +221,7 @@ class TestDualRangeAnalysis:
         4. Compares with golden reference for ABF
         """
         # Get ABF test file
-        abf_file = test_data_path / "250202_007[1-234].abf"
+        abf_file = test_data_path / "abf" / "250202_007[1-234].abf"
         assert abf_file.exists(), f"ABF test file not found: {abf_file}"
         
         # Get golden reference for ABF
@@ -373,7 +373,7 @@ class TestDualRangeAnalysis:
         3. The analysis correctly separates the two time windows
         """
         # Load test file
-        test_file = test_data_path / "250202_007[1-234].abf"
+        test_file = test_data_path / "abf" / "250202_007[1-234].abf"
         load_result = controller.load_file(str(test_file))
         assert load_result.success
         

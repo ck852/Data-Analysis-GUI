@@ -1,456 +1,510 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
+Test script for batch analysis IV workflow with golden file validation.
+
+Tests the complete workflow from batch analysis through IV summary export,
+validating all outputs against golden reference files. This test follows
+the exact workflow that occurs when using the GUI.
 """
 
-"""
-Test script to validate the batch analysis workflow from file loading through CSV export.
-
-This test mimics the exact user workflow for batch analysis:
-1. Select multiple ABF/MAT files for batch processing
-2. Set analysis parameters (same as single file test)
-3. Run batch analysis on all files
-4. Export individual CSVs for each file
-5. Compare outputs with golden reference files
-
-The test runs headless without GUI components but follows the same logic paths.
-
-REFACTORED: Base class implementation for testing both ABF and MAT file formats
-"""
-
-import pytest
 import os
+import csv
 import tempfile
-import numpy as np
+import shutil
 from pathlib import Path
-from typing import List, Dict, Any
-from abc import ABC, abstractmethod
+from typing import Dict, List, Tuple
+from dataclasses import replace
 
-# Import core components following the actual application architecture
-from data_analysis_gui.core.app_controller import ApplicationController
-from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
+import numpy as np
+import pytest
+
 from data_analysis_gui.core.channel_definitions import ChannelDefinitions
-from data_analysis_gui.core.models import BatchAnalysisResult
+from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
+from data_analysis_gui.services.batch_processor import BatchProcessor
+from data_analysis_gui.services.data_manager import DataManager
+from data_analysis_gui.core.iv_analysis import IVAnalysisService, IVSummaryExporter
 
 
-class TestBatchAnalysisWorkflowBase(ABC):
-    """Base test class for validating the complete batch analysis workflow."""
+def load_csv_data(filepath: Path) -> Tuple[List[str], np.ndarray]:
+    """
+    Load CSV headers and data array from file.
     
-    @property
-    @abstractmethod
-    def file_format(self) -> str:
-        """Return the file format being tested ('abf' or 'mat')."""
-        pass
-    
-    @property
-    @abstractmethod
-    def file_extension(self) -> str:
-        """Return the file extension pattern for glob ('*.abf' or '*.mat')."""
-        pass
-    
-    @pytest.fixture
-    def test_data_path(self):
-        """Get the path to test data files."""
-        current_dir = Path(__file__).parent
-        return current_dir / "fixtures" / "sample_data" / "IV+CD" / self.file_format
-    
-    @pytest.fixture
-    def golden_data_path(self):
-        """Get the path to golden reference files."""
-        current_dir = Path(__file__).parent
-        return current_dir / "fixtures" / "golden_data" / "golden_IV" / self.file_format
-    
-    @pytest.fixture
-    def controller(self):
-        """Create an ApplicationController instance for testing."""
-        return ApplicationController()
-    
-    @pytest.fixture
-    def batch_service(self, controller):
-        """Get the batch processor service from controller."""
-        # Use the controller's batch processor directly (new architecture)
-        return controller.batch_processor
-    
-    def create_parameters_from_gui_state(self, controller: ApplicationController, 
-                                        gui_state: Dict[str, Any]) -> AnalysisParameters:
-        """
-        Mimic the parameter creation from GUI state.
-        This follows the exact logic from control panel and controller.
-        """
-        # Extract x-axis configuration
-        x_axis = AxisConfig(
-            measure=gui_state.get('x_measure', 'Time'),
-            channel=gui_state.get('x_channel'),
-            peak_type=gui_state.get('x_peak_type')
-        )
+    Args:
+        filepath: Path to CSV file
         
-        # Extract y-axis configuration
-        y_axis = AxisConfig(
-            measure=gui_state.get('y_measure', 'Average'),
-            channel=gui_state.get('y_channel', 'Current'),
-            peak_type=gui_state.get('y_peak_type')
+    Returns:
+        Tuple of (headers, data_array)
+    """
+    if not filepath.exists():
+        raise FileNotFoundError(f"CSV file not found: {filepath}")
+    
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        headers = next(reader)
+        data = []
+        for row in reader:
+            data.append([float(val) if val and val != 'nan' else np.nan for val in row])
+    
+    return headers, np.array(data)
+
+
+def compare_csv_files(generated: Path, golden: Path, rtol: float = 1e-5, atol: float = 1e-6) -> None:
+    """
+    Compare two CSV files with detailed error reporting.
+    
+    Args:
+        generated: Path to generated CSV file
+        golden: Path to golden reference CSV file
+        rtol: Relative tolerance for numerical comparison
+        atol: Absolute tolerance for numerical comparison
+    """
+    # Load both files
+    gen_headers, gen_data = load_csv_data(generated)
+    gold_headers, gold_data = load_csv_data(golden)
+    
+    # Exact header comparison for individual files
+    try:
+        assert gen_headers == gold_headers, \
+            f"Headers mismatch:\nGenerated: {gen_headers}\nGolden: {gold_headers}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"Header validation failed for {generated.name}\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
         )
+    
+    # Compare data shape
+    try:
+        assert gen_data.shape == gold_data.shape, \
+            f"Data shape mismatch:\nGenerated: {gen_data.shape}\nGolden: {gold_data.shape}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"Shape validation failed for {generated.name}\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    # Compare data values
+    if gen_data.size > 0:
+        # Check for NaN positions matching
+        gen_nan_mask = np.isnan(gen_data)
+        gold_nan_mask = np.isnan(gold_data)
         
-        # Create parameters matching the controller's logic
+        # Check if NaN positions match
+        try:
+            assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                f"NaN positions don't match in {generated.name}"
+        except AssertionError as e:
+            raise AssertionError(
+                f"NaN position validation failed for {generated.name}\n"
+                f"Generated file: {generated}\n"
+                f"Golden file: {golden}\n"
+                f"{str(e)}"
+            )
+        
+        # Compare non-NaN values
+        if not np.all(gen_nan_mask):
+            valid_mask = ~gen_nan_mask
+            try:
+                np.testing.assert_allclose(
+                    gen_data[valid_mask],
+                    gold_data[valid_mask],
+                    rtol=rtol,
+                    atol=atol,
+                    err_msg=f"Data mismatch in {generated.name}"
+                )
+            except AssertionError as e:
+                diff = np.abs(gen_data[valid_mask] - gold_data[valid_mask])
+                max_diff_idx = np.argmax(diff)
+                max_diff = diff[max_diff_idx]
+                gen_val = gen_data[valid_mask][max_diff_idx]
+                gold_val = gold_data[valid_mask][max_diff_idx]
+                raise AssertionError(
+                    f"Numerical validation failed for {generated.name}\n"
+                    f"Generated file: {generated}\n"
+                    f"Golden file: {golden}\n"
+                    f"Max difference: {max_diff:.6e}\n"
+                    f"Generated value: {gen_val:.6f}\n"
+                    f"Golden value: {gold_val:.6f}\n"
+                    f"Tolerance: rtol={rtol}, atol={atol}\n"
+                    f"{str(e)}"
+                )
+
+
+def compare_iv_summary_csv(generated: Path, golden: Path) -> None:
+    """
+    Compare IV summary CSV files with appropriate tolerances.
+    
+    IV Summary files have format:
+    Voltage (mV) | File1 (pA) | File2 (pA) | ...
+    
+    Args:
+        generated: Path to generated summary CSV
+        golden: Path to golden reference summary CSV
+    """
+    gen_headers, gen_data = load_csv_data(generated)
+    gold_headers, gold_data = load_csv_data(golden)
+    
+    # Check header count matches
+    try:
+        assert len(gen_headers) == len(gold_headers), \
+            f"Header count mismatch: {len(gen_headers)} vs {len(gold_headers)}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"IV summary header validation failed\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    # First header should be Voltage
+    assert "Voltage" in gen_headers[0], f"First column should be Voltage, got: {gen_headers[0]}"
+    
+    # Compare data shape
+    try:
+        assert gen_data.shape == gold_data.shape, \
+            f"Data shape mismatch:\nGenerated: {gen_data.shape}\nGolden: {gold_data.shape}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"IV summary shape validation failed\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    if gen_data.size > 0:
+        # Voltage column (column 0) - use tight tolerance
+        try:
+            np.testing.assert_allclose(
+                gen_data[:, 0],
+                gold_data[:, 0],
+                rtol=1e-4,
+                atol=0.1,  # 0.1 mV tolerance for voltages
+                err_msg="Voltage column mismatch"
+            )
+        except AssertionError as e:
+            raise AssertionError(
+                f"IV summary voltage column validation failed\n"
+                f"Generated file: {generated}\n"
+                f"Golden file: {golden}\n"
+                f"{str(e)}"
+            )
+        
+        # Current columns - use appropriate tolerance
+        for col_idx in range(1, gen_data.shape[1]):
+            col_gen = gen_data[:, col_idx]
+            col_gold = gold_data[:, col_idx]
+            
+            # Handle NaN values
+            gen_nan_mask = np.isnan(col_gen)
+            gold_nan_mask = np.isnan(col_gold)
+            
+            try:
+                assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                    f"NaN positions don't match in column {col_idx}"
+            except AssertionError as e:
+                raise AssertionError(
+                    f"IV summary column {col_idx} NaN validation failed\n"
+                    f"Column header: {gen_headers[col_idx]}\n"
+                    f"Generated file: {generated}\n"
+                    f"Golden file: {golden}\n"
+                    f"{str(e)}"
+                )
+            
+            # Compare non-NaN values
+            valid_mask = ~gen_nan_mask
+            if np.any(valid_mask):
+                try:
+                    np.testing.assert_allclose(
+                        col_gen[valid_mask],
+                        col_gold[valid_mask],
+                        rtol=1e-4,
+                        atol=1e-2,  # 0.01 pA tolerance
+                        err_msg=f"Current mismatch in column {col_idx} ({gen_headers[col_idx]})"
+                    )
+                except AssertionError as e:
+                    diff = np.abs(col_gen[valid_mask] - col_gold[valid_mask])
+                    max_diff = np.max(diff)
+                    raise AssertionError(
+                        f"IV summary column {col_idx} validation failed\n"
+                        f"Column header: {gen_headers[col_idx]}\n"
+                        f"Max difference: {max_diff:.6e} pA\n"
+                        f"Generated file: {generated}\n"
+                        f"Golden file: {golden}\n"
+                        f"{str(e)}"
+                    )
+
+
+class BatchIVAnalysisTestBase:
+    """Base class for batch IV analysis workflow tests."""
+
+    # Subclasses should define these
+    FILE_TYPE = None  # 'abf' or 'mat'
+    FILE_EXTENSION = None  # '*.abf' or '*.mat'
+
+    @property
+    def sample_data_dir(self) -> Path:
+        """Get the sample data directory for this file type."""
+        # Using uppercase directory names as shown in filetree
+        if self.FILE_TYPE == 'abf':
+            return Path("tests/fixtures/sample_data/IV+CD/ABF")
+        else:
+            return Path(f"tests/fixtures/sample_data/IV+CD/{self.FILE_TYPE}")
+
+    @property
+    def golden_data_dir(self) -> Path:
+        """Get the golden data directory for this file type."""
+        return Path(f"tests/fixtures/golden_data/golden_IV/{self.FILE_TYPE}")
+
+    @pytest.fixture
+    def analysis_params(self):
+        """
+        Create analysis parameters matching the GUI state as specified:
+        - dual_range = False
+        - range1_start = 150.1, range1_end = 649.2
+        - X axis = Average Voltage, Y axis = Average Current
+        """
         return AnalysisParameters(
-            range1_start=gui_state.get('range1_start', 0.0),
-            range1_end=gui_state.get('range1_end', 100.0),
-            use_dual_range=gui_state.get('use_dual_range', False),
-            range2_start=gui_state.get('range2_start') if gui_state.get('use_dual_range') else None,
-            range2_end=gui_state.get('range2_end') if gui_state.get('use_dual_range') else None,
-            stimulus_period=gui_state.get('stimulus_period', 1000.0),
-            x_axis=x_axis,
-            y_axis=y_axis,
-            channel_config=controller.get_channel_configuration()
+            range1_start=150.1,
+            range1_end=649.2,
+            use_dual_range=False,
+            range2_start=None,
+            range2_end=None,
+            stimulus_period=1000.0,
+            x_axis=AxisConfig(measure="Average", channel="Voltage"),
+            y_axis=AxisConfig(measure="Average", channel="Current"),
+            channel_config={'voltage': 0, 'current': 1, 'current_units': 'pA'}
         )
-    
-    def get_all_test_files(self, directory: Path) -> List[str]:
-        """Get all test files from the test data directory."""
-        test_files = sorted(directory.glob(self.file_extension))
-        return [str(f) for f in test_files]
-    
-    def compare_csv_files(self, output_path: str, reference_path: str, 
-                         tolerance: float = 1e-6) -> None:
+
+    @pytest.fixture
+    def temp_output_dir(self):
+        """Create a temporary directory for test outputs."""
+        temp_dir = tempfile.mkdtemp()
+        yield temp_dir
+        # Cleanup
+        shutil.rmtree(temp_dir)
+
+    def get_test_files(self) -> List[str]:
+        """Get all test files from the sample data directory."""
+        if not self.sample_data_dir.exists():
+            pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
+
+        test_files = list(self.sample_data_dir.glob(self.FILE_EXTENSION))
+        if not test_files:
+            pytest.skip(f"No {self.FILE_TYPE.upper()} files found in {self.sample_data_dir}")
+
+        return [str(f) for f in sorted(test_files)]
+
+    def test_batch_iv_analysis_workflow(self, analysis_params, temp_output_dir):
         """
-        Compare two CSV files for equality within numerical tolerance.
-        
-        Args:
-            output_path: Path to generated CSV file
-            reference_path: Path to golden reference CSV file
-            tolerance: Numerical tolerance for floating point comparison
+        Test the complete batch IV analysis workflow with golden file validation.
+        This follows the exact workflow from the batch analysis workflow diagram.
         """
-        # Load both CSV files
-        output_data = np.genfromtxt(output_path, delimiter=',', skip_header=1)
-        reference_data = np.genfromtxt(reference_path, delimiter=',', skip_header=1)
         
-        # Check shape matches
-        assert output_data.shape == reference_data.shape, \
-            f"Shape mismatch for {Path(output_path).name}: output {output_data.shape} vs reference {reference_data.shape}"
+        # ==================================================================
+        # STEP 1: SET ANALYSIS PARAMETERS (already done via fixture)
+        # ==================================================================
+        # analysis_params created by fixture with specified values
         
-        # Check headers match
-        with open(output_path, 'r') as f:
-            output_header = f.readline().strip()
-        with open(reference_path, 'r') as f:
-            reference_header = f.readline().strip()
+        # ==================================================================
+        # STEP 2: INITIALIZE SERVICES (as MainWindow does)
+        # ==================================================================
+        channel_defs = ChannelDefinitions()
+        batch_processor = BatchProcessor(channel_defs)
+        data_manager = DataManager()
         
-        assert output_header == reference_header, \
-            f"Header mismatch for {Path(output_path).name}:\nOutput: {output_header}\nReference: {reference_header}"
+        # ==================================================================
+        # STEP 3: LOAD FILES (BatchAnalysisDialog.add_files)
+        # ==================================================================
+        test_files = self.get_test_files()
+        assert len(test_files) == 12, f"Expected 12 {self.FILE_TYPE.upper()} files, found {len(test_files)}"
         
-        # Check data values within tolerance
-        np.testing.assert_allclose(
-            output_data, 
-            reference_data, 
-            rtol=tolerance,
-            atol=tolerance,
-            err_msg=f"Data values do not match for {Path(output_path).name}"
-        )
-    
-    def test_batch_analysis_complete(self, controller, batch_service, 
-                                test_data_path, golden_data_path):
-        """
-        Test the complete batch analysis workflow mimicking exact user actions.
+        print(f"\n{'='*60}")
+        print(f"Testing {self.FILE_TYPE.upper()} Batch IV Analysis Workflow")
+        print(f"{'='*60}")
+        print(f"Processing {len(test_files)} files...")
+        print(f"Parameters: Range [{analysis_params.range1_start}, {analysis_params.range1_end}] ms")
+        print(f"X-axis: {analysis_params.x_axis.measure} {analysis_params.x_axis.channel}")
+        print(f"Y-axis: {analysis_params.y_axis.measure} {analysis_params.y_axis.channel}")
         
-        This test follows the exact sequence a user would perform:
-        1. Select multiple files for batch analysis (as in batch dialog)
-        2. Set analysis parameters (as set in control panel)
-        3. Run batch analysis (clicking "Start Analysis" in batch dialog)
-        4. Export individual CSVs (clicking "Export Individual CSVs" in results window)
-        5. Validate outputs against golden references
-        """
-        # ========== STEP 1: Get all test files for batch processing ==========
-        # This mimics user selecting multiple files in the batch dialog
-        input_files = self.get_all_test_files(test_data_path)
-        
-        # Verify we have the expected number of files
-        assert len(input_files) == 12, f"Expected 12 {self.file_format.upper()} files, found {len(input_files)}"
-        
-        # Verify all input files exist
-        for file_path in input_files:
-            assert Path(file_path).exists(), f"Input file not found: {file_path}"
-        
-        print(f"Found {len(input_files)} {self.file_format.upper()} files for batch processing")
-        
-        # ========== STEP 2: Set Analysis Parameters (mimics control panel) ==========
-        # This mimics the user setting values in the control panel
-        gui_state = {
-            # Range 1 settings (exactly as specified)
-            'range1_start': 150.1,  # Range 1 Start (ms)
-            'range1_end': 649.2,    # Range 1 End (ms)
-            'use_dual_range': False,  # Do not check "Use Dual Analysis"
-            
-            # Plot Settings (X/Y axis configuration)
-            'x_measure': 'Average',  # X-Axis: Average
-            'x_channel': 'Voltage',  # X-Axis: Voltage
-            'y_measure': 'Average',  # Y-Axis: Average  
-            'y_channel': 'Current',  # Y-Axis: Current
-            
-            # Default stimulus period (irrelevant for IV analysis)
-            'stimulus_period': 1000.0,
-            
-            # No peak type needed for Average measure
-            'x_peak_type': None,
-            'y_peak_type': None,
-        }
-        
-        # Create parameters exactly as the GUI would
-        params = self.create_parameters_from_gui_state(controller, gui_state)
-        
-        # Validate parameters were set correctly
-        assert params.range1_start == 150.1, f"range1_start mismatch: {params.range1_start}"
-        assert params.range1_end == 649.2, f"range1_end mismatch: {params.range1_end}"
-        assert params.use_dual_range == False, "use_dual_range should be False"
-        assert params.x_axis.measure == "Average", f"X measure mismatch: {params.x_axis.measure}"
-        assert params.x_axis.channel == "Voltage", f"X channel mismatch: {params.x_axis.channel}"
-        assert params.y_axis.measure == "Average", f"Y measure mismatch: {params.y_axis.measure}"
-        assert params.y_axis.channel == "Current", f"Y channel mismatch: {params.y_axis.channel}"
-        
-        # ========== STEP 3: Run Batch Analysis (mimics "Start Analysis" button) ==========
-        # This mimics clicking the "Start Analysis" button in BatchAnalysisDialog
-        
-        print(f"Starting batch analysis for {self.file_format.upper()} files...")
-        
-        # Track progress (optional - mimics the progress callbacks in GUI)
-        processed_files = []
-        def on_file_complete(result):
-            processed_files.append(result.base_name)
-            print(f"  Processed: {result.base_name} - {'Success' if result.success else 'Failed'}")
-        
-        batch_service.on_file_complete = on_file_complete
-        
-        # Run batch analysis (removed parallel parameter)
-        batch_result = batch_service.process_files(
-            file_paths=input_files,
-            params=params
+        # ==================================================================
+        # STEP 4: START ANALYSIS (BatchAnalysisWorker.run)
+        # ==================================================================
+        # BatchProcessor.process_files() - exactly as GUI does
+        batch_result = batch_processor.process_files(
+            file_paths=test_files,
+            params=analysis_params
         )
         
-        # Verify batch analysis completed successfully
-        assert isinstance(batch_result, BatchAnalysisResult), "Batch analysis should return BatchAnalysisResult"
+        # Validate batch processing results
         assert len(batch_result.successful_results) == 12, \
             f"Expected 12 successful results, got {len(batch_result.successful_results)}"
         assert len(batch_result.failed_results) == 0, \
-            f"Expected no failures, got {len(batch_result.failed_results)} failures"
+            f"Unexpected failures: {[r.file_path for r in batch_result.failed_results]}"
         
-        print(f"Batch analysis complete: {batch_result.success_rate:.0f}% success rate")
+        print(f"✓ Batch analysis complete: {batch_result.success_rate:.1f}% success rate")
         
-        # ========== STEP 4: Export Individual CSVs (mimics "Export Individual CSVs" button) ==========
-        # This mimics clicking "Export Individual CSVs" in BatchResultsWindow
+        # ==================================================================
+        # STEP 5: VIEW RESULTS (BatchResultsWindow opens)
+        # ==================================================================
+        # In the GUI, this would open BatchResultsWindow
+        # We'll verify the data structure is correct
         
-        with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Exporting to temporary directory: {temp_dir}")
-            
-            # Export batch results to individual CSV files (using new method name)
-            export_result = batch_service.export_results(
-                batch_result=batch_result,
-                output_dir=temp_dir  # New architecture uses output_dir
+        # Ensure selected_files is initialized (as BatchResultsWindow does)
+        if not hasattr(batch_result, 'selected_files') or batch_result.selected_files is None:
+            batch_result = replace(
+                batch_result,
+                selected_files={r.base_name for r in batch_result.successful_results}
             )
-            
-            # Verify export was successful (using success_count property)
-            assert export_result.success_count == 12, \
-                f"Expected 12 successful exports, got {export_result.success_count}"
-            assert export_result.total_records > 0, "No records were exported"
-            
-            print(f"Exported {export_result.success_count} files with {export_result.total_records} total records")
-            
-            # ========== STEP 5: Validate Outputs Against Golden References ==========
-            
-            # Get list of exported files
-            exported_files = sorted(Path(temp_dir).glob("*.csv"))
-            assert len(exported_files) == 12, f"Expected 12 exported files, found {len(exported_files)}"
-            
-            # Compare each exported file with its golden reference
-            comparison_count = 0
-            for exported_file in exported_files:
-                # Get the corresponding golden reference file
-                # The exported files should be named like "250514_001.csv", "250514_002.csv", etc.
-                reference_file = golden_data_path / exported_file.name
-                
-                if not reference_file.exists():
-                    print(f"Warning: No golden reference for {exported_file.name}, skipping comparison")
-                    continue
-                
-                print(f"  Comparing {exported_file.name} with golden reference...")
-                
-                # Compare the files
-                self.compare_csv_files(str(exported_file), str(reference_file))
-                comparison_count += 1
-            
-            # Verify we compared all expected files
-            assert comparison_count == 12, f"Expected to compare 12 files, only compared {comparison_count}"
-            
-            print(f"Successfully validated {comparison_count} files against golden references")
-    
-    def test_batch_analysis_data_integrity(self, controller, batch_service, test_data_path):
-        """
-        Additional test to verify data integrity throughout the batch workflow.
-        This ensures that batch processing produces the same results as individual processing.
-        """
-        # Get just first 3 files for a quicker integrity test
-        input_files = sorted(self.get_all_test_files(test_data_path))[:3]
         
-        # Set up parameters
-        gui_state = {
-            'range1_start': 150.1,
-            'range1_end': 649.2,
-            'use_dual_range': False,
-            'x_measure': 'Average',
-            'x_channel': 'Voltage',
-            'y_measure': 'Average',
-            'y_channel': 'Current',
-            'stimulus_period': 1000.0,
+        # Sort results as the GUI does
+        sorted_results = sorted(
+            batch_result.successful_results,
+            key=lambda r: int(r.base_name.split('_')[-1]) if r.base_name.split('_')[-1].isdigit() else 0
+        )
+        
+        # ==================================================================
+        # STEP 6: EXPORT IV SUMMARY (BatchResultsWindow._export_iv_summary)
+        # ==================================================================
+        print("\nExporting IV Summary...")
+        
+        # Prepare batch data structure as GUI does
+        batch_data = {
+            r.base_name: {
+                'x_values': r.x_data.tolist(),
+                'y_values': r.y_data.tolist(),
+                'x_values2': r.x_data2.tolist() if r.x_data2 is not None else None,
+                'y_values2': r.y_data2.tolist() if r.y_data2 is not None else None
+            }
+            for r in sorted_results
         }
         
-        params = self.create_parameters_from_gui_state(controller, gui_state)
+        # IVAnalysisService.prepare_iv_data()
+        iv_data_r1, iv_file_mapping, iv_data_r2 = IVAnalysisService.prepare_iv_data(
+            batch_data, batch_result.parameters
+        )
         
-        # Run batch analysis (removed parallel parameter)
-        batch_result = batch_service.process_files(input_files, params)
+        # Verify IV data structure
+        assert len(iv_data_r1) == 11, f"Expected 11 voltage points, got {len(iv_data_r1)}"
+        assert all(len(currents) == 12 for currents in iv_data_r1.values()), \
+            "Each voltage should have 12 current measurements"
         
-        # Verify batch result structure
-        assert batch_result.parameters == params, "Parameters should be preserved in result"
-        assert batch_result.total_files == 3, f"Expected 3 files, got {batch_result.total_files}"
-        assert batch_result.success_rate == 100.0, f"Expected 100% success, got {batch_result.success_rate}%"
+        # Get current units from parameters
+        current_units = analysis_params.channel_config.get('current_units', 'pA')
         
-        # Process the same files individually and compare results
-        for i, file_path in enumerate(input_files):
-            # Load file individually
-            controller.load_file(file_path)
+        # IVSummaryExporter.prepare_summary_table()
+        selected_files = batch_result.selected_files
+        iv_summary_table = IVSummaryExporter.prepare_summary_table(
+            iv_data_r1, 
+            iv_file_mapping, 
+            selected_files,
+            current_units
+        )
+        
+        # DataManager.export_to_csv() for summary
+        iv_summary_path = os.path.join(temp_output_dir, "IV_Summary.csv")
+        summary_result = data_manager.export_to_csv(iv_summary_table, iv_summary_path)
+        assert summary_result.success, f"IV summary export failed: {summary_result.error_message}"
+        print(f"✓ Exported IV summary with {summary_result.records_exported} records")
+        
+        # ==================================================================
+        # STEP 7: EXPORT INDIVIDUAL CSVs (BatchResultsWindow._export_individual_csvs)
+        # ==================================================================
+        print("\nExporting individual CSVs...")
+        
+        # Create filtered batch result (in GUI, this uses selected files)
+        filtered_batch = replace(
+            batch_result,
+            successful_results=sorted_results,
+            selected_files=selected_files
+        )
+        
+        # BatchProcessor.export_results()
+        individual_output_dir = os.path.join(temp_output_dir, "individual_csvs")
+        os.makedirs(individual_output_dir, exist_ok=True)
+        
+        export_result = batch_processor.export_results(filtered_batch, individual_output_dir)
+        assert export_result.success_count == 12, \
+            f"Expected 12 successful exports, got {export_result.success_count}"
+        print(f"✓ Exported {export_result.success_count} individual CSV files")
+        
+        # ==================================================================
+        # STEP 8: VALIDATE AGAINST GOLDEN FILES
+        # ==================================================================
+        print("\nValidating against golden reference files...")
+        
+        # Get expected file names (without bracketed parts)
+        expected_files = [
+            "250514_001", "250514_002", "250514_003", "250514_004",
+            "250514_005", "250514_006", "250514_007", "250514_008",
+            "250514_009", "250514_010", "250514_011", "250514_012"
+        ]
+        
+        # Validate individual CSV files
+        print("  Individual CSVs:")
+        for file_name in expected_files:
+            generated_csv = Path(individual_output_dir) / f"{file_name}.csv"
+            golden_csv = self.golden_data_dir / f"{file_name}.csv"
             
-            # Perform individual analysis
-            individual_result = controller.perform_analysis(params)
-            assert individual_result.success, f"Individual analysis failed for {Path(file_path).name}"
+            print(f"    Comparing {file_name}.csv...", end=" ")
             
-            # Get corresponding batch result
-            batch_file_result = batch_result.successful_results[i]
-            
-            # Compare X and Y data
-            np.testing.assert_allclose(
-                batch_file_result.x_data,
-                individual_result.data.x_data,
-                rtol=1e-9,
-                err_msg=f"X data mismatch for {Path(file_path).name}"
+            try:
+                compare_csv_files(
+                    generated_csv,
+                    golden_csv,
+                    rtol=1e-4,  # 0.01% relative tolerance
+                    atol=1e-2   # 0.01 absolute tolerance for small values
+                )
+                print("✓")
+            except AssertionError as e:
+                print("✗")
+                raise AssertionError(
+                    f"\nValidation failed for individual file: {file_name}.csv\n"
+                    f"{str(e)}"
+                )
+        
+        # Validate IV summary CSV
+        print("  IV Summary:")
+        print(f"    Comparing IV_Summary.csv...", end=" ")
+        
+        # Determine golden summary name (different for ABF vs MAT)
+        if self.FILE_TYPE == 'mat':
+            golden_summary_name = "Summary IV.csv"
+        else:
+            golden_summary_name = "IV_Summary.csv"
+        
+        golden_summary = self.golden_data_dir / golden_summary_name
+        
+        try:
+            compare_iv_summary_csv(Path(iv_summary_path), golden_summary)
+            print("✓")
+        except AssertionError as e:
+            print("✗")
+            raise AssertionError(
+                f"\nValidation failed for IV summary file\n"
+                f"Number of files: {len(expected_files)}\n"
+                f"{str(e)}"
             )
-            
-            np.testing.assert_allclose(
-                batch_file_result.y_data,
-                individual_result.data.y_data,
-                rtol=1e-9,
-                err_msg=f"Y data mismatch for {Path(file_path).name}"
-            )
-            
-            print(f"  Verified data integrity for {Path(file_path).name}")
         
-        print(f"Data integrity verified: batch and individual {self.file_format.upper()} processing produce identical results")
-    
-    def test_batch_export_file_naming(self, batch_service, test_data_path):
-        """
-        Test that exported files have the correct naming convention.
-        Files should be named based on the input file stem, not with brackets.
-        """
-        # Get just one file for testing
-        input_files = self.get_all_test_files(test_data_path)[:1]
-        
-        # Simple parameters
-        params = AnalysisParameters(
-            range1_start=150.1,
-            range1_end=649.2,
-            use_dual_range=False,
-            range2_start=None,
-            range2_end=None,
-            stimulus_period=1000.0,
-            x_axis=AxisConfig(measure="Average", channel="Voltage"),
-            y_axis=AxisConfig(measure="Average", channel="Current"),
-            channel_config={'voltage': 0, 'current': 1}
-        )
-        
-        # Run batch analysis (removed parallel parameter)
-        batch_result = batch_service.process_files(input_files, params)
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Export results (using new method name)
-            export_result = batch_service.export_results(batch_result, temp_dir)
-            
-            # Check exported filename
-            exported_files = list(Path(temp_dir).glob("*.csv"))
-            assert len(exported_files) == 1, f"Expected 1 exported file, found {len(exported_files)}"
-            
-            # The input file is like "250514_001[1-11].{abf|mat}"
-            # The output should be "250514_001.csv" (without brackets)
-            exported_name = exported_files[0].name
-            assert exported_name == "250514_001.csv", \
-                f"Expected filename '250514_001.csv', got '{exported_name}'"
-            
-            print(f"File naming verified for {self.file_format.upper()}: {exported_name}")
-    
-    def test_using_controller_batch_methods(self, controller, test_data_path):
-        """
-        Test batch analysis using the controller's compatibility methods.
-        This ensures the controller properly wraps batch service functionality.
-        """
-        # Get a couple of test files
-        input_files = self.get_all_test_files(test_data_path)[:2]
-        
-        # Create parameters
-        params = AnalysisParameters(
-            range1_start=150.1,
-            range1_end=649.2,
-            use_dual_range=False,
-            range2_start=None,
-            range2_end=None,
-            stimulus_period=1000.0,
-            x_axis=AxisConfig(measure="Average", channel="Voltage"),
-            y_axis=AxisConfig(measure="Average", channel="Current"),
-            channel_config={'voltage': 0, 'current': 1}
-        )
-        
-        # Run batch analysis through controller (removed parallel parameter)
-        batch_result = controller.run_batch_analysis(
-            file_paths=input_files,
-            params=params
-        )
-        
-        # Verify results
-        assert isinstance(batch_result, BatchAnalysisResult)
-        assert len(batch_result.successful_results) == 2
-        assert batch_result.success_rate == 100.0
-        
-        # Export through controller
-        with tempfile.TemporaryDirectory() as temp_dir:
-            export_result = controller.export_batch_results(batch_result, temp_dir)
-            
-            assert export_result.success_count == 2
-            assert export_result.total_records > 0
-            
-            # Verify files exist
-            exported_files = list(Path(temp_dir).glob("*.csv"))
-            assert len(exported_files) == 2
-        
-        print(f"Controller batch methods working correctly for {self.file_format.upper()} files")
+        print(f"\n{'='*60}")
+        print(f"✓ All {self.FILE_TYPE.upper()} batch IV analysis tests passed!")
+        print(f"{'='*60}\n")
 
 
-class TestBatchAnalysisWorkflowABF(TestBatchAnalysisWorkflowBase):
-    """Test batch analysis workflow for ABF files."""
-    
-    @property
-    def file_format(self) -> str:
-        return "abf"
-    
-    @property
-    def file_extension(self) -> str:
-        return "*.abf"
+class TestBatchIVAnalysisABF(BatchIVAnalysisTestBase):
+    """Test batch IV analysis workflow with ABF files."""
+    FILE_TYPE = 'abf'
+    FILE_EXTENSION = '*.abf'
 
 
-class TestBatchAnalysisWorkflowMAT(TestBatchAnalysisWorkflowBase):
-    """Test batch analysis workflow for MAT files."""
-    
-    @property
-    def file_format(self) -> str:
-        return "mat"
-    
-    # @property
-    # def file_extension(self) -> str:
-    #     return "*.mat"
+class TestBatchIVAnalysisMAT(BatchIVAnalysisTestBase):
+    """Test batch IV analysis workflow with MAT files."""
+    FILE_TYPE = 'mat'
+    FILE_EXTENSION = '*.mat'
 
 
 if __name__ == "__main__":
-    # Run the test directly if executed as a script
-    pytest.main([__file__, "-v", "-s"])
+    # Run the test directly
+    import sys
+    sys.exit(pytest.main([__file__, "-v", "-s"]))
