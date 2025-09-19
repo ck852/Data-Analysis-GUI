@@ -169,7 +169,10 @@ def apply_settings_to_main_window(main_window, settings: dict):
         if hasattr(main_window, 'channel_definitions'):
             main_window.channel_definitions.swap_channels()
             if hasattr(main_window, 'channel_toggle'):
+                # Block signals to prevent triggering another swap
+                main_window.channel_toggle.blockSignals(True)
                 main_window.channel_toggle.set_swapped(True)
+                main_window.channel_toggle.blockSignals(False)
             if hasattr(main_window, 'control_panel'):
                 main_window.control_panel.set_swap_state(True)
     

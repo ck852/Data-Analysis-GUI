@@ -110,16 +110,6 @@ class MainWindow(QMainWindow):
         # Configure window
         self.setWindowTitle("Electrophysiology Data Analysis")
         
-        # Initialize default values for settings that may be loaded
-        self.last_channel_view = 'Voltage'
-        self.last_directory = None
-
-        self.current_units = 'pA'  # Default current units
-
-        # Initialize channel toggle to prevent signal loops during settings loading
-        if hasattr(self, 'channel_toggle'):
-            self.channel_toggle.set_swapped(False)
-        
         # Load and apply settings immediately (shows user's last configuration)
         saved_settings = load_session_settings()
         if saved_settings:
