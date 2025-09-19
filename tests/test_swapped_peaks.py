@@ -17,7 +17,6 @@ This test validates the channel swapping feature with peak analysis by:
 
 import pytest
 import numpy as np
-import pandas as pd
 from pathlib import Path
 import tempfile
 import shutil

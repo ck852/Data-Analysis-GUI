@@ -11,7 +11,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 - See README for full description
 
 ### Changed
-- Updated dependency versions for PySide6, pandas, numpy, scipy, matplotlib, and pyabf.
+- Updated dependency versions for PySide6, numpy, scipy, matplotlib, and pyabf.
 - Polished GUI layout and parameter handling.
 
 ### Known Issues

@@ -14,18 +14,14 @@ It uses the actual components rather than duplicating their logic.
 """
 
 import pytest
-import tempfile
-import shutil
 from pathlib import Path
 import numpy as np
-import pandas as pd
+import csv
 
 # Import the exact same components used in the GUI workflow
 from data_analysis_gui.core.app_controller import ApplicationController
 from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
 from data_analysis_gui.core.channel_definitions import ChannelDefinitions
-from data_analysis_gui.services.batch_processor import BatchProcessor
-from data_analysis_gui.services.data_manager import DataManager
 
 
 class TestDualRangeBatchWorkflow:
@@ -138,29 +134,51 @@ class TestDualRangeBatchWorkflow:
             rtol: Relative tolerance for numeric comparison
             atol: Absolute tolerance for numeric comparison
         """
-        # Read both CSVs
-        generated = pd.read_csv(generated_path)
-        golden = pd.read_csv(golden_path)
+        # Helper function to load CSV data
+        def load_csv_data(filepath):
+            """Load CSV headers and data array from file."""
+            with open(filepath, 'r') as f:
+                reader = csv.reader(f)
+                headers = next(reader)
+                # Remove '#' prefix if present
+                if headers[0].startswith('#'):
+                    headers[0] = headers[0][1:].strip()
+                data = []
+                for row in reader:
+                    data.append([float(val) if val and val != 'nan' else np.nan for val in row])
+            return headers, np.array(data)
+        
+        # Load both files
+        gen_headers, gen_data = load_csv_data(generated_path)
+        gold_headers, gold_data = load_csv_data(golden_path)
+        
+        # Check headers
+        assert gen_headers == gold_headers, \
+            f"Headers mismatch:\nGenerated: {gen_headers}\nGolden: {gold_headers}"
         
         # Check shape
-        assert generated.shape == golden.shape, \
-            f"Shape mismatch: generated {generated.shape} vs golden {golden.shape}"
-        
-        # Check column names
-        assert list(generated.columns) == list(golden.columns), \
-            f"Column mismatch: {list(generated.columns)} vs {list(golden.columns)}"
+        assert gen_data.shape == gold_data.shape, \
+            f"Shape mismatch: generated {gen_data.shape} vs golden {gold_data.shape}"
         
         # Compare numeric data
-        for col in generated.columns:
-            generated_col = generated[col].values
-            golden_col = golden[col].values
+        if gen_data.size > 0:
+            # Check for NaN positions matching
+            gen_nan_mask = np.isnan(gen_data)
+            gold_nan_mask = np.isnan(gold_data)
             
-            # Use numpy's allclose for numeric comparison
-            np.testing.assert_allclose(
-                generated_col, golden_col, 
-                rtol=rtol, atol=atol,
-                err_msg=f"Mismatch in column '{col}'"
-            )
+            assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                f"NaN positions don't match"
+            
+            # Compare non-NaN values
+            if not np.all(gen_nan_mask):
+                valid_mask = ~gen_nan_mask
+                np.testing.assert_allclose(
+                    gen_data[valid_mask],
+                    gold_data[valid_mask],
+                    rtol=rtol,
+                    atol=atol,
+                    err_msg=f"Data mismatch"
+                )
     
     def _run_dual_range_batch_workflow(self, controller, batch_processor, analysis_parameters, file_format, tmp_path):
         """

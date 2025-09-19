@@ -16,7 +16,7 @@ import os
 import pytest
 import tempfile
 import numpy as np
-import pandas as pd
+import csv
 from pathlib import Path
 
 from data_analysis_gui.core.app_controller import ApplicationController
@@ -89,7 +89,7 @@ class TestPeakAnalysis:
         )
     
     def compare_csv_files(self, generated_path: str, golden_path: str, 
-                         tolerance: float = 1e-6) -> None:
+                        tolerance: float = 1e-6) -> None:
         """
         Compare generated CSV with golden reference data.
         
@@ -101,37 +101,54 @@ class TestPeakAnalysis:
         Raises:
             AssertionError: If files don't match within tolerance
         """
+        # Helper function to load CSV data
+        def load_csv_data(filepath):
+            """Load CSV headers and data array from file."""
+            with open(filepath, 'r') as f:
+                reader = csv.reader(f)
+                headers = next(reader)
+                # Remove '#' prefix if present
+                if headers[0].startswith('#'):
+                    headers[0] = headers[0][1:].strip()
+                data = []
+                for row in reader:
+                    data.append([float(val) if val and val != 'nan' else np.nan for val in row])
+            return headers, np.array(data)
+        
         # Read both CSV files
-        generated_df = pd.read_csv(generated_path)
-        golden_df = pd.read_csv(golden_path)
+        gen_headers, gen_data = load_csv_data(generated_path)
+        gold_headers, gold_data = load_csv_data(golden_path)
         
         # Check shape matches
-        assert generated_df.shape == golden_df.shape, (
-            f"Shape mismatch: generated {generated_df.shape} "
-            f"vs golden {golden_df.shape}"
+        assert gen_data.shape == gold_data.shape, (
+            f"Shape mismatch: generated {gen_data.shape} "
+            f"vs golden {gold_data.shape}"
         )
         
         # Check column names match
-        assert list(generated_df.columns) == list(golden_df.columns), (
-            f"Column mismatch: {list(generated_df.columns)} "
-            f"vs {list(golden_df.columns)}"
+        assert gen_headers == gold_headers, (
+            f"Column mismatch: {gen_headers} "
+            f"vs {gold_headers}"
         )
         
         # Compare numerical values
-        for col in generated_df.columns:
-            if generated_df[col].dtype in [np.float64, np.float32, np.int64, np.int32]:
-                # Numerical comparison with tolerance
+        if gen_data.size > 0:
+            # Check for NaN positions matching
+            gen_nan_mask = np.isnan(gen_data)
+            gold_nan_mask = np.isnan(gold_data)
+            
+            assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                "NaN positions don't match"
+            
+            # Compare non-NaN values
+            if not np.all(gen_nan_mask):
+                valid_mask = ~gen_nan_mask
                 np.testing.assert_allclose(
-                    generated_df[col].values,
-                    golden_df[col].values,
+                    gen_data[valid_mask],
+                    gold_data[valid_mask],
                     rtol=tolerance,
                     atol=tolerance,
-                    err_msg=f"Mismatch in column '{col}'"
-                )
-            else:
-                # String/other comparison
-                assert (generated_df[col] == golden_df[col]).all(), (
-                    f"Mismatch in non-numeric column '{col}'"
+                    err_msg="Numerical values mismatch"
                 )
     
     @pytest.mark.parametrize("peak_type,expected_file", [
