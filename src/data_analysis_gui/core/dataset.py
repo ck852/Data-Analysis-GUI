@@ -425,8 +425,22 @@ class DatasetLoader:
         Raises:
             IOError: If file cannot be read
             ValueError: If file structure is invalid
+            FileNotFoundError: If file doesn't exist
         """
         file_path = Path(file_path)
+        
+        # Check if file exists and is readable
+        if not file_path.exists():
+            # Check if this might be a glob pattern
+            if '[' in str(file_path) or '*' in str(file_path):
+                raise FileNotFoundError(
+                    f"File path appears to be a pattern, not a file: {file_path}\n"
+                    f"Please provide a specific file path, not a glob pattern."
+                )
+            raise FileNotFoundError(f"File not found: {file_path}")
+        
+        if not file_path.is_file():
+            raise IOError(f"Path is not a file: {file_path}")
         
         # Try scipy first (for older MAT files)
         try:
@@ -448,6 +462,27 @@ class DatasetLoader:
                     raise IOError(f"Failed to load MAT file with h5py: {h5_error}") from h5_error
             else:
                 raise IOError(f"Failed to load MAT file: {e}") from e
+        except (OSError, IOError) as e:
+            # Check for specific error patterns
+            error_str = str(e)
+            if 'Unknown mat file type' in error_str or 'version' in error_str:
+                # This might be a corrupted file or v7.3 file with misleading error
+                try:
+                    import h5py
+                    return DatasetLoader._load_mat_h5py(file_path, channel_map)
+                except ImportError:
+                    # h5py not available, file is likely corrupted
+                    raise IOError(
+                        f"Failed to load MAT file (may be corrupted or unsupported format): {e}"
+                    ) from e
+                except Exception as h5_error:
+                    # Both methods failed, file is likely corrupted
+                    raise IOError(
+                        f"Failed to load MAT file with both scipy and h5py. "
+                        f"File may be corrupted. Original error: {e}"
+                    ) from e
+            else:
+                raise IOError(f"Failed to load MAT file: {e}") from e
         except Exception as e:
             # For any other scipy error, try h5py as fallback
             try:
@@ -455,10 +490,13 @@ class DatasetLoader:
                 return DatasetLoader._load_mat_h5py(file_path, channel_map)
             except ImportError:
                 # If h5py not available, raise the original scipy error
-                raise IOError(f"Failed to load MAT file with scipy: {e}") from e
-            except Exception:
-                # If h5py also fails, raise the original scipy error
                 raise IOError(f"Failed to load MAT file: {e}") from e
+            except Exception as h5_error:
+                # If h5py also fails, provide comprehensive error
+                raise IOError(
+                    f"Failed to load MAT file with scipy ({e}) and h5py ({h5_error}). "
+                    f"File may be corrupted or in an unsupported format."
+                ) from e
     
     @staticmethod
     def _load_mat_scipy(file_path: Path, mat_data: dict, 
