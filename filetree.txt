@@ -67,7 +67,6 @@ streamlining/
 |       |   |-- custom_toolbar.py
 |       |   `-- shared_widgets.py
 |       |-- __init__.py
-|       |-- cli.py
 |       |-- filetree.txt
 |       |-- filetree_full.py
 |       |-- main.py
@@ -252,7 +251,7 @@ streamlining/
 |   |       |   |-- 250202_007[1-234].abf
 |   |       |   `-- 250202_007[1-234].mat
 |   |       |-- IV+CD/
-|   |       |   |-- abf/
+|   |       |   |-- ABF/
 |   |       |   |   |-- 250514_001[1-11].abf
 |   |       |   |   |-- 250514_002[1-11].abf
 |   |       |   |   |-- 250514_003[1-11].abf
@@ -296,11 +295,11 @@ streamlining/
 |   |-- test_peak.py
 |   |-- test_swapped.py
 |   `-- test_swapped_peaks.py
+|-- CHANGELOG.md
 |-- filetree.txt
 |-- filetree_full.py
 |-- LICENSE.md
 |-- pyproject.toml
 |-- pytest.ini
 |-- README.md
-|-- requirements-test.txt
 `-- requirements.txt
