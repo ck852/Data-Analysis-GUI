@@ -394,16 +394,16 @@ class TestSwappedPeaksBase(ABC):
             f"Not all files exported successfully for {peak_mode} mode"
 
 
-# class TestSwappedPeaksMAT(TestSwappedPeaksBase):
-#     """Test Swap Channels with Peak Analysis for MAT files."""
+class TestSwappedPeaksMAT(TestSwappedPeaksBase):
+    """Test Swap Channels with Peak Analysis for MAT files."""
     
-#     @property
-#     def file_format(self) -> str:
-#         return "mat"
+    @property
+    def file_format(self) -> str:
+        return "mat"
     
-#     @property
-#     def file_extension(self) -> str:
-#         return "mat"
+    @property
+    def file_extension(self) -> str:
+        return "mat"
 
 
 class TestSwappedPeaksABF(TestSwappedPeaksBase):

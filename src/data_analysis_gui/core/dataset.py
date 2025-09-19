@@ -413,6 +413,8 @@ class DatasetLoader:
         - T{n}: Time vectors for sweep n
         - Y{n}: Data matrices for sweep n
         
+        Supports both traditional MAT files (via scipy) and v7.3+ MAT files (via h5py).
+        
         Args:
             file_path: Path to the MAT file
             channel_map: Optional ChannelDefinitions instance for channel labeling
@@ -426,11 +428,52 @@ class DatasetLoader:
         """
         file_path = Path(file_path)
         
+        # Try scipy first (for older MAT files)
         try:
             mat_data = scipy.io.loadmat(str(file_path))
+            return DatasetLoader._load_mat_scipy(file_path, mat_data, channel_map)
+        except NotImplementedError as e:
+            # This specific error occurs with v7.3 MAT files
+            if 'v7.3' in str(e) or 'HDF' in str(e):
+                # Try h5py for v7.3+ MAT files
+                try:
+                    import h5py
+                    return DatasetLoader._load_mat_h5py(file_path, channel_map)
+                except ImportError:
+                    raise ImportError(
+                        "This appears to be a MATLAB v7.3+ file which requires h5py. "
+                        "Install with: pip install h5py"
+                    ) from e
+                except Exception as h5_error:
+                    raise IOError(f"Failed to load MAT file with h5py: {h5_error}") from h5_error
+            else:
+                raise IOError(f"Failed to load MAT file: {e}") from e
         except Exception as e:
-            raise IOError(f"Failed to load MAT file: {e}")
+            # For any other scipy error, try h5py as fallback
+            try:
+                import h5py
+                return DatasetLoader._load_mat_h5py(file_path, channel_map)
+            except ImportError:
+                # If h5py not available, raise the original scipy error
+                raise IOError(f"Failed to load MAT file with scipy: {e}") from e
+            except Exception:
+                # If h5py also fails, raise the original scipy error
+                raise IOError(f"Failed to load MAT file: {e}") from e
+    
+    @staticmethod
+    def _load_mat_scipy(file_path: Path, mat_data: dict, 
+                        channel_map: Optional[Any] = None) -> ElectrophysiologyDataset:
+        """
+        Load MAT file data using scipy structure.
         
+        Args:
+            file_path: Path to the MAT file
+            mat_data: Dictionary loaded by scipy.io.loadmat
+            channel_map: Optional ChannelDefinitions instance
+        
+        Returns:
+            Dataset containing all sweeps
+        """
         # Create dataset
         dataset = ElectrophysiologyDataset()
         
@@ -489,6 +532,103 @@ class DatasetLoader:
             dt_ms = np.mean(np.diff(time_ms))
             if dt_ms > 0:
                 dataset.metadata['sampling_rate_hz'] = 1000.0 / dt_ms
+        
+        # Apply channel mapping if provided
+        if channel_map is not None:
+            DatasetLoader._apply_channel_mapping(dataset, channel_map)
+        
+        return dataset
+    
+    @staticmethod
+    def _load_mat_h5py(file_path: Path, 
+                       channel_map: Optional[Any] = None) -> ElectrophysiologyDataset:
+        """
+        Load a MATLAB v7.3+ file using h5py.
+        
+        Args:
+            file_path: Path to the MAT file
+            channel_map: Optional ChannelDefinitions instance
+        
+        Returns:
+            Dataset containing all sweeps
+        """
+        import h5py
+        
+        dataset = ElectrophysiologyDataset()
+        
+        with h5py.File(str(file_path), 'r') as f:
+            # Find all T{n}/Y{n} pairs
+            sweep_indices = []
+            for key in f.keys():
+                if key.startswith('T') and not key.startswith('__'):
+                    index = key[1:]
+                    if f'Y{index}' in f:
+                        sweep_indices.append(index)
+            
+            if not sweep_indices:
+                raise ValueError(
+                    "No valid sweep data found in MAT file. "
+                    "Expected T{n} and Y{n} variable pairs."
+                )
+            
+            # Sort sweep indices
+            try:
+                sweep_indices.sort(key=int)
+            except ValueError:
+                sweep_indices.sort()
+            
+            # Load each sweep
+            for index in sweep_indices:
+                time_key = f'T{index}'
+                data_key = f'Y{index}'
+                
+                # Extract time vector
+                time_data = f[time_key]
+                if isinstance(time_data, h5py.Dataset):
+                    time_s = np.array(time_data).squeeze()
+                else:
+                    # Handle reference (MATLAB sometimes stores as references)
+                    time_s = np.array(f[time_data[0, 0]]).squeeze()
+                
+                # Convert to milliseconds
+                time_ms = time_s * 1000.0
+                
+                # Extract data matrix
+                data_obj = f[data_key]
+                if isinstance(data_obj, h5py.Dataset):
+                    data = np.array(data_obj)
+                else:
+                    # Handle reference
+                    data = np.array(f[data_obj[0, 0]])
+                
+                # MATLAB stores data in column-major (Fortran) order
+                # h5py reads it transposed, so we may need to transpose back
+                if data.shape[0] != len(time_ms) and data.shape[1] == len(time_ms):
+                    data = data.T
+                
+                # Ensure data is 2D
+                if data.ndim == 1:
+                    data = data.reshape(-1, 1)
+                elif data.ndim > 2:
+                    data = np.squeeze(data)
+                    if data.ndim == 1:
+                        data = data.reshape(-1, 1)
+                
+                # Add sweep to dataset
+                dataset.add_sweep(index, time_ms, data)
+        
+        # Set metadata
+        dataset.metadata['format'] = 'matlab_v73'
+        dataset.metadata['source_file'] = str(file_path)
+        
+        # Estimate sampling rate
+        if sweep_indices:
+            first_index = sweep_indices[0]
+            time_ms, _ = dataset.get_sweep(first_index)
+            if len(time_ms) >= 2:
+                dt_ms = np.mean(np.diff(time_ms))
+                if dt_ms > 0:
+                    dataset.metadata['sampling_rate_hz'] = 1000.0 / dt_ms
         
         # Apply channel mapping if provided
         if channel_map is not None:
