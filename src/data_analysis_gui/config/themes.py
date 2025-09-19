@@ -11,10 +11,24 @@ Simplified for maintainability while preserving modern appearance.
 """
 
 from typing import Optional
-from PySide6.QtWidgets import (QWidget, QPushButton, QApplication, QListWidget, 
-                            QTableWidget, QProgressBar, QLabel, QCheckBox,
-                            QGroupBox, QComboBox, QSpinBox, QDoubleSpinBox,
-                            QLineEdit, QDialog, QMainWindow, QSplitter)
+from PySide6.QtWidgets import (
+    QWidget,
+    QPushButton,
+    QApplication,
+    QListWidget,
+    QTableWidget,
+    QProgressBar,
+    QLabel,
+    QCheckBox,
+    QGroupBox,
+    QComboBox,
+    QSpinBox,
+    QDoubleSpinBox,
+    QLineEdit,
+    QDialog,
+    QMainWindow,
+    QSplitter,
+)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor
 
@@ -24,51 +38,42 @@ from PySide6.QtGui import QPalette, QColor
 
 MODERN_COLORS = {
     # Core action colors
-    'primary': '#0084FF',
-    'secondary': '#6C757D',
-    'success': '#28A745',
-    'warning': '#FFC107',
-    'danger': '#DC3545',
-    
+    "primary": "#0084FF",
+    "secondary": "#6C757D",
+    "success": "#28A745",
+    "warning": "#FFC107",
+    "danger": "#DC3545",
     # UI base colors
-    'background': '#FFFFFF',
-    'surface': '#F8F9FA',
-    'border': '#DEE2E6',
-    'text': '#212529',
-    'text_muted': '#6C757D',
-    
+    "background": "#FFFFFF",
+    "surface": "#F8F9FA",
+    "border": "#DEE2E6",
+    "text": "#212529",
+    "text_muted": "#6C757D",
     # Interactive states
-    'hover': '#E9ECEF',
-    'disabled': '#CCCCCC',
-    'selected': '#E3F2FD',
-    'focus': '#80BDFF'
+    "hover": "#E9ECEF",
+    "disabled": "#CCCCCC",
+    "selected": "#E3F2FD",
+    "focus": "#80BDFF",
 }
 
 # Simple sizing constants
 WIDGET_SIZES = {
-    'button_height': 20,
-    'input_height': 20,
-    'button_min_width': 40,
+    "button_height": 20,
+    "input_height": 20,
+    "button_min_width": 40,
 }
 
 # Simple spacing values
-SPACING = {
-    'border_radius': '3px',
-    'padding': '4px 8px',
-    'margin': '2px'
-}
+SPACING = {"border_radius": "3px", "padding": "4px 8px", "margin": "2px"}
 
 # Base font settings
 BASE_FONT = "font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;"
-FONT_SIZES = {
-    'normal': '10pt',
-    'large': '11pt',
-    'small': '9pt'
-}
+FONT_SIZES = {"normal": "10pt", "large": "11pt", "small": "9pt"}
 
 # ============================================================================
 # CORE STYLING FUNCTIONS - Simplified API
 # ============================================================================
+
 
 def apply_modern_theme(widget: QWidget) -> None:
     """
@@ -77,11 +82,11 @@ def apply_modern_theme(widget: QWidget) -> None:
     """
     if isinstance(widget, QMainWindow) or isinstance(widget, QDialog):
         widget.setStyleSheet(_get_base_stylesheet())
-        
+
         # Set application palette if main window
         if isinstance(widget, QMainWindow):
             _apply_palette(widget)
-            
+
     elif isinstance(widget, QPushButton):
         style_button(widget)
     elif isinstance(widget, (QLineEdit, QSpinBox, QDoubleSpinBox)):
@@ -102,7 +107,8 @@ def apply_modern_theme(widget: QWidget) -> None:
         style_checkbox(widget)
     elif isinstance(widget, QSplitter):
         # Use minimal splitter styling
-        widget.setStyleSheet(f"""
+        widget.setStyleSheet(
+            f"""
             QSplitter::handle {{
                 background: {MODERN_COLORS['border']};
                 width: 1px;
@@ -110,10 +116,12 @@ def apply_modern_theme(widget: QWidget) -> None:
             QSplitter::handle:hover {{
                 background: {MODERN_COLORS['primary']};
             }}
-        """)
+        """
+        )
     else:
         # Apply base stylesheet for unknown widgets
         widget.setStyleSheet(_get_base_stylesheet())
+
 
 def style_button(button: QPushButton, style_type: str = "secondary") -> None:
     """
@@ -121,37 +129,30 @@ def style_button(button: QPushButton, style_type: str = "secondary") -> None:
     """
     styles = {
         "primary": {
-            'bg': MODERN_COLORS['primary'],
-            'hover': '#0066CC',
-            'text': 'white'
+            "bg": MODERN_COLORS["primary"],
+            "hover": "#0066CC",
+            "text": "white",
         },
         "secondary": {
-            'bg': MODERN_COLORS['surface'],
-            'hover': MODERN_COLORS['hover'],
-            'text': MODERN_COLORS['text'],
-            'border': f"1px solid {MODERN_COLORS['border']}"
+            "bg": MODERN_COLORS["surface"],
+            "hover": MODERN_COLORS["hover"],
+            "text": MODERN_COLORS["text"],
+            "border": f"1px solid {MODERN_COLORS['border']}",
         },
-        "accent": {
-            'bg': MODERN_COLORS['success'],
-            'hover': '#218838',
-            'text': 'white'
-        },
-        "danger": {
-            'bg': MODERN_COLORS['danger'],
-            'hover': '#C82333',
-            'text': 'white'
-        },
+        "accent": {"bg": MODERN_COLORS["success"], "hover": "#218838", "text": "white"},
+        "danger": {"bg": MODERN_COLORS["danger"], "hover": "#C82333", "text": "white"},
         "warning": {
-            'bg': MODERN_COLORS['warning'],
-            'hover': '#E0A800',
-            'text': MODERN_COLORS['text']
-        }
+            "bg": MODERN_COLORS["warning"],
+            "hover": "#E0A800",
+            "text": MODERN_COLORS["text"],
+        },
     }
-    
-    style = styles.get(style_type, styles['secondary'])
-    border = style.get('border', 'none')
-    
-    button.setStyleSheet(f"""
+
+    style = styles.get(style_type, styles["secondary"])
+    border = style.get("border", "none")
+
+    button.setStyleSheet(
+        f"""
         QPushButton {{
             background-color: {style['bg']};
             color: {style['text']};
@@ -176,16 +177,18 @@ def style_button(button: QPushButton, style_type: str = "secondary") -> None:
             color: {MODERN_COLORS['text_muted']};
             border-color: {MODERN_COLORS['border']};
         }}
-    """)
+    """
+    )
+
 
 def style_input_field(widget: QWidget, invalid: bool = False) -> None:
     """
     Style input fields (QLineEdit, QSpinBox, QDoubleSpinBox).
     Handles normal and invalid states.
     """
-    bg_color = '#ffcccc' if invalid else MODERN_COLORS['background']
-    border_color = MODERN_COLORS['danger'] if invalid else MODERN_COLORS['border']
-    
+    bg_color = "#ffcccc" if invalid else MODERN_COLORS["background"]
+    border_color = MODERN_COLORS["danger"] if invalid else MODERN_COLORS["border"]
+
     base_style = f"""
         QLineEdit, QSpinBox, QDoubleSpinBox {{
             border: 1px solid {border_color};
@@ -209,7 +212,7 @@ def style_input_field(widget: QWidget, invalid: bool = False) -> None:
             color: {MODERN_COLORS['text_muted']};
         }}
     """
-    
+
     # Add spinbox-specific styling
     if isinstance(widget, (QSpinBox, QDoubleSpinBox)):
         base_style += f"""
@@ -224,12 +227,14 @@ def style_input_field(widget: QWidget, invalid: bool = False) -> None:
                 background: {MODERN_COLORS['hover']};
             }}
         """
-    
+
     widget.setStyleSheet(base_style)
+
 
 def style_combo_box(widget: QComboBox) -> None:
     """Style a combo box with modern appearance."""
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QComboBox {{
             border: 1px solid {MODERN_COLORS['border']};
             border-radius: {SPACING['border_radius']};
@@ -268,28 +273,68 @@ def style_combo_box(widget: QComboBox) -> None:
             selection-background-color: {MODERN_COLORS['selected']};
             padding: 2px;
         }}
-    """)
-
-def style_label(widget: QLabel, style_type: str = 'normal') -> None:
     """
-    Style a label. Types: normal, heading, subheading, muted, caption, 
+    )
+
+
+def style_label(widget: QLabel, style_type: str = "normal") -> None:
+    """
+    Style a label. Types: normal, heading, subheading, muted, caption,
     info, success, warning, error
     """
     styles = {
-        'normal': {'color': MODERN_COLORS['text'], 'size': FONT_SIZES['normal'], 'weight': 'normal'},
-        'heading': {'color': MODERN_COLORS['text'], 'size': FONT_SIZES['large'], 'weight': 'bold'},
-        'subheading': {'color': MODERN_COLORS['text'], 'size': FONT_SIZES['normal'], 'weight': '500'},
-        'muted': {'color': MODERN_COLORS['text_muted'], 'size': FONT_SIZES['small'], 'weight': 'normal'},
-        'caption': {'color': MODERN_COLORS['text_muted'], 'size': FONT_SIZES['small'], 'weight': 'normal', 'style': 'italic'},
-        'info': {'color': MODERN_COLORS['primary'], 'size': FONT_SIZES['normal'], 'weight': '500'},
-        'success': {'color': MODERN_COLORS['success'], 'size': FONT_SIZES['normal'], 'weight': '500'},
-        'warning': {'color': MODERN_COLORS['warning'], 'size': FONT_SIZES['normal'], 'weight': '500'},
-        'error': {'color': MODERN_COLORS['danger'], 'size': FONT_SIZES['normal'], 'weight': '500'}
+        "normal": {
+            "color": MODERN_COLORS["text"],
+            "size": FONT_SIZES["normal"],
+            "weight": "normal",
+        },
+        "heading": {
+            "color": MODERN_COLORS["text"],
+            "size": FONT_SIZES["large"],
+            "weight": "bold",
+        },
+        "subheading": {
+            "color": MODERN_COLORS["text"],
+            "size": FONT_SIZES["normal"],
+            "weight": "500",
+        },
+        "muted": {
+            "color": MODERN_COLORS["text_muted"],
+            "size": FONT_SIZES["small"],
+            "weight": "normal",
+        },
+        "caption": {
+            "color": MODERN_COLORS["text_muted"],
+            "size": FONT_SIZES["small"],
+            "weight": "normal",
+            "style": "italic",
+        },
+        "info": {
+            "color": MODERN_COLORS["primary"],
+            "size": FONT_SIZES["normal"],
+            "weight": "500",
+        },
+        "success": {
+            "color": MODERN_COLORS["success"],
+            "size": FONT_SIZES["normal"],
+            "weight": "500",
+        },
+        "warning": {
+            "color": MODERN_COLORS["warning"],
+            "size": FONT_SIZES["normal"],
+            "weight": "500",
+        },
+        "error": {
+            "color": MODERN_COLORS["danger"],
+            "size": FONT_SIZES["normal"],
+            "weight": "500",
+        },
     }
-    
-    style = styles.get(style_type, styles['normal'])
-    
-    widget.setStyleSheet(f"""
+
+    style = styles.get(style_type, styles["normal"])
+
+    widget.setStyleSheet(
+        f"""
         QLabel {{
             color: {style['color']};
             {BASE_FONT}
@@ -297,12 +342,15 @@ def style_label(widget: QLabel, style_type: str = 'normal') -> None:
             font-weight: {style['weight']};
             {f"font-style: {style.get('style', 'normal')};" if 'style' in style else ""}
         }}
-    """)
+    """
+    )
+
 
 def style_table_widget(widget: QTableWidget) -> None:
     """Style a table widget with alternating rows and modern headers."""
     widget.setAlternatingRowColors(True)
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QTableWidget {{
             border: 1px solid {MODERN_COLORS['border']};
             border-radius: {SPACING['border_radius']};
@@ -326,11 +374,14 @@ def style_table_widget(widget: QTableWidget) -> None:
             padding: 4px 8px;
             font-weight: 500;
         }}
-    """)
+    """
+    )
+
 
 def style_list_widget(widget: QListWidget) -> None:
     """Style a list widget."""
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QListWidget {{
             border: 1px solid {MODERN_COLORS['border']};
             border-radius: {SPACING['border_radius']};
@@ -349,11 +400,14 @@ def style_list_widget(widget: QListWidget) -> None:
         QListWidget::item:hover {{
             background-color: {MODERN_COLORS['hover']};
         }}
-    """)
+    """
+    )
+
 
 def style_progress_bar(widget: QProgressBar) -> None:
     """Style a progress bar."""
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QProgressBar {{
             border: 1px solid {MODERN_COLORS['border']};
             border-radius: {SPACING['border_radius']};
@@ -368,11 +422,14 @@ def style_progress_bar(widget: QProgressBar) -> None:
             background-color: {MODERN_COLORS['primary']};
             border-radius: 2px;
         }}
-    """)
+    """
+    )
+
 
 def style_group_box(widget: QGroupBox) -> None:
     """Style a group box."""
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QGroupBox {{
             {BASE_FONT}
             font-weight: 500;
@@ -388,11 +445,14 @@ def style_group_box(widget: QGroupBox) -> None:
             padding: 0 4px;
             background-color: {MODERN_COLORS['background']};
         }}
-    """)
+    """
+    )
+
 
 def style_checkbox(widget: QCheckBox) -> None:
     """Style a checkbox."""
-    widget.setStyleSheet(f"""
+    widget.setStyleSheet(
+        f"""
         QCheckBox {{
             spacing: 4px;
             {BASE_FONT}
@@ -416,7 +476,9 @@ def style_checkbox(widget: QCheckBox) -> None:
         QCheckBox::indicator:disabled {{
             background-color: {MODERN_COLORS['disabled']};
         }}
-    """)
+    """
+    )
+
 
 def apply_compact_layout(widget: QWidget, spacing: int = 8, margin: int = 10) -> None:
     """Apply compact spacing to a widget's layout."""
@@ -424,16 +486,20 @@ def apply_compact_layout(widget: QWidget, spacing: int = 8, margin: int = 10) ->
         widget.layout().setSpacing(spacing)
         widget.layout().setContentsMargins(margin, margin, margin, margin)
 
+
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
 
-def create_styled_button(text: str, style_type: str = "secondary", 
-                        parent: QWidget = None) -> QPushButton:
+
+def create_styled_button(
+    text: str, style_type: str = "secondary", parent: QWidget = None
+) -> QPushButton:
     """Create and style a button in one step."""
     button = QPushButton(text, parent)
     style_button(button, style_type)
     return button
+
 
 def _get_base_stylesheet() -> str:
     """Get the base stylesheet for dialogs and main windows."""
@@ -459,29 +525,32 @@ def _get_base_stylesheet() -> str:
         }}
     """
 
+
 def _apply_palette(widget: QWidget) -> None:
     """Apply color palette to application or widget."""
     palette = QPalette()
-    palette.setColor(QPalette.ColorRole.Window, QColor(MODERN_COLORS['background']))
-    palette.setColor(QPalette.ColorRole.WindowText, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.ColorRole.Base, QColor(MODERN_COLORS['background']))
-    palette.setColor(QPalette.ColorRole.AlternateBase, QColor(MODERN_COLORS['surface']))
-    palette.setColor(QPalette.ColorRole.Text, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.ColorRole.Button, QColor(MODERN_COLORS['surface']))
-    palette.setColor(QPalette.ColorRole.ButtonText, QColor(MODERN_COLORS['text']))
-    palette.setColor(QPalette.ColorRole.Highlight, QColor(MODERN_COLORS['selected']))
-    palette.setColor(QPalette.ColorRole.HighlightedText, QColor(MODERN_COLORS['text']))
-    
-    if hasattr(widget, 'setPalette'):
+    palette.setColor(QPalette.ColorRole.Window, QColor(MODERN_COLORS["background"]))
+    palette.setColor(QPalette.ColorRole.WindowText, QColor(MODERN_COLORS["text"]))
+    palette.setColor(QPalette.ColorRole.Base, QColor(MODERN_COLORS["background"]))
+    palette.setColor(QPalette.ColorRole.AlternateBase, QColor(MODERN_COLORS["surface"]))
+    palette.setColor(QPalette.ColorRole.Text, QColor(MODERN_COLORS["text"]))
+    palette.setColor(QPalette.ColorRole.Button, QColor(MODERN_COLORS["surface"]))
+    palette.setColor(QPalette.ColorRole.ButtonText, QColor(MODERN_COLORS["text"]))
+    palette.setColor(QPalette.ColorRole.Highlight, QColor(MODERN_COLORS["selected"]))
+    palette.setColor(QPalette.ColorRole.HighlightedText, QColor(MODERN_COLORS["text"]))
+
+    if hasattr(widget, "setPalette"):
         widget.setPalette(palette)
     elif isinstance(widget, QApplication):
         widget.setPalette(palette)
 
+
 def apply_theme_to_application(app: QApplication) -> None:
     """Apply theme to entire application."""
-    app.setStyle('Fusion')
+    app.setStyle("Fusion")
     _apply_palette(app)
     app.setStyleSheet(_get_base_stylesheet())
+
 
 # ============================================================================
 # BACKWARD COMPATIBILITY ALIASES
@@ -505,30 +574,39 @@ style_status_label = style_label
 apply_widget_palette = apply_modern_theme
 get_theme_stylesheet = _get_base_stylesheet
 
+
 # Color utility functions for compatibility
 def get_file_count_color(count: int, max_count: int = 10) -> str:
-    return MODERN_COLORS['success'] if count >= max_count // 2 else MODERN_COLORS['warning']
+    return (
+        MODERN_COLORS["success"]
+        if count >= max_count // 2
+        else MODERN_COLORS["warning"]
+    )
+
 
 def get_status_color(status: str) -> str:
     status_map = {
-        'success': MODERN_COLORS['success'],
-        'warning': MODERN_COLORS['warning'],
-        'error': MODERN_COLORS['danger'],
-        'info': MODERN_COLORS['primary'],
-        'muted': MODERN_COLORS['text_muted']
+        "success": MODERN_COLORS["success"],
+        "warning": MODERN_COLORS["warning"],
+        "error": MODERN_COLORS["danger"],
+        "info": MODERN_COLORS["primary"],
+        "muted": MODERN_COLORS["text_muted"],
     }
-    return status_map.get(status.lower(), MODERN_COLORS['text'])
+    return status_map.get(status.lower(), MODERN_COLORS["text"])
+
 
 def get_selection_summary_color(selected: int, total: int) -> str:
     if selected == 0:
-        return MODERN_COLORS['warning']
+        return MODERN_COLORS["warning"]
     elif selected == total:
-        return MODERN_COLORS['success']
+        return MODERN_COLORS["success"]
     else:
-        return MODERN_COLORS['primary']
+        return MODERN_COLORS["primary"]
+
 
 # Typography and spacing exports for compatibility
-TYPOGRAPHY = {'font_family': BASE_FONT}
+TYPOGRAPHY = {"font_family": BASE_FONT}
+
 
 # Button style getter for compatibility
 def get_button_style(style_type: str = "secondary") -> str:
@@ -536,39 +614,37 @@ def get_button_style(style_type: str = "secondary") -> str:
     style_button(button, style_type)
     return button.styleSheet()
 
+
 # ============================================================================
 # EXPORTS
 # ============================================================================
 
 __all__ = [
     # Core colors and constants
-    'MODERN_COLORS',
-    'WIDGET_SIZES',
-    'SPACING',
-    
+    "MODERN_COLORS",
+    "WIDGET_SIZES",
+    "SPACING",
     # Main styling functions
-    'apply_modern_theme',
-    'style_button',
-    'style_input_field',
-    'style_combo_box',
-    'style_label',
-    'style_table_widget',
-    'style_list_widget',
-    'style_progress_bar',
-    'style_group_box',
-    'style_checkbox',
-    'apply_compact_layout',
-    
+    "apply_modern_theme",
+    "style_button",
+    "style_input_field",
+    "style_combo_box",
+    "style_label",
+    "style_table_widget",
+    "style_list_widget",
+    "style_progress_bar",
+    "style_group_box",
+    "style_checkbox",
+    "apply_compact_layout",
     # Utility functions
-    'create_styled_button',
-    'apply_theme_to_application',
-    
+    "create_styled_button",
+    "apply_theme_to_application",
     # Backward compatibility
-    'style_main_window',
-    'style_dialog',
-    'get_button_style',
-    'get_file_count_color',
-    'get_status_color',
-    'get_selection_summary_color',
-    'TYPOGRAPHY'
+    "style_main_window",
+    "style_dialog",
+    "get_button_style",
+    "get_file_count_color",
+    "get_status_color",
+    "get_selection_summary_color",
+    "TYPOGRAPHY",
 ]

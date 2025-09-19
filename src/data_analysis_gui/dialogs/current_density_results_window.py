@@ -17,19 +17,33 @@ from pathlib import Path
 from typing import Dict
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
-                             QMessageBox, QPushButton, QSplitter, QVBoxLayout,
-                             QWidget)
+from PySide6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 from data_analysis_gui.config.logging import get_logger
-from data_analysis_gui.config.themes import (style_button, style_label,
-                                             style_main_window, style_splitter)
+from data_analysis_gui.config.themes import (
+    style_button,
+    style_label,
+    style_main_window,
+    style_splitter,
+)
 from data_analysis_gui.core.models import BatchAnalysisResult
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.services.current_density_service import CurrentDensityService
-from data_analysis_gui.widgets.shared_widgets import (BatchFileListWidget,
-                                                      DynamicBatchPlotWidget,
-                                                      FileSelectionState)
+from data_analysis_gui.widgets.shared_widgets import (
+    BatchFileListWidget,
+    DynamicBatchPlotWidget,
+    FileSelectionState,
+)
 
 from data_analysis_gui.core.plot_formatter import PlotFormatter
 
@@ -39,16 +53,24 @@ logger = get_logger(__name__)
 class CurrentDensityResultsWindow(QMainWindow):
     """Window for displaying current density results with interactive features."""
 
-    def __init__(self, parent, batch_result: BatchAnalysisResult,
-                 cslow_mapping: Dict[str, float], data_service,
-                 batch_service=None):
+    def __init__(
+        self,
+        parent,
+        batch_result: BatchAnalysisResult,
+        cslow_mapping: Dict[str, float],
+        data_service,
+        batch_service=None,
+    ):
         super().__init__(parent)
 
         self.original_batch_result = batch_result
         self.active_batch_result = deepcopy(batch_result)
 
-        selected = getattr(batch_result, 'selected_files',
-                           {r.base_name for r in batch_result.successful_results})
+        selected = getattr(
+            batch_result,
+            "selected_files",
+            {r.base_name for r in batch_result.successful_results},
+        )
         self.selection_state = FileSelectionState(selected)
 
         self.plot_formatter = PlotFormatter()
@@ -91,11 +113,11 @@ class CurrentDensityResultsWindow(QMainWindow):
         splitter.addWidget(self._create_left_panel())
 
         self.plot_widget = DynamicBatchPlotWidget()
-        plot_labels = self.plot_formatter.get_plot_titles_and_labels('current_density')
+        plot_labels = self.plot_formatter.get_plot_titles_and_labels("current_density")
         self.plot_widget.initialize_plot(
-            x_label=plot_labels['x_label'],
-            y_label=plot_labels['y_label'],
-            title=plot_labels['title']
+            x_label=plot_labels["x_label"],
+            y_label=plot_labels["y_label"],
+            title=plot_labels["title"],
         )
         splitter.addWidget(self.plot_widget)
 
@@ -160,9 +182,11 @@ class CurrentDensityResultsWindow(QMainWindow):
 
     def _sort_results(self, results):
         """Sort results numerically based on filename."""
+
         def extract_number(file_name):
-            match = re.search(r'_(\d+)', file_name)
+            match = re.search(r"_(\d+)", file_name)
             return int(match.group(1)) if match else 0
+
         return sorted(results, key=lambda r: extract_number(r.base_name))
 
     def _populate_file_list(self):
@@ -180,22 +204,24 @@ class CurrentDensityResultsWindow(QMainWindow):
 
     def _apply_initial_current_density(self):
         """Apply initial current density calculations to all files."""
-        original_results = {r.base_name: r for r in self.original_batch_result.successful_results}
-        
+        original_results = {
+            r.base_name: r for r in self.original_batch_result.successful_results
+        }
+
         for i, result in enumerate(self.active_batch_result.successful_results):
             file_name = result.base_name
             cslow = self.cslow_mapping.get(file_name, 0.0)
-            
+
             if cslow > 0 and file_name in original_results:
                 # Use service for the calculation
                 updated_result = self.cd_service.recalculate_cd_for_file(
                     file_name,
                     cslow,
                     self.active_batch_result,
-                    self.original_batch_result
+                    self.original_batch_result,
                 )
                 self.active_batch_result.successful_results[i] = updated_result
-        
+
         logger.debug(f"Applied initial current density calculations.")
 
     def _on_cslow_changed(self, file_name: str, new_cslow: float):
@@ -203,31 +229,38 @@ class CurrentDensityResultsWindow(QMainWindow):
         try:
             # Find the index
             target_index = next(
-                (i for i, r in enumerate(self.active_batch_result.successful_results)
-                 if r.base_name == file_name),
-                None
+                (
+                    i
+                    for i, r in enumerate(self.active_batch_result.successful_results)
+                    if r.base_name == file_name
+                ),
+                None,
             )
-            
+
             if target_index is None:
                 return
-            
+
             # Use service to recalculate
             updated_result = self.cd_service.recalculate_cd_for_file(
                 file_name,
                 new_cslow,
                 self.active_batch_result,
-                self.original_batch_result
+                self.original_batch_result,
             )
-            
+
             # Update our batch result
             self.active_batch_result.successful_results[target_index] = updated_result
             self.cslow_mapping[file_name] = new_cslow
-            
+
             # Update plot
             self.plot_widget.update_line_data(
                 file_name,
                 updated_result.y_data,
-                updated_result.y_data2 if self.active_batch_result.parameters.use_dual_range else None
+                (
+                    updated_result.y_data2
+                    if self.active_batch_result.parameters.use_dual_range
+                    else None
+                ),
             )
             self.plot_widget.auto_scale_to_data()
         except (ValueError, ZeroDivisionError) as e:
@@ -238,7 +271,7 @@ class CurrentDensityResultsWindow(QMainWindow):
         sorted_results = self._sort_results(self.active_batch_result.successful_results)
         self.plot_widget.set_data(
             sorted_results,
-            use_dual_range=self.active_batch_result.parameters.use_dual_range
+            use_dual_range=self.active_batch_result.parameters.use_dual_range,
         )
         self.plot_widget.update_visibility(self.selection_state.get_selected_files())
         self.plot_widget.auto_scale_to_data()
@@ -254,9 +287,9 @@ class CurrentDensityResultsWindow(QMainWindow):
         """Validate Cslow values for all selected files before exporting."""
         for row in range(self.file_list.rowCount()):
             cslow_widget = self.file_list.cellWidget(row, 3)
-            if cslow_widget and hasattr(cslow_widget, 'text'):
+            if cslow_widget and hasattr(cslow_widget, "text"):
                 try:
-                    if float(cslow_widget.text()) <= 0: 
+                    if float(cslow_widget.text()) <= 0:
                         return False
                 except ValueError:
                     return False
@@ -270,45 +303,60 @@ class CurrentDensityResultsWindow(QMainWindow):
             return
 
         if not self._validate_all_cslow_values():
-            QMessageBox.warning(self, "Invalid Input", "Please correct invalid Cslow values before exporting.")
+            QMessageBox.warning(
+                self,
+                "Invalid Input",
+                "Please correct invalid Cslow values before exporting.",
+            )
             return
 
-        output_dir = self.file_dialog_service.get_directory(self, "Select Output Directory")
+        output_dir = self.file_dialog_service.get_directory(
+            self, "Select Output Directory"
+        )
         if not output_dir:
             return
 
         try:
             # Filter results by selection
             filtered_results = [
-                r for r in self.active_batch_result.successful_results 
+                r
+                for r in self.active_batch_result.successful_results
                 if r.base_name in selected_files
             ]
-            
+
             if not filtered_results:
                 QMessageBox.warning(self, "No Data", "No valid results to export.")
                 return
-            
+
             # Add "_CD" suffix to filenames for current density exports
             cd_results = []
             for result in filtered_results:
                 cd_result = replace(result, base_name=f"{result.base_name}_CD")
                 cd_results.append(cd_result)
-            
+
             # Create batch for export
             filtered_batch = replace(
                 self.active_batch_result,
                 successful_results=cd_results,
                 failed_results=[],
-                selected_files=selected_files
+                selected_files=selected_files,
             )
-            
-            export_result = self.batch_service.export_results(filtered_batch, output_dir)
+
+            export_result = self.batch_service.export_results(
+                filtered_batch, output_dir
+            )
             success_count = sum(1 for r in export_result.export_results if r.success)
 
             if success_count > 0:
-                QMessageBox.information(self, "Export Complete", f"Exported {success_count} current density files")
+                QMessageBox.information(
+                    self,
+                    "Export Complete",
+                    f"Exported {success_count} current density files",
+                )
             else:
-                QMessageBox.warning(self, "Export Failed", "No files were exported successfully.")
+                QMessageBox.warning(
+                    self, "Export Failed", "No files were exported successfully."
+                )
         except Exception as e:
             logger.error(f"CSV export failed: {e}", exc_info=True)
             QMessageBox.critical(self, "Export Failed", f"Export failed: {str(e)}")
@@ -316,18 +364,27 @@ class CurrentDensityResultsWindow(QMainWindow):
     def _export_summary(self):
         """Export current density summary after validating inputs."""
         if not self._validate_all_cslow_values():
-            QMessageBox.warning(self, "Invalid Input", "Please correct invalid Cslow values before exporting.")
+            QMessageBox.warning(
+                self,
+                "Invalid Input",
+                "Please correct invalid Cslow values before exporting.",
+            )
             return
 
-        file_path = self.file_dialog_service.get_export_path(self, "Current_Density_Summary.csv")
+        file_path = self.file_dialog_service.get_export_path(
+            self, "Current_Density_Summary.csv"
+        )
         if not file_path:
             return
 
         try:
             selected_files = self.selection_state.get_selected_files()
-            sorted_results = [r for r in self._sort_results(self.active_batch_result.successful_results)
-                              if r.base_name in selected_files]
-            
+            sorted_results = [
+                r
+                for r in self._sort_results(self.active_batch_result.successful_results)
+                if r.base_name in selected_files
+            ]
+
             # Prepare voltage data and file mapping
             voltage_data, file_mapping = {}, {}
             for idx, result in enumerate(sorted_results):
@@ -339,16 +396,24 @@ class CurrentDensityResultsWindow(QMainWindow):
                         voltage_data[voltage_rounded] = [np.nan] * len(sorted_results)
                     if i < len(result.y_data):
                         voltage_data[voltage_rounded][idx] = result.y_data[i]
-            
+
             # Use service to prepare export
             export_data = self.cd_service.prepare_summary_export(
-                voltage_data, file_mapping, self.cslow_mapping, selected_files, self.y_unit
+                voltage_data,
+                file_mapping,
+                self.cslow_mapping,
+                selected_files,
+                self.y_unit,
             )
-            
+
             result = self.data_service.export_to_csv(export_data, file_path)
 
             if result.success:
-                QMessageBox.information(self, "Export Complete", f"Exported summary for {len(selected_files)} files.")
+                QMessageBox.information(
+                    self,
+                    "Export Complete",
+                    f"Exported summary for {len(selected_files)} files.",
+                )
             else:
                 QMessageBox.warning(self, "Export Failed", result.error_message)
         except Exception as e:
@@ -358,13 +423,17 @@ class CurrentDensityResultsWindow(QMainWindow):
     def _export_plot(self):
         """Export the current plot to an image file."""
         file_path = self.file_dialog_service.get_export_path(
-            self, "current_density_plot.png",
-            file_types="PNG (*.png);;PDF (*.pdf);;SVG (*.svg)")
+            self,
+            "current_density_plot.png",
+            file_types="PNG (*.png);;PDF (*.pdf);;SVG (*.svg)",
+        )
 
         if file_path:
             try:
                 self.plot_widget.export_figure(file_path)
-                QMessageBox.information(self, "Export Complete", f"Plot saved to {Path(file_path).name}")
+                QMessageBox.information(
+                    self, "Export Complete", f"Plot saved to {Path(file_path).name}"
+                )
             except Exception as e:
                 logger.error(f"Failed to export plot: {e}", exc_info=True)
                 QMessageBox.critical(self, "Export Failed", str(e))

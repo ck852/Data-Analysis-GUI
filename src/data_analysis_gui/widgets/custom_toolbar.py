@@ -24,33 +24,33 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
     A cleaner, more modern navigation toolbar for matplotlib plots.
     Keeps only essential functions and matches GUI styling.
     """
-    
+
     # Signal for when zoom/pan state changes
     mode_changed = Signal(str)  # 'zoom', 'pan', or 'none'
-    
+
     def __init__(self, canvas, parent=None):
         """
         Initialize the streamlined toolbar.
-        
+
         Args:
             canvas: The matplotlib canvas
             parent: Parent widget
         """
         # Store the canvas reference before calling parent init
         self._canvas = canvas
-        
+
         # Initialize current mode early
-        self.current_mode = 'none'
-        
+        self.current_mode = "none"
+
         # Initialize mode_label as None first
         self.mode_label = None
-        
+
         # Call parent constructor
         super().__init__(canvas, parent)
-        
+
         # Apply custom styling from centralized configuration
         self._apply_styling()
-    
+
     def _init_toolbar(self):
         """
         Override to create only the tools we want.
@@ -58,232 +58,280 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         """
         # Clear any default items
         self.clear()
-        
+
         # Add only the tools we want, in the order we want
         self._add_streamlined_tools()
-        
+
         # Add a stretch to push everything to the left
         self.addStretch()
-        
+
         # Add a subtle label for current mode with proper font size
         self.mode_label = QLabel("")
-        self.mode_label.setStyleSheet(f"""
+        self.mode_label.setStyleSheet(
+            f"""
             QLabel {{
                 color: #606060;
                 font-size: {TOOLBAR_CONFIG['mode_label_font_size']}px;
                 margin: 0px 10px;
             }}
-        """)
+        """
+        )
         self.addWidget(self.mode_label)
-    
+
     def _add_streamlined_tools(self):
         """Add only essential navigation tools with custom icons."""
         from PySide6.QtGui import QFont
-        
+
         # Create font for toolbar actions
         toolbar_font = QFont()
-        toolbar_font.setPointSize(TOOLBAR_CONFIG['button_font_size'])
-        
+        toolbar_font.setPointSize(TOOLBAR_CONFIG["button_font_size"])
+
         # Home (reset view)
         self.home_action = QAction("Reset", self)
         self.home_action.setToolTip("Reset to original view")
         self.home_action.triggered.connect(self.home)
-        self.home_action.setIcon(self._create_icon('home'))
+        self.home_action.setIcon(self._create_icon("home"))
         self.home_action.setFont(toolbar_font)
         self.addAction(self.home_action)
-        
+
         # Back/Forward navigation
         self.back_action = QAction("Back", self)
         self.back_action.setToolTip("Back to previous view")
         self.back_action.triggered.connect(self.back)
-        self.back_action.setIcon(self._create_icon('back'))
+        self.back_action.setIcon(self._create_icon("back"))
         self.back_action.setFont(toolbar_font)
         self.addAction(self.back_action)
-        
+
         self.forward_action = QAction("Forward", self)
         self.forward_action.setToolTip("Forward to next view")
         self.forward_action.triggered.connect(self.forward)
-        self.forward_action.setIcon(self._create_icon('forward'))
+        self.forward_action.setIcon(self._create_icon("forward"))
         self.forward_action.setFont(toolbar_font)
         self.addAction(self.forward_action)
-        
+
         self.addSeparator()
-        
+
         # Pan
         self.pan_action = QAction("Pan", self)
         self.pan_action.setToolTip("Pan axes with left mouse, zoom with right")
         self.pan_action.setCheckable(True)
         self.pan_action.triggered.connect(self.pan)
-        self.pan_action.setIcon(self._create_icon('pan'))
+        self.pan_action.setIcon(self._create_icon("pan"))
         self.pan_action.setFont(toolbar_font)
         self.addAction(self.pan_action)
-        
+
         # Zoom
         self.zoom_action = QAction("Zoom", self)
         self.zoom_action.setToolTip("Zoom to rectangle")
         self.zoom_action.setCheckable(True)
         self.zoom_action.triggered.connect(self.zoom)
-        self.zoom_action.setIcon(self._create_icon('zoom'))
+        self.zoom_action.setIcon(self._create_icon("zoom"))
         self.zoom_action.setFont(toolbar_font)
         self.addAction(self.zoom_action)
-        
+
         self.addSeparator()
-        
+
         # Save (optional - can be removed if export is handled elsewhere)
         self.save_action = QAction("Save", self)
         self.save_action.setToolTip("Save the figure")
         self.save_action.triggered.connect(self.save_figure)
-        self.save_action.setIcon(self._create_icon('save'))
+        self.save_action.setIcon(self._create_icon("save"))
         self.save_action.setFont(toolbar_font)
         self.addAction(self.save_action)
-    
+
     def _create_icon(self, icon_type: str) -> QIcon:
         """
         Create simple, modern icons programmatically.
-        
+
         Args:
             icon_type: Type of icon to create
-            
+
         Returns:
             QIcon object
         """
         # Use icon size from centralized configuration
-        icon_size = TOOLBAR_CONFIG['icon_size']
-        
+        icon_size = TOOLBAR_CONFIG["icon_size"]
+
         # Create a pixmap for the icon
         pixmap = QPixmap(icon_size, icon_size)
         pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
+
         # Icon color
-        color = QColor('#606060')
+        color = QColor("#606060")
         painter.setPen(color)
         painter.setBrush(color)
-        
+
         # Scale factor for larger icons
         scale = icon_size / 16.0  # Original designs were for 16x16
-        
-        if icon_type == 'home':
+
+        if icon_type == "home":
             # Simple house shape (scaled)
-            painter.drawLine(int(8*scale), int(4*scale), int(3*scale), int(9*scale))
-            painter.drawLine(int(8*scale), int(4*scale), int(13*scale), int(9*scale))
-            painter.drawRect(int(5*scale), int(9*scale), int(6*scale), int(5*scale))
-        
-        elif icon_type == 'back':
+            painter.drawLine(
+                int(8 * scale), int(4 * scale), int(3 * scale), int(9 * scale)
+            )
+            painter.drawLine(
+                int(8 * scale), int(4 * scale), int(13 * scale), int(9 * scale)
+            )
+            painter.drawRect(
+                int(5 * scale), int(9 * scale), int(6 * scale), int(5 * scale)
+            )
+
+        elif icon_type == "back":
             # Left arrow (scaled)
-            painter.drawLine(int(5*scale), int(8*scale), int(11*scale), int(4*scale))
-            painter.drawLine(int(5*scale), int(8*scale), int(11*scale), int(12*scale))
-            painter.drawLine(int(5*scale), int(8*scale), int(13*scale), int(8*scale))
-        
-        elif icon_type == 'forward':
+            painter.drawLine(
+                int(5 * scale), int(8 * scale), int(11 * scale), int(4 * scale)
+            )
+            painter.drawLine(
+                int(5 * scale), int(8 * scale), int(11 * scale), int(12 * scale)
+            )
+            painter.drawLine(
+                int(5 * scale), int(8 * scale), int(13 * scale), int(8 * scale)
+            )
+
+        elif icon_type == "forward":
             # Right arrow (scaled)
-            painter.drawLine(int(11*scale), int(8*scale), int(5*scale), int(4*scale))
-            painter.drawLine(int(11*scale), int(8*scale), int(5*scale), int(12*scale))
-            painter.drawLine(int(11*scale), int(8*scale), int(3*scale), int(8*scale))
-        
-        elif icon_type == 'pan':
+            painter.drawLine(
+                int(11 * scale), int(8 * scale), int(5 * scale), int(4 * scale)
+            )
+            painter.drawLine(
+                int(11 * scale), int(8 * scale), int(5 * scale), int(12 * scale)
+            )
+            painter.drawLine(
+                int(11 * scale), int(8 * scale), int(3 * scale), int(8 * scale)
+            )
+
+        elif icon_type == "pan":
             # Hand/move icon (scaled)
-            painter.drawLine(int(8*scale), int(3*scale), int(8*scale), int(13*scale))
-            painter.drawLine(int(3*scale), int(8*scale), int(13*scale), int(8*scale))
-            painter.drawLine(int(5*scale), int(5*scale), int(8*scale), int(3*scale))
-            painter.drawLine(int(11*scale), int(5*scale), int(8*scale), int(3*scale))
-            painter.drawLine(int(5*scale), int(11*scale), int(8*scale), int(13*scale))
-            painter.drawLine(int(11*scale), int(11*scale), int(8*scale), int(13*scale))
-        
-        elif icon_type == 'zoom':
+            painter.drawLine(
+                int(8 * scale), int(3 * scale), int(8 * scale), int(13 * scale)
+            )
+            painter.drawLine(
+                int(3 * scale), int(8 * scale), int(13 * scale), int(8 * scale)
+            )
+            painter.drawLine(
+                int(5 * scale), int(5 * scale), int(8 * scale), int(3 * scale)
+            )
+            painter.drawLine(
+                int(11 * scale), int(5 * scale), int(8 * scale), int(3 * scale)
+            )
+            painter.drawLine(
+                int(5 * scale), int(11 * scale), int(8 * scale), int(13 * scale)
+            )
+            painter.drawLine(
+                int(11 * scale), int(11 * scale), int(8 * scale), int(13 * scale)
+            )
+
+        elif icon_type == "zoom":
             # Magnifying glass (scaled)
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawEllipse(int(4*scale), int(4*scale), int(7*scale), int(7*scale))
-            painter.drawLine(int(10*scale), int(10*scale), int(13*scale), int(13*scale))
-        
-        elif icon_type == 'save':
+            painter.drawEllipse(
+                int(4 * scale), int(4 * scale), int(7 * scale), int(7 * scale)
+            )
+            painter.drawLine(
+                int(10 * scale), int(10 * scale), int(13 * scale), int(13 * scale)
+            )
+
+        elif icon_type == "save":
             # Floppy disk / save icon (scaled)
-            painter.drawRect(int(3*scale), int(3*scale), int(10*scale), int(10*scale))
-            painter.fillRect(int(5*scale), int(3*scale), int(6*scale), int(4*scale), QColor('white'))
-            painter.fillRect(int(9*scale), int(4*scale), int(2*scale), int(2*scale), color)
-        
+            painter.drawRect(
+                int(3 * scale), int(3 * scale), int(10 * scale), int(10 * scale)
+            )
+            painter.fillRect(
+                int(5 * scale),
+                int(3 * scale),
+                int(6 * scale),
+                int(4 * scale),
+                QColor("white"),
+            )
+            painter.fillRect(
+                int(9 * scale), int(4 * scale), int(2 * scale), int(2 * scale), color
+            )
+
         painter.end()
-        
+
         return QIcon(pixmap)
-    
+
     def _apply_styling(self):
         """Apply custom styling to match the GUI using centralized configuration."""
         # Get stylesheet from centralized configuration
         self.setStyleSheet(get_toolbar_style())
-        
+
         # Set icon size using configuration
-        self.setIconSize(QSize(TOOLBAR_CONFIG['icon_size'], TOOLBAR_CONFIG['icon_size']))
+        self.setIconSize(
+            QSize(TOOLBAR_CONFIG["icon_size"], TOOLBAR_CONFIG["icon_size"])
+        )
         self.setMovable(False)
-        
+
         # Set toolbar button style to show text beside icons
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-    
+
     def pan(self, *args):
         """Override pan to update mode indicator."""
         super().pan(*args)
-        
+
         # Check if mode_label exists before using it
-        if hasattr(self, 'mode_label') and self.mode_label:
-            if self._actions['pan'].isChecked():
-                self.current_mode = 'pan'
+        if hasattr(self, "mode_label") and self.mode_label:
+            if self._actions["pan"].isChecked():
+                self.current_mode = "pan"
                 self.mode_label.setText("Pan Mode")
                 # Uncheck zoom action if it's checked
-                if hasattr(self, 'zoom_action'):
+                if hasattr(self, "zoom_action"):
                     self.zoom_action.setChecked(False)
             else:
-                self.current_mode = 'none'
+                self.current_mode = "none"
                 self.mode_label.setText("")
         else:
             # Just update the mode without touching the label
-            if self._actions['pan'].isChecked():
-                self.current_mode = 'pan'
+            if self._actions["pan"].isChecked():
+                self.current_mode = "pan"
             else:
-                self.current_mode = 'none'
-        
+                self.current_mode = "none"
+
         self.mode_changed.emit(self.current_mode)
-    
+
     def zoom(self, *args):
         """Override zoom to update mode indicator."""
         super().zoom(*args)
-        
+
         # Check if mode_label exists before using it
-        if hasattr(self, 'mode_label') and self.mode_label:
-            if self._actions['zoom'].isChecked():
-                self.current_mode = 'zoom'
+        if hasattr(self, "mode_label") and self.mode_label:
+            if self._actions["zoom"].isChecked():
+                self.current_mode = "zoom"
                 self.mode_label.setText("Zoom Mode")
                 # Uncheck pan action if it's checked
-                if hasattr(self, 'pan_action'):
+                if hasattr(self, "pan_action"):
                     self.pan_action.setChecked(False)
             else:
-                self.current_mode = 'none'
+                self.current_mode = "none"
                 self.mode_label.setText("")
         else:
             # Just update the mode without touching the label
-            if self._actions['zoom'].isChecked():
-                self.current_mode = 'zoom'
+            if self._actions["zoom"].isChecked():
+                self.current_mode = "zoom"
             else:
-                self.current_mode = 'none'
-        
+                self.current_mode = "none"
+
         self.mode_changed.emit(self.current_mode)
-    
+
     def home(self, *args):
         """Override home to clear mode."""
         super().home(*args)
-        
+
         # Uncheck both actions
-        if hasattr(self, 'pan_action'):
+        if hasattr(self, "pan_action"):
             self.pan_action.setChecked(False)
-        if hasattr(self, 'zoom_action'):
+        if hasattr(self, "zoom_action"):
             self.zoom_action.setChecked(False)
-        
-        self.current_mode = 'none'
-        
+
+        self.current_mode = "none"
+
         # Update label if it exists
-        if hasattr(self, 'mode_label') and self.mode_label:
+        if hasattr(self, "mode_label") and self.mode_label:
             self.mode_label.setText("")
-        
+
         self.mode_changed.emit(self.current_mode)
 
 
@@ -292,50 +340,51 @@ class MinimalNavigationToolbar(QWidget):
     An even more minimal toolbar with just zoom/pan toggle.
     For use in dialogs and secondary windows.
     """
-    
+
     mode_changed = Signal(str)
-    
+
     def __init__(self, canvas, parent=None):
         super().__init__(parent)
         self.canvas = canvas
         self.toolbar = NavigationToolbar(canvas, self)
         self.toolbar.setVisible(False)  # Hide the actual toolbar
-        
+
         # Create minimal UI
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
-        
+
         # Just zoom and pan buttons
         self.zoom_btn = self._create_tool_button("Zoom", "zoom")
         self.pan_btn = self._create_tool_button("Pan", "pan")
         self.reset_btn = self._create_tool_button("Reset", "reset")
-        
+
         # Create label with proper font size from configuration
         tools_label = QLabel("Tools:")
         tools_label.setStyleSheet(f"font-size: {TOOLBAR_CONFIG['button_font_size']}px;")
-        
+
         layout.addWidget(tools_label)
         layout.addWidget(self.zoom_btn)
         layout.addWidget(self.pan_btn)
         layout.addWidget(self.reset_btn)
         layout.addStretch()
-        
+
         # Connect buttons
         self.zoom_btn.clicked.connect(self._toggle_zoom)
         self.pan_btn.clicked.connect(self._toggle_pan)
         self.reset_btn.clicked.connect(self._reset_view)
-        
-        self.current_mode = 'none'
-    
+
+        self.current_mode = "none"
+
     def _create_tool_button(self, text: str, mode: str):
         """Create a styled tool button with proper font size."""
         from PySide6.QtWidgets import QPushButton
-        
+
         btn = QPushButton(text)
-        btn.setCheckable(mode != 'reset')
-        btn.setMaximumHeight(TOOLBAR_CONFIG['button_min_height'])
-        btn.setStyleSheet(f"""
+        btn.setCheckable(mode != "reset")
+        btn.setMaximumHeight(TOOLBAR_CONFIG["button_min_height"])
+        btn.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: #F0F0F0;
                 border: 1px solid #C0C0C0;
@@ -352,35 +401,36 @@ class MinimalNavigationToolbar(QWidget):
                 background-color: #D8E4F0;
                 border-color: #2E86AB;
             }}
-        """)
+        """
+        )
         return btn
-    
+
     def _toggle_zoom(self):
         """Toggle zoom mode."""
         if self.zoom_btn.isChecked():
             self.toolbar.zoom()
             self.pan_btn.setChecked(False)
-            self.current_mode = 'zoom'
+            self.current_mode = "zoom"
         else:
             self.toolbar.zoom()  # Toggle off
-            self.current_mode = 'none'
+            self.current_mode = "none"
         self.mode_changed.emit(self.current_mode)
-    
+
     def _toggle_pan(self):
         """Toggle pan mode."""
         if self.pan_btn.isChecked():
             self.toolbar.pan()
             self.zoom_btn.setChecked(False)
-            self.current_mode = 'pan'
+            self.current_mode = "pan"
         else:
             self.toolbar.pan()  # Toggle off
-            self.current_mode = 'none'
+            self.current_mode = "none"
         self.mode_changed.emit(self.current_mode)
-    
+
     def _reset_view(self):
         """Reset to home view."""
         self.toolbar.home()
         self.zoom_btn.setChecked(False)
         self.pan_btn.setChecked(False)
-        self.current_mode = 'none'
+        self.current_mode = "none"
         self.mode_changed.emit(self.current_mode)

@@ -11,9 +11,9 @@ from .plot_service import PlotService
 from .current_density_service import CurrentDensityService
 
 __all__ = [
-    'DataManager',
-    'AnalysisManager',
-    'BatchProcessor',
-    'PlotService',
-    'CurrentDensityService'
+    "DataManager",
+    "AnalysisManager",
+    "BatchProcessor",
+    "PlotService",
+    "CurrentDensityService",
 ]

@@ -7,11 +7,13 @@ License: MIT (see LICENSE file for details)
 from PySide6.QtWidgets import QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox
 from PySide6.QtCore import QTimer
 
+
 class SelectAllLineEdit(QLineEdit):
     """
     A QLineEdit that selects all its text when it gains focus,
     unless specifically told not to.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._select_all_on_focus = True
@@ -33,6 +35,7 @@ class SelectAllLineEdit(QLineEdit):
 
 class SelectAllSpinBox(QDoubleSpinBox):
     """Custom QDoubleSpinBox that selects all text when focused"""
+
     def focusInEvent(self, event):
         super().focusInEvent(event)
         # Select all text when the spinbox gets focus
@@ -45,6 +48,7 @@ class SelectAllSpinBox(QDoubleSpinBox):
 
 class SelectAllIntSpinBox(QSpinBox):
     """Custom QSpinBox that selects all text when focused"""
+
     def focusInEvent(self, event):
         super().focusInEvent(event)
         # Select all text when the spinbox gets focus
@@ -54,7 +58,9 @@ class SelectAllIntSpinBox(QSpinBox):
         # Ignore the mouse wheel event to prevent scrolling
         event.ignore()
 
+
 class NoScrollComboBox(QComboBox):
     """ComboBox that ignores wheel events to prevent accidental changes."""
+
     def wheelEvent(self, event):
         event.ignore()

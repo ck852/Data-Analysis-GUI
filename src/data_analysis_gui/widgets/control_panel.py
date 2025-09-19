@@ -10,9 +10,16 @@ Handles all control settings and communicates via signals.
 Controls are always active regardless of file loading state.
 """
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, QGroupBox,
-                             QLabel, QPushButton, QCheckBox,
-                             QGridLayout)
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QScrollArea,
+    QGroupBox,
+    QLabel,
+    QPushButton,
+    QCheckBox,
+    QGridLayout,
+)
 from PySide6.QtCore import Signal
 
 # Import custom widgets that handle scrolling properly
@@ -21,17 +28,25 @@ from data_analysis_gui.config import DEFAULT_SETTINGS
 from data_analysis_gui.core.params import AnalysisParameters
 
 from data_analysis_gui.config.themes import (
-    style_button, style_scroll_area, style_group_box, style_label,
-    style_checkbox, apply_compact_layout,
-    style_spinbox_with_arrows, style_combo_simple,
-    MODERN_COLORS, SPACING, WIDGET_SIZES
+    style_button,
+    style_scroll_area,
+    style_group_box,
+    style_label,
+    style_checkbox,
+    apply_compact_layout,
+    style_spinbox_with_arrows,
+    style_combo_simple,
+    MODERN_COLORS,
+    SPACING,
+    WIDGET_SIZES,
 )
+
 
 class ControlPanel(QWidget):
     """
     Self-contained control panel widget that manages all analysis settings.
     Emits signals to communicate user actions to the main window.
-    
+
     Simplified version: Controls are always active, removing complexity around
     file loading states.
     """
@@ -46,35 +61,35 @@ class ControlPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._is_swapped = False
-        self._current_units = 'pA'
-        
+        self._current_units = "pA"
+
         # Dictionary to track previous valid values
         self._previous_valid_values = {}
-        
+
         # Track which fields have invalid state
         self._invalid_fields = set()
-        
+
         # Store original style sheets for restoration
         self._original_styles = {}
-        
+
         self._setup_ui()
-        
+
         # Initialize tracking with starting values after UI setup
         self._previous_valid_values = {
-            'start1': self.start_spin.value(),
-            'end1': self.end_spin.value(),
-            'start2': self.start_spin2.value(),
-            'end2': self.end_spin2.value()
+            "start1": self.start_spin.value(),
+            "end1": self.end_spin.value(),
+            "start2": self.start_spin2.value(),
+            "end2": self.end_spin2.value(),
         }
-        
+
         # Store original styles for all spinboxes after themes are applied
         self._original_styles = {
-            'start1': self.start_spin.styleSheet(),
-            'end1': self.end_spin.styleSheet(),
-            'start2': self.start_spin2.styleSheet(),
-            'end2': self.end_spin2.styleSheet()
+            "start1": self.start_spin.styleSheet(),
+            "end1": self.end_spin.styleSheet(),
+            "start2": self.start_spin2.styleSheet(),
+            "end2": self.end_spin2.styleSheet(),
         }
-        
+
         self._connect_signals()
 
     def _setup_ui(self):
@@ -83,7 +98,7 @@ class ControlPanel(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setMinimumWidth(280)
-        
+
         # Apply theme styling to scroll area
         style_scroll_area(scroll_area)
 
@@ -119,7 +134,7 @@ class ControlPanel(QWidget):
     def set_current_units(self, units: str):
         """
         Set the current units for display and export.
-        
+
         Args:
             units: Current units ('pA', 'nA', or 'μA')
         """
@@ -128,7 +143,7 @@ class ControlPanel(QWidget):
     def get_current_units(self) -> str:
         """
         Get the current units setting.
-        
+
         Returns:
             Current units string
         """
@@ -138,7 +153,7 @@ class ControlPanel(QWidget):
         """Create the analysis settings group with full theme styling"""
         analysis_group = QGroupBox("Analysis Settings")
         style_group_box(analysis_group)
-        
+
         analysis_layout = QGridLayout(analysis_group)
         apply_compact_layout(analysis_group, spacing=4, margin=6)
 
@@ -156,14 +171,14 @@ class ControlPanel(QWidget):
 
         # Stimulus period
         stim_label = QLabel("Stimulus Period (ms):")
-        style_label(stim_label, 'normal')
+        style_label(stim_label, "normal")
         analysis_layout.addWidget(stim_label, 5, 0)
-        
+
         self.period_spin = SelectAllSpinBox()
         self.period_spin.setRange(1, 100000)
-        self.period_spin.setValue(DEFAULT_SETTINGS['stimulus_period'])
+        self.period_spin.setValue(DEFAULT_SETTINGS["stimulus_period"])
         self.period_spin.setSingleStep(100)
-        self.period_spin.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.period_spin.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_spinbox_with_arrows(self.period_spin)
         analysis_layout.addWidget(self.period_spin, 5, 1)
 
@@ -173,29 +188,29 @@ class ControlPanel(QWidget):
         """Add Range 1 settings to layout with theme styling"""
         # Range 1 Start
         start_label = QLabel("Range 1 Start (ms):")
-        style_label(start_label, 'normal')
+        style_label(start_label, "normal")
         layout.addWidget(start_label, 0, 0)
-        
+
         self.start_spin = SelectAllSpinBox()
         self.start_spin.setRange(0, 100000)
-        self.start_spin.setValue(DEFAULT_SETTINGS['range1_start'])
+        self.start_spin.setValue(DEFAULT_SETTINGS["range1_start"])
         self.start_spin.setSingleStep(0.05)
         self.start_spin.setDecimals(2)
-        self.start_spin.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.start_spin.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_spinbox_with_arrows(self.start_spin)
         layout.addWidget(self.start_spin, 0, 1)
 
         # Range 1 End
         end_label = QLabel("Range 1 End (ms):")
-        style_label(end_label, 'normal')
+        style_label(end_label, "normal")
         layout.addWidget(end_label, 1, 0)
-        
+
         self.end_spin = SelectAllSpinBox()
         self.end_spin.setRange(0, 100000)
-        self.end_spin.setValue(DEFAULT_SETTINGS['range1_end'])
+        self.end_spin.setValue(DEFAULT_SETTINGS["range1_end"])
         self.end_spin.setSingleStep(0.05)
         self.end_spin.setDecimals(2)
-        self.end_spin.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.end_spin.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_spinbox_with_arrows(self.end_spin)
         layout.addWidget(self.end_spin, 1, 1)
 
@@ -203,31 +218,31 @@ class ControlPanel(QWidget):
         """Add Range 2 settings to layout with theme styling"""
         # Range 2 Start
         start2_label = QLabel("Range 2 Start (ms):")
-        style_label(start2_label, 'normal')
+        style_label(start2_label, "normal")
         layout.addWidget(start2_label, 3, 0)
-        
+
         self.start_spin2 = SelectAllSpinBox()
         self.start_spin2.setRange(0, 100000)
-        self.start_spin2.setValue(DEFAULT_SETTINGS['range2_start'])
+        self.start_spin2.setValue(DEFAULT_SETTINGS["range2_start"])
         self.start_spin2.setSingleStep(0.05)
         self.start_spin2.setDecimals(2)
         self.start_spin2.setEnabled(False)
-        self.start_spin2.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.start_spin2.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_spinbox_with_arrows(self.start_spin2)
         layout.addWidget(self.start_spin2, 3, 1)
 
         # Range 2 End
         end2_label = QLabel("Range 2 End (ms):")
-        style_label(end2_label, 'normal')
+        style_label(end2_label, "normal")
         layout.addWidget(end2_label, 4, 0)
-        
+
         self.end_spin2 = SelectAllSpinBox()
         self.end_spin2.setRange(0, 100000)
-        self.end_spin2.setValue(DEFAULT_SETTINGS['range2_end'])
+        self.end_spin2.setValue(DEFAULT_SETTINGS["range2_end"])
         self.end_spin2.setSingleStep(0.05)
         self.end_spin2.setDecimals(2)
         self.end_spin2.setEnabled(False)
-        self.end_spin2.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.end_spin2.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_spinbox_with_arrows(self.end_spin2)
         layout.addWidget(self.end_spin2, 4, 1)
 
@@ -235,45 +250,45 @@ class ControlPanel(QWidget):
         """Create the plot settings group with full theme styling"""
         plot_group = QGroupBox("Plot Settings")
         style_group_box(plot_group)
-        
+
         plot_layout = QGridLayout(plot_group)
         apply_compact_layout(plot_group, spacing=4, margin=6)
 
         # X-axis settings with NoScrollComboBox
         x_label = QLabel("X-Axis:")
-        style_label(x_label, 'normal')
+        style_label(x_label, "normal")
         plot_layout.addWidget(x_label, 0, 0)
-        
+
         self.x_measure_combo = NoScrollComboBox()
         self.x_measure_combo.addItems(["Time", "Peak", "Average"])
         self.x_measure_combo.setCurrentText("Average")
-        self.x_measure_combo.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.x_measure_combo.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_combo_simple(self.x_measure_combo)
         plot_layout.addWidget(self.x_measure_combo, 0, 1)
 
         self.x_channel_combo = NoScrollComboBox()
         self.x_channel_combo.addItems(["Voltage", "Current"])
         self.x_channel_combo.setCurrentText("Voltage")
-        self.x_channel_combo.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.x_channel_combo.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_combo_simple(self.x_channel_combo)
         plot_layout.addWidget(self.x_channel_combo, 0, 2)
 
         # Y-axis settings with NoScrollComboBox
         y_label = QLabel("Y-Axis:")
-        style_label(y_label, 'normal')
+        style_label(y_label, "normal")
         plot_layout.addWidget(y_label, 1, 0)
-        
+
         self.y_measure_combo = NoScrollComboBox()
         self.y_measure_combo.addItems(["Peak", "Average", "Time"])
         self.y_measure_combo.setCurrentText("Average")
-        self.y_measure_combo.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.y_measure_combo.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_combo_simple(self.y_measure_combo)
         plot_layout.addWidget(self.y_measure_combo, 1, 1)
 
         self.y_channel_combo = NoScrollComboBox()
         self.y_channel_combo.addItems(["Voltage", "Current"])
         self.y_channel_combo.setCurrentText("Current")
-        self.y_channel_combo.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.y_channel_combo.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_combo_simple(self.y_channel_combo)
         plot_layout.addWidget(self.y_channel_combo, 1, 2)
 
@@ -287,29 +302,37 @@ class ControlPanel(QWidget):
 
         # Peak Mode settings with NoScrollComboBox
         peak_label = QLabel("Peak Mode:")
-        style_label(peak_label, 'normal')
+        style_label(peak_label, "normal")
         plot_layout.addWidget(peak_label, 3, 0)
-        
+
         self.peak_mode_combo = NoScrollComboBox()
         self.peak_mode_combo.addItems(["Absolute", "Positive", "Negative", "Peak-Peak"])
         self.peak_mode_combo.setCurrentText("Absolute")
-        self.peak_mode_combo.setToolTip("Peak calculation mode (applies when X or Y axis is set to Peak)")
-        self.peak_mode_combo.setMinimumHeight(WIDGET_SIZES['input_height'])
+        self.peak_mode_combo.setToolTip(
+            "Peak calculation mode (applies when X or Y axis is set to Peak)"
+        )
+        self.peak_mode_combo.setMinimumHeight(WIDGET_SIZES["input_height"])
         style_combo_simple(self.peak_mode_combo)
         plot_layout.addWidget(self.peak_mode_combo, 3, 1, 1, 2)
 
         # Connect signal to enable/disable peak mode based on axis selection
-        self.x_measure_combo.currentTextChanged.connect(self._update_peak_mode_visibility)
-        self.y_measure_combo.currentTextChanged.connect(self._update_peak_mode_visibility)
+        self.x_measure_combo.currentTextChanged.connect(
+            self._update_peak_mode_visibility
+        )
+        self.y_measure_combo.currentTextChanged.connect(
+            self._update_peak_mode_visibility
+        )
 
         return plot_group
 
     def _update_peak_mode_visibility(self):
         """Enable/disable peak mode combo based on whether Peak is selected"""
-        is_peak_selected = (self.x_measure_combo.currentText() == "Peak" or
-                        self.y_measure_combo.currentText() == "Peak")
+        is_peak_selected = (
+            self.x_measure_combo.currentText() == "Peak"
+            or self.y_measure_combo.currentText() == "Peak"
+        )
         self.peak_mode_combo.setEnabled(is_peak_selected)
-        
+
         # Update visual state when disabled
         if not is_peak_selected:
             # Re-apply combo box styling to ensure disabled state looks correct
@@ -324,7 +347,7 @@ class ControlPanel(QWidget):
         self.end_spin2.valueChanged.connect(self._validate_and_update)
         # Also re-validate when the dual range checkbox is toggled
         self.dual_range_cb.stateChanged.connect(self._validate_and_update)
-        
+
         # Run initial validation to set button states correctly
         self._validate_and_update()
 
@@ -340,11 +363,11 @@ class ControlPanel(QWidget):
         is_range1_valid = end1_val > start1_val
 
         if not is_range1_valid:
-            self._mark_field_invalid('start1')
-            self._mark_field_invalid('end1')
+            self._mark_field_invalid("start1")
+            self._mark_field_invalid("end1")
         else:
-            self._clear_invalid_state('start1')
-            self._clear_invalid_state('end1')
+            self._clear_invalid_state("start1")
+            self._clear_invalid_state("end1")
 
         # --- Validate Range 2 (if enabled) ---
         is_range2_valid = True
@@ -354,15 +377,15 @@ class ControlPanel(QWidget):
             is_range2_valid = end2_val > start2_val
 
             if not is_range2_valid:
-                self._mark_field_invalid('start2')
-                self._mark_field_invalid('end2')
+                self._mark_field_invalid("start2")
+                self._mark_field_invalid("end2")
             else:
-                self._clear_invalid_state('start2')
-                self._clear_invalid_state('end2')
+                self._clear_invalid_state("start2")
+                self._clear_invalid_state("end2")
         else:
             # If dual range is disabled, its fields can't be invalid
-            self._clear_invalid_state('start2')
-            self._clear_invalid_state('end2')
+            self._clear_invalid_state("start2")
+            self._clear_invalid_state("end2")
 
         # --- Update Button State ---
         # Buttons are enabled based on validation only
@@ -376,10 +399,10 @@ class ControlPanel(QWidget):
     def _mark_field_invalid(self, spinbox_key: str):
         """Mark a field as invalid using theme functions."""
         spinbox_map = {
-            'start1': self.start_spin,
-            'end1': self.end_spin,
-            'start2': self.start_spin2,
-            'end2': self.end_spin2
+            "start1": self.start_spin,
+            "end1": self.end_spin,
+            "start2": self.start_spin2,
+            "end2": self.end_spin2,
         }
         spinbox = spinbox_map.get(spinbox_key)
         if spinbox and spinbox_key not in self._invalid_fields:
@@ -387,10 +410,10 @@ class ControlPanel(QWidget):
             # Save the current style before applying invalid state
             if spinbox_key not in self._original_styles:
                 self._original_styles[spinbox_key] = spinbox.styleSheet()
-            
+
             # Apply invalid background color (hardcoded since it's not in refactored theme)
             current_style = spinbox.styleSheet()
-            invalid_bg = '#ffcccc'  # Light red background for invalid state
+            invalid_bg = "#ffcccc"  # Light red background for invalid state
             invalid_style = f"{current_style}\nQDoubleSpinBox {{ background-color: {invalid_bg}; border-color: {MODERN_COLORS['danger']}; }}"
             spinbox.setStyleSheet(invalid_style)
 
@@ -399,10 +422,10 @@ class ControlPanel(QWidget):
         if spinbox_key in self._invalid_fields:
             self._invalid_fields.remove(spinbox_key)
             spinbox_map = {
-                'start1': self.start_spin,
-                'end1': self.end_spin,
-                'start2': self.start_spin2,
-                'end2': self.end_spin2
+                "start1": self.start_spin,
+                "end1": self.end_spin,
+                "start2": self.start_spin2,
+                "end2": self.end_spin2,
             }
             spinbox = spinbox_map.get(spinbox_key)
             if spinbox:
@@ -414,18 +437,18 @@ class ControlPanel(QWidget):
         enabled = self.dual_range_cb.isChecked()
         self.start_spin2.setEnabled(enabled)
         self.end_spin2.setEnabled(enabled)
-        
+
         # Re-apply styling to ensure disabled state looks correct
         style_spinbox_with_arrows(self.start_spin2)
         style_spinbox_with_arrows(self.end_spin2)
-        
+
         self.dual_range_toggled.emit(enabled)
         # The validation is handled by the connected signal
 
     def set_swap_state(self, is_swapped: bool):
         """
         Set the channel swap state directly.
-        
+
         Args:
             is_swapped: True if channels are swapped, False otherwise
         """
@@ -434,45 +457,49 @@ class ControlPanel(QWidget):
     def get_parameters(self) -> AnalysisParameters:
         """
         Get analysis parameters as a proper typed object.
-        
+
         Returns:
             AnalysisParameters object with current control values
         """
         from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
-        
+
         # Determine peak mode
         peak_mode = self.peak_mode_combo.currentText()
-        
+
         # Create X-axis config
         x_measure = self.x_measure_combo.currentText()
         x_axis = AxisConfig(
             measure=x_measure,
             channel=self.x_channel_combo.currentText() if x_measure != "Time" else None,
-            peak_type=peak_mode if x_measure == "Peak" else None
+            peak_type=peak_mode if x_measure == "Peak" else None,
         )
-        
+
         # Create Y-axis config
         y_measure = self.y_measure_combo.currentText()
         y_axis = AxisConfig(
             measure=y_measure,
             channel=self.y_channel_combo.currentText() if y_measure != "Time" else None,
-            peak_type=peak_mode if y_measure == "Peak" else None
+            peak_type=peak_mode if y_measure == "Peak" else None,
         )
-        
+
         # Return clean parameters object with current units
         return AnalysisParameters(
             range1_start=self.start_spin.value(),
             range1_end=self.end_spin.value(),
             use_dual_range=self.dual_range_cb.isChecked(),
-            range2_start=self.start_spin2.value() if self.dual_range_cb.isChecked() else None,
-            range2_end=self.end_spin2.value() if self.dual_range_cb.isChecked() else None,
+            range2_start=(
+                self.start_spin2.value() if self.dual_range_cb.isChecked() else None
+            ),
+            range2_end=(
+                self.end_spin2.value() if self.dual_range_cb.isChecked() else None
+            ),
             stimulus_period=self.period_spin.value(),
             x_axis=x_axis,
             y_axis=y_axis,
             channel_config={
-                'channels_swapped': self._is_swapped,
-                'current_units': self._current_units  # Include current units
-            }
+                "channels_swapped": self._is_swapped,
+                "current_units": self._current_units,  # Include current units
+            },
         )
 
     # --- Public methods for data access and updates ---
@@ -480,31 +507,32 @@ class ControlPanel(QWidget):
     def get_range_values(self) -> dict:
         """Get current range values"""
         return {
-            'range1_start': self.start_spin.value(),
-            'range1_end': self.end_spin.value(),
-            'use_dual_range': self.dual_range_cb.isChecked(),
-            'range2_start': self.start_spin2.value() if self.dual_range_cb.isChecked() else None,
-            'range2_end': self.end_spin2.value() if self.dual_range_cb.isChecked() else None
+            "range1_start": self.start_spin.value(),
+            "range1_end": self.end_spin.value(),
+            "use_dual_range": self.dual_range_cb.isChecked(),
+            "range2_start": (
+                self.start_spin2.value() if self.dual_range_cb.isChecked() else None
+            ),
+            "range2_end": (
+                self.end_spin2.value() if self.dual_range_cb.isChecked() else None
+            ),
         }
 
     def get_range_spinboxes(self) -> dict:
         """Get references to range spinboxes for plot manager"""
-        spinboxes = {
-            'start1': self.start_spin,
-            'end1': self.end_spin
-        }
+        spinboxes = {"start1": self.start_spin, "end1": self.end_spin}
         if self.dual_range_cb.isChecked():
-            spinboxes['start2'] = self.start_spin2
-            spinboxes['end2'] = self.end_spin2
+            spinboxes["start2"] = self.start_spin2
+            spinboxes["end2"] = self.end_spin2
         return spinboxes
 
     def update_range_value(self, spinbox_key: str, value: float):
         """Update a specific range spinbox value (e.g., from cursor drag)."""
         spinbox_map = {
-            'start1': self.start_spin,
-            'end1': self.end_spin,
-            'start2': self.start_spin2,
-            'end2': self.end_spin2
+            "start1": self.start_spin,
+            "end1": self.end_spin,
+            "start2": self.start_spin2,
+            "end2": self.end_spin2,
         }
         if spinbox_key in spinbox_map:
             # setValue() triggers validation automatically
@@ -526,20 +554,20 @@ class ControlPanel(QWidget):
             self.start_spin2.setValue(max_time)
         if self.end_spin2.value() > max_time:
             self.end_spin2.setValue(max_time)
-            
+
         # After clamping, sync the valid state
         self._previous_valid_values = {
-            'start1': self.start_spin.value(),
-            'end1': self.end_spin.value(),
-            'start2': self.start_spin2.value(),
-            'end2': self.end_spin2.value()
+            "start1": self.start_spin.value(),
+            "end1": self.end_spin.value(),
+            "start2": self.start_spin2.value(),
+            "end2": self.end_spin2.value(),
         }
 
     def set_parameters_from_dict(self, params: dict):
         """
         Set analysis parameters from a dictionary (for loading settings).
         Temporarily disables validation signals to set all values at once.
-        
+
         Args:
             params: Dictionary with analysis parameter values
         """
@@ -550,39 +578,39 @@ class ControlPanel(QWidget):
             self.start_spin2.blockSignals(True),
             self.end_spin2.blockSignals(True),
             self.dual_range_cb.blockSignals(True),
-            self.period_spin.blockSignals(True)
+            self.period_spin.blockSignals(True),
         ]
-        
+
         try:
             # Set Range 1 values
-            if 'range1_start' in params:
-                self.start_spin.setValue(params['range1_start'])
-            if 'range1_end' in params:
-                self.end_spin.setValue(params['range1_end'])
-            
+            if "range1_start" in params:
+                self.start_spin.setValue(params["range1_start"])
+            if "range1_end" in params:
+                self.end_spin.setValue(params["range1_end"])
+
             # Set dual range checkbox
-            use_dual = params.get('use_dual_range', False)
+            use_dual = params.get("use_dual_range", False)
             self.dual_range_cb.setChecked(use_dual)
-            
+
             # Enable/disable Range 2 controls based on dual range
             self.start_spin2.setEnabled(use_dual)
             self.end_spin2.setEnabled(use_dual)
-            
+
             # Set Range 2 values
             if use_dual:
-                if 'range2_start' in params and params['range2_start'] is not None:
-                    self.start_spin2.setValue(params['range2_start'])
-                if 'range2_end' in params and params['range2_end'] is not None:
-                    self.end_spin2.setValue(params['range2_end'])
-            
+                if "range2_start" in params and params["range2_start"] is not None:
+                    self.start_spin2.setValue(params["range2_start"])
+                if "range2_end" in params and params["range2_end"] is not None:
+                    self.end_spin2.setValue(params["range2_end"])
+
             # Set stimulus period
-            if 'stimulus_period' in params:
-                self.period_spin.setValue(params['stimulus_period'])
-            
+            if "stimulus_period" in params:
+                self.period_spin.setValue(params["stimulus_period"])
+
             # Set current units if present
-            if 'current_units' in params:
-                self._current_units = params['current_units']
-                
+            if "current_units" in params:
+                self._current_units = params["current_units"]
+
         finally:
             # Restore signal states
             self.start_spin.blockSignals(signals_were_blocked[0])
@@ -591,11 +619,11 @@ class ControlPanel(QWidget):
             self.end_spin2.blockSignals(signals_were_blocked[3])
             self.dual_range_cb.blockSignals(signals_were_blocked[4])
             self.period_spin.blockSignals(signals_were_blocked[5])
-            
+
             # Re-apply styling to ensure correct appearance
             style_spinbox_with_arrows(self.start_spin2)
             style_spinbox_with_arrows(self.end_spin2)
-            
+
             # Now validate everything once and emit signals
             self._validate_and_update()
             if use_dual:
@@ -604,7 +632,7 @@ class ControlPanel(QWidget):
     def set_plot_settings_from_dict(self, params: dict):
         """
         Set plot settings from a dictionary (for loading settings).
-        
+
         Args:
             params: Dictionary with plot setting values
         """
@@ -614,38 +642,38 @@ class ControlPanel(QWidget):
             self.x_channel_combo.blockSignals(True),
             self.y_measure_combo.blockSignals(True),
             self.y_channel_combo.blockSignals(True),
-            self.peak_mode_combo.blockSignals(True)
+            self.peak_mode_combo.blockSignals(True),
         ]
-        
+
         try:
             # Set X-axis settings
-            if 'x_measure' in params:
-                index = self.x_measure_combo.findText(params['x_measure'])
+            if "x_measure" in params:
+                index = self.x_measure_combo.findText(params["x_measure"])
                 if index >= 0:
                     self.x_measure_combo.setCurrentIndex(index)
-            
-            if 'x_channel' in params and params['x_channel']:
-                index = self.x_channel_combo.findText(params['x_channel'])
+
+            if "x_channel" in params and params["x_channel"]:
+                index = self.x_channel_combo.findText(params["x_channel"])
                 if index >= 0:
                     self.x_channel_combo.setCurrentIndex(index)
-            
+
             # Set Y-axis settings
-            if 'y_measure' in params:
-                index = self.y_measure_combo.findText(params['y_measure'])
+            if "y_measure" in params:
+                index = self.y_measure_combo.findText(params["y_measure"])
                 if index >= 0:
                     self.y_measure_combo.setCurrentIndex(index)
-            
-            if 'y_channel' in params and params['y_channel']:
-                index = self.y_channel_combo.findText(params['y_channel'])
+
+            if "y_channel" in params and params["y_channel"]:
+                index = self.y_channel_combo.findText(params["y_channel"])
                 if index >= 0:
                     self.y_channel_combo.setCurrentIndex(index)
-            
+
             # Set peak mode
-            if 'peak_mode' in params:
-                index = self.peak_mode_combo.findText(params['peak_mode'])
+            if "peak_mode" in params:
+                index = self.peak_mode_combo.findText(params["peak_mode"])
                 if index >= 0:
                     self.peak_mode_combo.setCurrentIndex(index)
-                    
+
         finally:
             # Restore signals
             self.x_measure_combo.blockSignals(signals_blocked[0])
@@ -653,7 +681,7 @@ class ControlPanel(QWidget):
             self.y_measure_combo.blockSignals(signals_blocked[2])
             self.y_channel_combo.blockSignals(signals_blocked[3])
             self.peak_mode_combo.blockSignals(signals_blocked[4])
-            
+
             # Update peak mode visibility based on current selections
             self._update_peak_mode_visibility()
 
@@ -661,25 +689,29 @@ class ControlPanel(QWidget):
         """
         Get all control panel settings as a dictionary.
         Useful for saving complete state.
-        
+
         Returns:
             Dictionary with all current settings
         """
         return {
-            'analysis': {
-                'range1_start': self.start_spin.value(),
-                'range1_end': self.end_spin.value(),
-                'use_dual_range': self.dual_range_cb.isChecked(),
-                'range2_start': self.start_spin2.value() if self.dual_range_cb.isChecked() else None,
-                'range2_end': self.end_spin2.value() if self.dual_range_cb.isChecked() else None,
-                'stimulus_period': self.period_spin.value(),
-                'current_units': self._current_units,  # Add current units to saved settings
+            "analysis": {
+                "range1_start": self.start_spin.value(),
+                "range1_end": self.end_spin.value(),
+                "use_dual_range": self.dual_range_cb.isChecked(),
+                "range2_start": (
+                    self.start_spin2.value() if self.dual_range_cb.isChecked() else None
+                ),
+                "range2_end": (
+                    self.end_spin2.value() if self.dual_range_cb.isChecked() else None
+                ),
+                "stimulus_period": self.period_spin.value(),
+                "current_units": self._current_units,  # Add current units to saved settings
             },
-            'plot': {
-                'x_measure': self.x_measure_combo.currentText(),
-                'x_channel': self.x_channel_combo.currentText(),
-                'y_measure': self.y_measure_combo.currentText(),
-                'y_channel': self.y_channel_combo.currentText(),
-                'peak_mode': self.peak_mode_combo.currentText()
-            }
+            "plot": {
+                "x_measure": self.x_measure_combo.currentText(),
+                "x_channel": self.x_channel_combo.currentText(),
+                "y_measure": self.y_measure_combo.currentText(),
+                "y_channel": self.y_channel_combo.currentText(),
+                "peak_mode": self.peak_mode_combo.currentText(),
+            },
         }

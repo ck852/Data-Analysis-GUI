@@ -8,4 +8,4 @@ License: MIT (see LICENSE file for details)
 
 from .file_dialog_service import FileDialogService
 
-__all__ = ['FileDialogService']
+__all__ = ["FileDialogService"]

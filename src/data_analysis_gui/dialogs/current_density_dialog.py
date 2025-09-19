@@ -18,17 +18,32 @@ from typing import Dict
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QDoubleValidator
-from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox,
-                             QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-                             QMessageBox, QPushButton, QTableWidget,
-                             QTableWidgetItem, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 from data_analysis_gui.config.logging import get_logger
+
 # Updated imports for refactored themes.py
-from data_analysis_gui.config.themes import (MODERN_COLORS, apply_compact_layout,
-                                             style_button, apply_modern_theme,
-                                             style_input_field,
-                                             style_table_widget)
+from data_analysis_gui.config.themes import (
+    MODERN_COLORS,
+    apply_compact_layout,
+    style_button,
+    apply_modern_theme,
+    style_input_field,
+    style_table_widget,
+)
 from data_analysis_gui.core.models import BatchAnalysisResult
 
 logger = get_logger(__name__)
@@ -43,10 +58,10 @@ class CurrentDensityDialog(QDialog):
         self.cslow_inputs = {}  # filename -> QLineEdit
 
         self.setModal(True)
-        
+
         # Set window title before applying theme
         self.setWindowTitle("Current Density Analysis - Enter Cslow Values")
-        
+
         self.init_ui()
 
         # Apply centralized styling from refactored themes.py
@@ -94,7 +109,7 @@ class CurrentDensityDialog(QDialog):
         self.default_input = QLineEdit("18.0")
         self.default_input.setMaximumWidth(80)
         self.default_input.setValidator(QDoubleValidator(0.01, 10000.0, 2))
-        style_input_field(self.default_input) # Apply theme styling
+        style_input_field(self.default_input)  # Apply theme styling
 
         button_layout.addWidget(set_all_btn)
         button_layout.addWidget(self.default_input)
@@ -117,7 +132,7 @@ class CurrentDensityDialog(QDialog):
         """Populate table with files and input fields."""
         results = sorted(
             self.batch_result.successful_results,
-            key=lambda r: self._extract_number(r.base_name)
+            key=lambda r: self._extract_number(r.base_name),
         )
         self.table.setRowCount(len(results))
 
@@ -130,7 +145,7 @@ class CurrentDensityDialog(QDialog):
             # Cslow input
             cslow_input = QLineEdit()
             cslow_input.setValidator(QDoubleValidator(0.01, 10000.0, 2))
-            style_input_field(cslow_input) # Apply theme styling
+            style_input_field(cslow_input)  # Apply theme styling
             cslow_input.textChanged.connect(lambda _, r=row: self._update_status(r))
             self.table.setCellWidget(row, 1, cslow_input)
             self.cslow_inputs[result.base_name] = cslow_input
@@ -142,10 +157,10 @@ class CurrentDensityDialog(QDialog):
 
     def _extract_number(self, filename: str) -> int:
         """Extract number from filename for sorting."""
-        match = re.search(r'_(\d+)', filename)
+        match = re.search(r"_(\d+)", filename)
         if match:
             return int(match.group(1))
-        numbers = re.findall(r'\d+', filename)
+        numbers = re.findall(r"\d+", filename)
         return int(numbers[-1]) if numbers else 0
 
     def _update_status(self, row: int):
@@ -158,7 +173,7 @@ class CurrentDensityDialog(QDialog):
             if text and self._is_valid_number(text):
                 status_item.setText("✔")
                 # Use theme color for success status
-                status_item.setForeground(QColor(MODERN_COLORS['success']))
+                status_item.setForeground(QColor(MODERN_COLORS["success"]))
             else:
                 status_item.setText("")
 
@@ -177,7 +192,7 @@ class CurrentDensityDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Invalid Value",
-                "Please enter a valid positive number for the default value."
+                "Please enter a valid positive number for the default value.",
             )
             return
 
@@ -187,7 +202,7 @@ class CurrentDensityDialog(QDialog):
     def _validate_and_accept(self):
         """Validate all inputs before accepting."""
         missing_files = []
-        selected_files = getattr(self.batch_result, 'selected_files', set())
+        selected_files = getattr(self.batch_result, "selected_files", set())
 
         for filename, cslow_input in self.cslow_inputs.items():
             text = cslow_input.text().strip()
@@ -200,7 +215,7 @@ class CurrentDensityDialog(QDialog):
                 self,
                 "Missing Values",
                 f"Please enter valid Cslow values for selected files.\n"
-                f"Missing: {len(missing_files)} file(s)"
+                f"Missing: {len(missing_files)} file(s)",
             )
             return
 
@@ -219,10 +234,13 @@ class CurrentDensityDialog(QDialog):
         """Handle keyboard events for copy/paste support."""
         # Check for paste shortcut: Ctrl+V on Windows/Linux, Cmd+V on Mac
         is_paste = (
-            (event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_V) or
-            (event.modifiers() == Qt.KeyboardModifier.MetaModifier and event.key() == Qt.Key.Key_V)
+            event.modifiers() == Qt.KeyboardModifier.ControlModifier
+            and event.key() == Qt.Key.Key_V
+        ) or (
+            event.modifiers() == Qt.KeyboardModifier.MetaModifier
+            and event.key() == Qt.Key.Key_V
         )
-        
+
         if is_paste:
             self._handle_paste()
         else:
@@ -235,7 +253,7 @@ class CurrentDensityDialog(QDialog):
         if not text:
             return
 
-        lines = text.strip().split('\n')
+        lines = text.strip().split("\n")
         values = [line.strip() for line in lines if self._is_valid_number(line.strip())]
 
         current_widget = QApplication.focusWidget()

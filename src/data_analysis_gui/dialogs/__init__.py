@@ -11,9 +11,9 @@ from .current_density_dialog import CurrentDensityDialog
 from .current_density_results_window import CurrentDensityResultsWindow
 
 __all__ = [
-    'BatchAnalysisDialog',
-    'AnalysisPlotDialog',
-    'BatchResultsWindow',
-    'CurrentDensityDialog',
-    'CurrentDensityResultsWindow'
+    "BatchAnalysisDialog",
+    "AnalysisPlotDialog",
+    "BatchResultsWindow",
+    "CurrentDensityDialog",
+    "CurrentDensityResultsWindow",
 ]

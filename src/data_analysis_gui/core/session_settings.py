@@ -22,7 +22,9 @@ SETTINGS_VERSION = "1.0"
 
 def get_settings_dir() -> Path:
     """Get the application settings directory, creating if needed."""
-    app_config = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation)
+    app_config = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.AppConfigLocation
+    )
     settings_dir = Path(app_config) / "data_analysis_gui"
     settings_dir.mkdir(parents=True, exist_ok=True)
     return settings_dir
@@ -31,23 +33,20 @@ def get_settings_dir() -> Path:
 def save_session_settings(settings: Dict[str, Any]) -> bool:
     """
     Save session settings with version info.
-    
+
     Args:
         settings: Complete settings dictionary
-        
+
     Returns:
         True if saved successfully
     """
     try:
         settings_file = get_settings_dir() / "session_settings.json"
-        
+
         # Add version for future compatibility
-        settings_with_version = {
-            "version": SETTINGS_VERSION,
-            "settings": settings
-        }
-        
-        with open(settings_file, 'w') as f:
+        settings_with_version = {"version": SETTINGS_VERSION, "settings": settings}
+
+        with open(settings_file, "w") as f:
             json.dump(settings_with_version, f, indent=2)
         return True
     except Exception as e:
@@ -58,7 +57,7 @@ def save_session_settings(settings: Dict[str, Any]) -> bool:
 def load_session_settings() -> Optional[Dict[str, Any]]:
     """
     Load session settings, handling version compatibility.
-    
+
     Returns:
         Settings dictionary if valid, None otherwise
     """
@@ -66,10 +65,10 @@ def load_session_settings() -> Optional[Dict[str, Any]]:
         settings_file = get_settings_dir() / "session_settings.json"
         if not settings_file.exists():
             return None
-            
-        with open(settings_file, 'r') as f:
+
+        with open(settings_file, "r") as f:
             data = json.load(f)
-        
+
         # Handle both old format (direct dict) and new format (with version)
         if isinstance(data, dict):
             if "version" in data and "settings" in data:
@@ -78,7 +77,7 @@ def load_session_settings() -> Optional[Dict[str, Any]]:
             else:
                 # Old format - treat as settings directly
                 return data
-                
+
     except Exception as e:
         print(f"Failed to load session settings: {e}")
     return None
@@ -87,118 +86,127 @@ def load_session_settings() -> Optional[Dict[str, Any]]:
 def extract_settings_from_main_window(main_window) -> dict:
     """
     Extract current settings from MainWindow for saving.
-    
+
     Args:
         main_window: MainWindow instance
-        
+
     Returns:
         Dictionary of current settings
     """
     settings = {}
-    
+
     # Get control panel settings
-    if hasattr(main_window, 'control_panel'):
+    if hasattr(main_window, "control_panel"):
         settings.update(main_window.control_panel.get_all_settings_dict())
-    
+
     # Add window-level settings
-    if hasattr(main_window, 'channel_combo'):
-        settings['last_channel_view'] = main_window.channel_combo.currentText()
-    
+    if hasattr(main_window, "channel_combo"):
+        settings["last_channel_view"] = main_window.channel_combo.currentText()
+
     # Add current units preference
-    if hasattr(main_window, 'current_units_combo'):
-        settings['current_units'] = main_window.current_units_combo.currentText()
-    elif hasattr(main_window, 'current_units'):
-        settings['current_units'] = main_window.current_units
-    
+    if hasattr(main_window, "current_units_combo"):
+        settings["current_units"] = main_window.current_units_combo.currentText()
+    elif hasattr(main_window, "current_units"):
+        settings["current_units"] = main_window.current_units
+
     # Add channel swap state
-    if hasattr(main_window, 'channel_definitions'):
-        settings['channels_swapped'] = main_window.channel_definitions.is_swapped()
-    
+    if hasattr(main_window, "channel_definitions"):
+        settings["channels_swapped"] = main_window.channel_definitions.is_swapped()
+
     # Add last directory
-    if hasattr(main_window, 'current_file_path') and main_window.current_file_path:
+    if hasattr(main_window, "current_file_path") and main_window.current_file_path:
         from pathlib import Path
-        settings['last_directory'] = str(Path(main_window.current_file_path).parent)
-    
+
+        settings["last_directory"] = str(Path(main_window.current_file_path).parent)
+
     # Add file dialog directory memory
-    if hasattr(main_window, 'file_dialog_service'):
-        settings['file_dialog_directories'] = main_window.file_dialog_service.get_last_directories()
-    
+    if hasattr(main_window, "file_dialog_service"):
+        settings["file_dialog_directories"] = (
+            main_window.file_dialog_service.get_last_directories()
+        )
+
     return settings
 
 
 def apply_settings_to_main_window(main_window, settings: dict):
     """
     Apply loaded settings to MainWindow.
-    
+
     Args:
         main_window: MainWindow instance
         settings: Dictionary of settings to apply
     """
     # Apply analysis settings
-    if 'analysis' in settings and hasattr(main_window, 'control_panel'):
-        main_window.control_panel.set_parameters_from_dict(settings['analysis'])
-        
+    if "analysis" in settings and hasattr(main_window, "control_panel"):
+        main_window.control_panel.set_parameters_from_dict(settings["analysis"])
+
         # Set current units in control panel if present
-        if 'current_units' in settings['analysis']:
-            main_window.control_panel.set_current_units(settings['analysis']['current_units'])
-    
+        if "current_units" in settings["analysis"]:
+            main_window.control_panel.set_current_units(
+                settings["analysis"]["current_units"]
+            )
+
     # Apply plot settings
-    if 'plot' in settings and hasattr(main_window, 'control_panel'):
-        main_window.control_panel.set_plot_settings_from_dict(settings['plot'])
-    
+    if "plot" in settings and hasattr(main_window, "control_panel"):
+        main_window.control_panel.set_plot_settings_from_dict(settings["plot"])
+
     # Apply window-level settings
-    if 'last_channel_view' in settings and hasattr(main_window, 'channel_combo'):
-        idx = main_window.channel_combo.findText(settings['last_channel_view'])
+    if "last_channel_view" in settings and hasattr(main_window, "channel_combo"):
+        idx = main_window.channel_combo.findText(settings["last_channel_view"])
         if idx >= 0:
             main_window.channel_combo.setCurrentIndex(idx)
         # Store for later use
-        main_window.last_channel_view = settings['last_channel_view']
-    
+        main_window.last_channel_view = settings["last_channel_view"]
+
     # Apply current units preference
-    if 'current_units' in settings:
-        if hasattr(main_window, 'current_units_combo'):
-            idx = main_window.current_units_combo.findText(settings['current_units'])
+    if "current_units" in settings:
+        if hasattr(main_window, "current_units_combo"):
+            idx = main_window.current_units_combo.findText(settings["current_units"])
             if idx >= 0:
                 main_window.current_units_combo.setCurrentIndex(idx)
         # Store in main window
-        if hasattr(main_window, 'current_units'):
-            main_window.current_units = settings['current_units']
-    
+        if hasattr(main_window, "current_units"):
+            main_window.current_units = settings["current_units"]
+
     # Apply channel swap state
-    if 'channels_swapped' in settings and settings['channels_swapped']:
-        if hasattr(main_window, 'channel_definitions'):
+    if "channels_swapped" in settings and settings["channels_swapped"]:
+        if hasattr(main_window, "channel_definitions"):
             main_window.channel_definitions.swap_channels()
-            if hasattr(main_window, 'channel_toggle'):
+            if hasattr(main_window, "channel_toggle"):
                 # Block signals to prevent triggering another swap
                 main_window.channel_toggle.blockSignals(True)
                 main_window.channel_toggle.set_swapped(True)
                 main_window.channel_toggle.blockSignals(False)
-            if hasattr(main_window, 'control_panel'):
+            if hasattr(main_window, "control_panel"):
                 main_window.control_panel.set_swap_state(True)
-    
+
     # Apply last directory
-    if 'last_directory' in settings:
-        main_window.last_directory = settings['last_directory']
-    
+    if "last_directory" in settings:
+        main_window.last_directory = settings["last_directory"]
+
     # Apply file dialog directory memory
-    if 'file_dialog_directories' in settings and hasattr(main_window, 'file_dialog_service'):
-        main_window.file_dialog_service.set_last_directories(settings['file_dialog_directories'])
+    if "file_dialog_directories" in settings and hasattr(
+        main_window, "file_dialog_service"
+    ):
+        main_window.file_dialog_service.set_last_directories(
+            settings["file_dialog_directories"]
+        )
 
 
 def revalidate_ranges_for_file(main_window, max_sweep_time: float):
     """
     Revalidate and clamp range values after a file is loaded.
-    
+
     Args:
         main_window: The MainWindow instance
         max_sweep_time: Maximum sweep time from the loaded file
     """
-    if hasattr(main_window, 'control_panel'):
+    if hasattr(main_window, "control_panel"):
         control = main_window.control_panel
-        
+
         # Update the max range for all spinboxes
         control.set_analysis_range(max_sweep_time)
-        
+
         # The set_analysis_range method already clamps values,
         # and validation happens automatically
 

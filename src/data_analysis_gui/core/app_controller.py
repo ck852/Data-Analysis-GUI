@@ -41,9 +41,11 @@ logger = get_logger(__name__)
 # Result wrapper dataclasses (kept as is)
 # =========================
 
+
 @dataclass
 class AnalysisOperationResult:
     """Result wrapper for analysis operations."""
+
     success: bool
     data: Optional[AnalysisResult] = None
     error_message: Optional[str] = None
@@ -53,6 +55,7 @@ class AnalysisOperationResult:
 @dataclass
 class PlotDataResult:
     """Result wrapper for plot data operations."""
+
     success: bool
     data: Optional[PlotData] = None
     error_message: Optional[str] = None
@@ -62,6 +65,7 @@ class PlotDataResult:
 @dataclass
 class PeakAnalysisOperationResult:
     """Result wrapper for peak analysis operations."""
+
     success: bool
     data: Optional[PeakAnalysisResult] = None
     error_message: Optional[str] = None
@@ -71,6 +75,7 @@ class PeakAnalysisOperationResult:
 @dataclass
 class FileLoadResult:
     """Result wrapper for file loading operations."""
+
     success: bool
     file_info: Optional[FileInfo] = None
     error_message: Optional[str] = None
@@ -81,20 +86,23 @@ class FileLoadResult:
 # Controller
 # =========================
 
+
 class ApplicationController:
     """
     Application controller with proper service management.
     Services can be injected or created internally.
     """
 
-    def __init__(self, 
-                 channel_definitions: Optional[ChannelDefinitions] = None,
-                 data_manager: Optional[DataManager] = None,
-                 analysis_manager: Optional[AnalysisManager] = None,
-                 batch_processor: Optional[BatchProcessor] = None):
+    def __init__(
+        self,
+        channel_definitions: Optional[ChannelDefinitions] = None,
+        data_manager: Optional[DataManager] = None,
+        analysis_manager: Optional[AnalysisManager] = None,
+        batch_processor: Optional[BatchProcessor] = None,
+    ):
         """
         Initialize controller with optional service injection.
-        
+
         Args:
             channel_definitions: Channel configuration (created if not provided)
             data_manager: Data management service (created if not provided)
@@ -110,8 +118,12 @@ class ApplicationController:
 
         # Services - use provided or create new
         self.data_manager = data_manager or DataManager()
-        self.analysis_manager = analysis_manager or AnalysisManager(self.channel_definitions)
-        self.batch_processor = batch_processor or BatchProcessor(self.channel_definitions)
+        self.analysis_manager = analysis_manager or AnalysisManager(
+            self.channel_definitions
+        )
+        self.batch_processor = batch_processor or BatchProcessor(
+            self.channel_definitions
+        )
 
         # Compatibility aliases (to avoid breaking older code)
         self.data_service = self.data_manager
@@ -120,7 +132,7 @@ class ApplicationController:
         self.batch_service = self.batch_processor
 
         # Keep reference to analysis engine from analysis manager if it exists
-        if hasattr(self.analysis_manager, 'engine'):
+        if hasattr(self.analysis_manager, "engine"):
             self.engine = self.analysis_manager.engine
 
         # GUI callbacks (set by view)
@@ -133,15 +145,15 @@ class ApplicationController:
     def get_services(self) -> Dict[str, Any]:
         """
         Get all services for external use.
-        
+
         Returns:
             Dictionary of service references
         """
         return {
-            'data_manager': self.data_manager,
-            'analysis_manager': self.analysis_manager,
-            'batch_processor': self.batch_processor,
-            'channel_definitions': self.channel_definitions
+            "data_manager": self.data_manager,
+            "analysis_manager": self.analysis_manager,
+            "batch_processor": self.batch_processor,
+            "channel_definitions": self.channel_definitions,
         }
 
     # =========================================================================
@@ -149,26 +161,23 @@ class ApplicationController:
     # =========================================================================
 
     def run_batch_analysis(
-        self,
-        file_paths: List[str],
-        params: AnalysisParameters
+        self, file_paths: List[str], params: AnalysisParameters
     ) -> BatchAnalysisResult:
         """
         Run a batch analysis over multiple files.
-        
+
         Simple sequential processing for clarity and reliability.
-        
+
         Args:
             file_paths: List of files to analyze
             params: Analysis parameters to use
-            
+
         Returns:
             BatchAnalysisResult with all results
         """
         try:
             return self.batch_processor.process_files(
-                file_paths=file_paths,
-                params=params
+                file_paths=file_paths, params=params
             )
         except Exception as e:
             logger.error(f"Batch analysis failed: {e}", exc_info=True)
@@ -227,8 +236,7 @@ class ApplicationController:
 
             # Prepare file info for GUI
             sweep_names = sorted(
-                dataset.sweeps(),
-                key=lambda x: int(x) if x.isdigit() else 0
+                dataset.sweeps(), key=lambda x: int(x) if x.isdigit() else 0
             )
             file_info = FileInfo(
                 name=Path(file_path).name,
@@ -270,7 +278,9 @@ class ApplicationController:
             logger.error(f"Unexpected error loading file: {e}", exc_info=True)
             if self.on_error:
                 self.on_error(f"An unexpected error occurred: {str(e)}")
-            return FileLoadResult(False, None, f"Unexpected error: {str(e)}", type(e).__name__)
+            return FileLoadResult(
+                False, None, f"Unexpected error: {str(e)}", type(e).__name__
+            )
 
     def has_data(self) -> bool:
         """Check if data is currently loaded."""
@@ -283,7 +293,9 @@ class ApplicationController:
         """
         if not self.has_data():
             logger.warning("No data loaded for analysis")
-            return AnalysisOperationResult(False, None, "No data loaded", "ValidationError")
+            return AnalysisOperationResult(
+                False, None, "No data loaded", "ValidationError"
+            )
 
         try:
             result = self.analysis_manager.analyze(self.current_dataset, params)
@@ -300,9 +312,13 @@ class ApplicationController:
 
         except Exception as e:
             logger.error(f"Unexpected error during analysis: {e}", exc_info=True)
-            return AnalysisOperationResult(False, None, f"Unexpected error: {str(e)}", type(e).__name__)
+            return AnalysisOperationResult(
+                False, None, f"Unexpected error: {str(e)}", type(e).__name__
+            )
 
-    def export_analysis_data(self, params: AnalysisParameters, file_path: str) -> ExportResult:
+    def export_analysis_data(
+        self, params: AnalysisParameters, file_path: str
+    ) -> ExportResult:
         """
         Export analyzed data (single file).
         """
@@ -315,7 +331,9 @@ class ApplicationController:
             result = self.data_manager.export_to_csv(table, file_path)
 
             if result.success:
-                logger.info(f"Exported {result.records_exported} records to {Path(file_path).name}")
+                logger.info(
+                    f"Exported {result.records_exported} records to {Path(file_path).name}"
+                )
             else:
                 logger.error(f"Export failed: {result.error_message}")
 
@@ -323,9 +341,13 @@ class ApplicationController:
 
         except Exception as e:
             logger.error(f"Unexpected error during export: {e}", exc_info=True)
-            return ExportResult(success=False, error_message=f"Unexpected error: {str(e)}")
+            return ExportResult(
+                success=False, error_message=f"Unexpected error: {str(e)}"
+            )
 
-    def get_sweep_plot_data(self, sweep_index: str, channel_type: str) -> PlotDataResult:
+    def get_sweep_plot_data(
+        self, sweep_index: str, channel_type: str
+    ) -> PlotDataResult:
         """
         Get data for plotting a single sweep.
         FAIL-CLOSED: Always returns a result object, never None.
@@ -351,20 +373,27 @@ class ApplicationController:
 
         except Exception as e:
             logger.error(f"Unexpected error getting sweep data: {e}", exc_info=True)
-            return PlotDataResult(False, None, f"Unexpected error: {str(e)}", type(e).__name__)
+            return PlotDataResult(
+                False, None, f"Unexpected error: {str(e)}", type(e).__name__
+            )
 
-    def get_peak_analysis(self, params: AnalysisParameters,
-                              peak_types: List[str] = None) -> PeakAnalysisOperationResult:
+    def get_peak_analysis(
+        self, params: AnalysisParameters, peak_types: List[str] = None
+    ) -> PeakAnalysisOperationResult:
         """
         Perform comprehensive peak analysis.
         FAIL-CLOSED: Always returns a result object, never None.
         """
         if not self.has_data():
             logger.warning("No data loaded for peak analysis")
-            return PeakAnalysisOperationResult(False, None, "No data loaded", "ValidationError")
+            return PeakAnalysisOperationResult(
+                False, None, "No data loaded", "ValidationError"
+            )
 
         try:
-            result = self.analysis_manager.get_peak_analysis(self.current_dataset, params, peak_types)
+            result = self.analysis_manager.get_peak_analysis(
+                self.current_dataset, params, peak_types
+            )
             logger.debug("Peak analysis completed successfully")
             return PeakAnalysisOperationResult(True, result)
 
@@ -378,7 +407,9 @@ class ApplicationController:
 
         except Exception as e:
             logger.error(f"Unexpected error during peak analysis: {e}", exc_info=True)
-            return PeakAnalysisOperationResult(False, None, f"Unexpected error: {str(e)}", type(e).__name__)
+            return PeakAnalysisOperationResult(
+                False, None, f"Unexpected error: {str(e)}", type(e).__name__
+            )
 
     def get_suggested_export_filename(self, params: AnalysisParameters) -> str:
         """
@@ -402,17 +433,15 @@ class ApplicationController:
 
         # If data is loaded, then update the dataset with the new definitions
         if self.has_data():
-            self.current_dataset.update_channel_definitions(
-                self.channel_definitions
-            )
-        
-        return {'success': True, 'is_swapped': is_swapped}
+            self.current_dataset.update_channel_definitions(self.channel_definitions)
+
+        return {"success": True, "is_swapped": is_swapped}
 
     def get_channel_configuration(self) -> Dict[str, int]:
         """
         Get current channel configuration.
         """
         return {
-            'voltage': self.channel_definitions.get_voltage_channel(),
-            'current': self.channel_definitions.get_current_channel(),
+            "voltage": self.channel_definitions.get_voltage_channel(),
+            "current": self.channel_definitions.get_current_channel(),
         }

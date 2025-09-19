@@ -20,9 +20,17 @@ from typing import Dict, List, Set, Optional, Tuple, Callable
 import numpy as np
 from pathlib import Path
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, 
-                             QTableWidgetItem, QCheckBox, QHeaderView, QLabel,
-                             QPushButton)
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QCheckBox,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
 
@@ -36,7 +44,9 @@ from data_analysis_gui.core.models import FileAnalysisResult
 from data_analysis_gui.config.logging import get_logger
 
 from data_analysis_gui.config.plot_style import (
-    apply_plot_style, format_batch_plot, COLOR_CYCLE
+    apply_plot_style,
+    format_batch_plot,
+    COLOR_CYCLE,
 )
 from data_analysis_gui.widgets.custom_toolbar import MinimalNavigationToolbar
 
@@ -46,22 +56,24 @@ logger = get_logger(__name__)
 class FileSelectionState:
     """
     Manages file selection state that can be shared across windows.
-    
+
     This class maintains a set of selected files and notifies observers
     when the selection changes, enabling synchronized selection across
     multiple UI components.
     """
-    
+
     def __init__(self, initial_files: Optional[Set[str]] = None):
         """
         Initialize with optional set of initially selected files.
-        
+
         Args:
             initial_files: Set of filenames to select initially
         """
-        self._selected_files: Set[str] = initial_files.copy() if initial_files else set()
+        self._selected_files: Set[str] = (
+            initial_files.copy() if initial_files else set()
+        )
         self._observers: List[Callable[[Set[str]], None]] = []
-        
+
     def toggle_file(self, filename: str, selected: bool) -> None:
         """Toggle selection state for a file."""
         if selected:
@@ -69,29 +81,29 @@ class FileSelectionState:
         else:
             self._selected_files.discard(filename)
         self._notify_observers()
-    
+
     def set_files(self, filenames: Set[str]) -> None:
         """Set the complete selection state."""
         self._selected_files = filenames.copy()
         self._notify_observers()
-    
+
     def is_selected(self, filename: str) -> bool:
         """Check if a file is selected."""
         return filename in self._selected_files
-    
+
     def get_selected_files(self) -> Set[str]:
         """Get copy of currently selected files."""
         return self._selected_files.copy()
-    
+
     def add_observer(self, callback: Callable[[Set[str]], None]) -> None:
         """Add observer to be notified of selection changes."""
         self._observers.append(callback)
-    
+
     def remove_observer(self, callback: Callable[[Set[str]], None]) -> None:
         """Remove an observer."""
         if callback in self._observers:
             self._observers.remove(callback)
-    
+
     def _notify_observers(self) -> None:
         """Notify all observers of selection change."""
         selected = self.get_selected_files()
@@ -105,50 +117,51 @@ class FileSelectionState:
 class DynamicBatchPlotWidget(QWidget):
     """
     Reusable plot widget for batch results with smooth dynamic updates.
-    
+
     This widget maintains a persistent matplotlib figure and updates only
     the data or visibility of plot lines, avoiding the flicker of complete
     redraws. It's designed to work with both batch results and current
     density displays.
     """
-    
+
     # Signals
     plot_updated = Signal()
-    
+
     def __init__(self, parent=None):
         """Initialize the plot widget with modern styling."""
         super().__init__(parent)
-        
+
         # Apply global plot style
         apply_plot_style()
-        
+
         # Plot components (created lazily)
         self.figure: Optional[Figure] = None
         self.canvas: Optional[FigureCanvas] = None
         self.ax = None
         self.toolbar: Optional[MinimalNavigationToolbar] = None
-        
+
         # Data management
         self.line_objects: Dict[str, Dict[str, Line2D]] = {}
         self.file_colors: Dict[str, Tuple[float, ...]] = {}
         self.plot_initialized = False
-        
+
         # Configuration
         self.use_dual_range = False
         self.x_label = "X"
         self.y_label = "Y"
         self.title = ""
         self.legend_fontsize = 8
-        
+
         # Layout
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        
+
         # Initialize with styled empty message
         self.empty_label = QLabel("No data to display")
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_label.setStyleSheet("""
+        self.empty_label.setStyleSheet(
+            """
             QLabel {
                 color: #808080;
                 font-size: 12px;
@@ -158,59 +171,63 @@ class DynamicBatchPlotWidget(QWidget):
                 border-radius: 4px;
                 padding: 20px;
             }
-        """)
+        """
+        )
         self.layout.addWidget(self.empty_label)
-    
+
     def initialize_plot(self, x_label: str, y_label: str, title: str = "") -> None:
         """
         Initialize the plot with labels and title.
-        
+
         Args:
             x_label: Label for x-axis
-            y_label: Label for y-axis  
+            y_label: Label for y-axis
             title: Plot title (optional)
         """
         self.x_label = x_label
         self.y_label = y_label
         self.title = title
-        
+
         if not self.plot_initialized:
             self._create_plot_components()
-    
+
     def _create_plot_components(self) -> None:
         """Create matplotlib figure, canvas, and toolbar with modern styling."""
         # Remove empty label
         if self.empty_label:
             self.empty_label.setParent(None)
             self.empty_label = None
-        
+
         # Create figure with modern style
-        self.figure = Figure(figsize=(12, 8), facecolor='#FAFAFA')
+        self.figure = Figure(figsize=(12, 8), facecolor="#FAFAFA")
         self.ax = self.figure.add_subplot(111)
-        
+
         # Apply batch plot formatting
         format_batch_plot(self.ax, self.x_label, self.y_label)
-        
+
         # Create canvas
         self.canvas = FigureCanvas(self.figure)
-        
+
         # Create minimal toolbar for batch plots
         self.toolbar = MinimalNavigationToolbar(self.canvas, self)
-        
+
         # Add to layout with proper spacing
         self.layout.addWidget(self.toolbar)
         self.layout.addWidget(self.canvas)
-        
+
         self.plot_initialized = True
         logger.debug("Plot components created")
-    
-    def set_data(self, results: List[FileAnalysisResult], 
-             use_dual_range: bool = False,
-             color_mapping: Optional[Dict[str, Tuple[float, ...]]] = None,
-             auto_scale: bool = True) -> None:  # Add auto_scale parameter
+
+    def set_data(
+        self,
+        results: List[FileAnalysisResult],
+        use_dual_range: bool = False,
+        color_mapping: Optional[Dict[str, Tuple[float, ...]]] = None,
+        auto_scale: bool = True,
+    ) -> None:  # Add auto_scale parameter
         """
         Set the data to be plotted with optional auto-scaling.
-        
+
         Args:
             results: List of analysis results
             use_dual_range: Whether dual range data should be shown
@@ -220,124 +237,129 @@ class DynamicBatchPlotWidget(QWidget):
         if not self.plot_initialized:
             logger.warning("Plot not initialized. Call initialize_plot first.")
             return
-        
+
         self.use_dual_range = use_dual_range
-        
+
         # Generate color mapping if not provided
         if color_mapping is None:
             color_mapping = self._generate_color_mapping(results)
         self.file_colors = color_mapping
-        
+
         # Clear existing lines
         for lines_dict in self.line_objects.values():
             for line in lines_dict.values():
                 line.remove()
         self.line_objects.clear()
-        
+
         # Create line objects for each result
         for result in results:
             self._create_lines_for_result(result)
-        
+
         # Update plot appearance
         self._update_plot_appearance()
-        
+
         # Auto-scale if requested (especially important for current density)
         if auto_scale:
             self._auto_scale_axes()
-        
+
         # Draw
         self.canvas.draw_idle()
         self.plot_updated.emit()
-    
-    def _generate_color_mapping(self, results: List[FileAnalysisResult]) -> Dict[str, Tuple[float, ...]]:
+
+    def _generate_color_mapping(
+        self, results: List[FileAnalysisResult]
+    ) -> Dict[str, Tuple[float, ...]]:
         """Generate color mapping using the modern color palette."""
         color_mapping = {}
-        
+
         for idx, result in enumerate(results):
             # Use the modern color cycle
             color_hex = COLOR_CYCLE[idx % len(COLOR_CYCLE)]
-            
+
             # Convert hex to RGB tuple
-            if color_hex.startswith('#'):
-                color = tuple(int(color_hex[i:i+2], 16)/255 for i in (1, 3, 5))
+            if color_hex.startswith("#"):
+                color = tuple(int(color_hex[i : i + 2], 16) / 255 for i in (1, 3, 5))
             else:
                 import matplotlib.colors as mcolors
+
                 color = mcolors.to_rgb(color_hex)
-            
+
             color_mapping[result.base_name] = color
-        
+
         return color_mapping
-    
+
     def _create_lines_for_result(self, result: FileAnalysisResult) -> None:
         """Create line objects with modern styling."""
         color = self.file_colors.get(result.base_name, (0, 0, 0))
-        
+
         # Range 1 line with modern styling
         if len(result.x_data) > 0 and len(result.y_data) > 0:
-            line_r1, = self.ax.plot(
-                result.x_data, result.y_data,
-                'o-',
+            (line_r1,) = self.ax.plot(
+                result.x_data,
+                result.y_data,
+                "o-",
                 label=f"{result.base_name}",
                 markersize=4,
                 markeredgewidth=0,
                 linewidth=1.5,
                 alpha=0.85,
                 color=color,
-                visible=True
+                visible=True,
             )
-            
+
             if result.base_name not in self.line_objects:
                 self.line_objects[result.base_name] = {}
-            self.line_objects[result.base_name]['range1'] = line_r1
-        
+            self.line_objects[result.base_name]["range1"] = line_r1
+
         # Range 2 line with dashed style
         if self.use_dual_range and result.y_data2 is not None:
             if len(result.x_data) > 0 and len(result.y_data2) > 0:
-                line_r2, = self.ax.plot(
-                    result.x_data if result.x_data2 is None else result.x_data2, 
+                (line_r2,) = self.ax.plot(
+                    result.x_data if result.x_data2 is None else result.x_data2,
                     result.y_data2,
-                    's--',
+                    "s--",
                     label=f"{result.base_name} (Range 2)",
                     markersize=4,
                     markeredgewidth=0,
                     linewidth=1.5,
                     alpha=0.85,
                     color=color,
-                    visible=True
+                    visible=True,
                 )
-                self.line_objects[result.base_name]['range2'] = line_r2
-    
+                self.line_objects[result.base_name]["range2"] = line_r2
+
     def update_visibility(self, selected_files: Set[str]) -> None:
         """
         Update line visibility based on selected files.
-        
+
         Args:
             selected_files: Set of filenames that should be visible
         """
         if not self.plot_initialized:
             return
-        
+
         # Update line visibility
         for filename, lines_dict in self.line_objects.items():
             visible = filename in selected_files
             for line in lines_dict.values():
                 line.set_visible(visible)
-        
+
         # Update legend to show only visible lines
         self._update_plot_appearance()
-        
+
         # Re-scale to fit only visible data
         self._auto_scale_axes()
-        
+
         # Redraw
         self.canvas.draw_idle()
         self.plot_updated.emit()
-    
-    def update_line_data(self, filename: str, y_data: np.ndarray, 
-                        y_data2: Optional[np.ndarray] = None) -> None:
+
+    def update_line_data(
+        self, filename: str, y_data: np.ndarray, y_data2: Optional[np.ndarray] = None
+    ) -> None:
         """
         Update Y data for a specific file's lines.
-        
+
         Args:
             filename: Name of file to update
             y_data: New Y data for range 1
@@ -346,54 +368,55 @@ class DynamicBatchPlotWidget(QWidget):
         if filename not in self.line_objects:
             logger.warning(f"No line objects for file: {filename}")
             return
-        
+
         lines = self.line_objects[filename]
-        
+
         # Update range 1
-        if 'range1' in lines:
-            lines['range1'].set_ydata(y_data)
-        
+        if "range1" in lines:
+            lines["range1"].set_ydata(y_data)
+
         # Update range 2
-        if self.use_dual_range and y_data2 is not None and 'range2' in lines:
-            lines['range2'].set_ydata(y_data2)
-        
+        if self.use_dual_range and y_data2 is not None and "range2" in lines:
+            lines["range2"].set_ydata(y_data2)
+
         # Update axis limits if needed
         self.ax.relim()
         self.ax.autoscale_view()
-        
+
         # Redraw
         self.canvas.draw_idle()
         self.plot_updated.emit()
-    
+
     def _update_plot_appearance(self) -> None:
         """Update legend and plot appearance with modern styling."""
         # Get visible lines for legend
         visible_lines = []
         visible_labels = []
-        
+
         for filename, lines_dict in self.line_objects.items():
             for range_key, line in lines_dict.items():
                 if line.get_visible():
                     visible_lines.append(line)
                     visible_labels.append(line.get_label())
-        
+
         # Update legend with modern styling
         if visible_lines:
             legend = self.ax.legend(
-                visible_lines, visible_labels,
-                loc='best',
+                visible_lines,
+                visible_labels,
+                loc="best",
                 frameon=True,
                 fancybox=False,
                 shadow=False,
                 framealpha=0.95,
-                edgecolor='#D0D0D0',
-                facecolor='white',
+                edgecolor="#D0D0D0",
+                facecolor="white",
                 fontsize=self.legend_fontsize,
                 borderpad=0.5,
                 columnspacing=1.2,
-                handlelength=2
+                handlelength=2,
             )
-            
+
             # Make legend draggable for better user experience
             if legend:
                 legend.set_draggable(True)
@@ -402,7 +425,7 @@ class DynamicBatchPlotWidget(QWidget):
             legend = self.ax.get_legend()
             if legend:
                 legend.remove()
-    
+
     def clear_plot(self) -> None:
         """Clear all plot data."""
         if self.plot_initialized:
@@ -413,7 +436,7 @@ class DynamicBatchPlotWidget(QWidget):
             self.file_colors.clear()
             self.ax.clear()
             self.canvas.draw_idle()
-    
+
     def export_figure(self, filepath: str, dpi: int = 300) -> None:
         """Export the current figure with high quality."""
         if self.figure:
@@ -421,10 +444,10 @@ class DynamicBatchPlotWidget(QWidget):
             self.figure.savefig(
                 filepath,
                 dpi=dpi,
-                bbox_inches='tight',
-                facecolor='white',
-                edgecolor='none',
-                pad_inches=0.1
+                bbox_inches="tight",
+                facecolor="white",
+                edgecolor="none",
+                pad_inches=0.1,
             )
 
     def _auto_scale_axes(self):
@@ -434,11 +457,11 @@ class DynamicBatchPlotWidget(QWidget):
         """
         if not self.ax or not self.line_objects:
             return
-        
+
         # Collect all visible y-data
         all_y_data = []
         all_x_data = []
-        
+
         for filename, lines_dict in self.line_objects.items():
             for line in lines_dict.values():
                 if line.get_visible():
@@ -447,12 +470,12 @@ class DynamicBatchPlotWidget(QWidget):
                     if len(y_data) > 0:
                         all_y_data.extend(y_data)
                         all_x_data.extend(x_data)
-        
+
         if all_y_data and all_x_data:
             # Calculate data ranges
             y_min, y_max = np.nanmin(all_y_data), np.nanmax(all_y_data)
             x_min, x_max = np.nanmin(all_x_data), np.nanmax(all_x_data)
-            
+
             # Add smart padding based on data range
             y_range = y_max - y_min
             if y_range > 0:
@@ -461,14 +484,14 @@ class DynamicBatchPlotWidget(QWidget):
             else:
                 # If all values are the same, add 10% of the value as padding
                 y_padding = abs(y_max) * 0.1 if y_max != 0 else 1.0
-            
+
             x_range = x_max - x_min
             x_padding = x_range * 0.02 if x_range > 0 else 1.0
-            
+
             # Set the limits
             self.ax.set_ylim(y_min - y_padding, y_max + y_padding)
             self.ax.set_xlim(x_min - x_padding, x_max + x_padding)
-        
+
         # Refresh the canvas
         self.canvas.draw_idle()
 
@@ -479,11 +502,11 @@ class DynamicBatchPlotWidget(QWidget):
         """
         if not self.ax or not self.line_objects:
             return
-        
+
         # Collect all visible y-data
         all_y_data = []
         all_x_data = []
-        
+
         for filename, lines_dict in self.line_objects.items():
             for line in lines_dict.values():
                 if line.get_visible():
@@ -495,12 +518,12 @@ class DynamicBatchPlotWidget(QWidget):
                         if np.any(valid_mask):
                             all_y_data.extend(y_data[valid_mask])
                             all_x_data.extend(x_data[valid_mask])
-        
+
         if all_y_data and all_x_data:
             # Calculate data ranges
             y_min, y_max = np.min(all_y_data), np.max(all_y_data)
             x_min, x_max = np.min(all_x_data), np.max(all_x_data)
-            
+
             # Add smart padding based on data range
             y_range = y_max - y_min
             if y_range > 0:
@@ -509,55 +532,60 @@ class DynamicBatchPlotWidget(QWidget):
             else:
                 # If all values are the same, add 10% of the value as padding
                 y_padding = abs(y_max) * 0.1 if y_max != 0 else 1.0
-            
+
             x_range = x_max - x_min
             x_padding = x_range * 0.02 if x_range > 0 else 1.0
-            
+
             # Set the limits
             self.ax.set_ylim(y_min - y_padding, y_max + y_padding)
             self.ax.set_xlim(x_min - x_padding, x_max + x_padding)
-            
+
             # Refresh the canvas
             self.canvas.draw_idle()
+
 
 class BatchFileListWidget(QTableWidget):
     """
     Enhanced file list widget that maintains selection state across windows.
-    
+
     This widget displays files with checkboxes and optional additional columns
     (like Cslow values). It uses a FileSelectionState object to maintain
     consistency across different windows.
     """
-    
+
     # Signals
     selection_changed = Signal()
     cslow_value_changed = Signal(str, float)  # filename, new_value
-    
-    def __init__(self, selection_state: Optional[FileSelectionState] = None,
-                 show_cslow: bool = False, parent=None):
+
+    def __init__(
+        self,
+        selection_state: Optional[FileSelectionState] = None,
+        show_cslow: bool = False,
+        parent=None,
+    ):
         """
         Initialize the file list widget.
-        
+
         Args:
             selection_state: Shared selection state object
             show_cslow: Whether to show Cslow column
             parent: Parent widget
         """
         super().__init__(parent)
-        
+
         self.selection_state = selection_state or FileSelectionState()
         self.show_cslow = show_cslow
         self.file_colors: Dict[str, Tuple[float, ...]] = {}
-        
+
         # Prevent signal cascades
         self._updating_checkboxes = False
-        
+
         # Configure table
         self._setup_table()
-        
+
         # Connect to selection state
         self.selection_state.add_observer(self._on_external_selection_change)
-    
+
     def _setup_table(self) -> None:
         """Set up table structure and appearance."""
         # Column setup
@@ -567,32 +595,38 @@ class BatchFileListWidget(QTableWidget):
         else:
             self.setColumnCount(3)
             self.setHorizontalHeaderLabels(["", "Color", "File"])
-        
+
         # Column sizing
         self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         self.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        
+
         self.setColumnWidth(0, 30)  # Checkbox
         self.setColumnWidth(1, 40)  # Color
-        
+
         if self.show_cslow:
-            self.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+            self.horizontalHeader().setSectionResizeMode(
+                3, QHeaderView.ResizeMode.Fixed
+            )
             self.setColumnWidth(3, 100)
-        
+
         # Appearance
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QTableWidget.SelectRows)
         self.verticalHeader().setVisible(False)
-        
+
         # Make file column non-editable
         self.setEditTriggers(QTableWidget.NoEditTriggers)
-    
-    def add_file(self, file_name: str, color: Tuple[float, ...], 
-                 cslow_val: Optional[float] = None) -> None:
+
+    def add_file(
+        self,
+        file_name: str,
+        color: Tuple[float, ...],
+        cslow_val: Optional[float] = None,
+    ) -> None:
         """
         Add a file to the list.
-        
+
         Args:
             file_name: Name of the file
             color: RGB color tuple
@@ -600,87 +634,89 @@ class BatchFileListWidget(QTableWidget):
         """
         row = self.rowCount()
         self.insertRow(row)
-        
+
         # Checkbox
         checkbox = QCheckBox()
         checkbox.setChecked(self.selection_state.is_selected(file_name))
-        checkbox.stateChanged.connect(lambda: self._on_checkbox_changed(file_name, checkbox.isChecked()))
-        
+        checkbox.stateChanged.connect(
+            lambda: self._on_checkbox_changed(file_name, checkbox.isChecked())
+        )
+
         checkbox_widget = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_widget)
         checkbox_layout.addWidget(checkbox)
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         checkbox_layout.setContentsMargins(0, 0, 0, 0)
         self.setCellWidget(row, 0, checkbox_widget)
-        
+
         # Color indicator
         self.setCellWidget(row, 1, self._create_color_indicator(color))
-        
+
         # File name
         file_item = QTableWidgetItem(file_name)
         file_item.setFlags(file_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.setItem(row, 2, file_item)
-        
+
         # Cslow value (if applicable)
         if self.show_cslow and cslow_val is not None:
             from data_analysis_gui.widgets.custom_inputs import SelectAllLineEdit
-            
+
             cslow_edit = SelectAllLineEdit()
             cslow_edit.setText(f"{cslow_val:.2f}")
             cslow_edit.editingFinished.connect(
                 lambda: self._on_cslow_changed(file_name, cslow_edit)
             )
             self.setCellWidget(row, 3, cslow_edit)
-        
+
         # Store color
         self.file_colors[file_name] = color
-    
+
     def _create_color_indicator(self, color: Tuple[float, ...]) -> QWidget:
         """Create a colored square widget."""
         widget = QWidget()
         layout = QHBoxLayout(widget)
-        
+
         pixmap = QPixmap(20, 20)
         pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
+
         # Convert to QColor
-        qcolor = QColor(int(color[0]*255), int(color[1]*255), int(color[2]*255))
-        
+        qcolor = QColor(int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))
+
         painter.setBrush(QBrush(qcolor))
         painter.setPen(Qt.GlobalColor.black)
         painter.drawRect(2, 2, 16, 16)
         painter.end()
-        
+
         label = QLabel()
         label.setPixmap(pixmap)
         layout.addWidget(label)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
-        
+
         return widget
-    
+
     def _on_checkbox_changed(self, file_name: str, checked: bool) -> None:
         """Handle individual checkbox changes."""
         if not self._updating_checkboxes:
             self.selection_state.toggle_file(file_name, checked)
             self.selection_changed.emit()
-    
+
     def _on_external_selection_change(self, selected_files: Set[str]) -> None:
         """Handle selection changes from other sources."""
         self._updating_checkboxes = True
-        
+
         for row in range(self.rowCount()):
             file_name = self.item(row, 2).text()
             checkbox = self.cellWidget(row, 0).findChild(QCheckBox)
             if checkbox:
                 checkbox.setChecked(file_name in selected_files)
-        
+
         self._updating_checkboxes = False
         self.selection_changed.emit()
-    
+
     def _on_cslow_changed(self, file_name: str, cslow_edit: QWidget) -> None:
         """Handle Cslow value changes."""
         try:
@@ -688,29 +724,29 @@ class BatchFileListWidget(QTableWidget):
             self.cslow_value_changed.emit(file_name, new_value)
         except ValueError:
             logger.warning(f"Invalid Cslow value for {file_name}")
-    
+
     def set_all_checked(self, checked: bool) -> None:
         """Check or uncheck all files at once."""
         self._updating_checkboxes = True
-        
+
         # Collect all filenames
         filenames = set()
         for row in range(self.rowCount()):
             file_name = self.item(row, 2).text()
             if checked:
                 filenames.add(file_name)
-            
+
             # Update checkbox UI
             checkbox = self.cellWidget(row, 0).findChild(QCheckBox)
             if checkbox:
                 checkbox.setChecked(checked)
-        
+
         self._updating_checkboxes = False
-        
+
         # Update selection state once
         self.selection_state.set_files(filenames)
         self.selection_changed.emit()
-    
+
     def get_selected_files(self) -> Set[str]:
         """Get currently selected files from the shared state."""
         return self.selection_state.get_selected_files()
