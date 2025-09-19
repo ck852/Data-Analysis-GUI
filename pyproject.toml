@@ -3,28 +3,29 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "data-analysis-gui"
-version = "0.1.0"
-description = "Patch-clamp electrophysiology data analysis GUI with MAT/CSV support"
+name = "PatchBatch"
+version = "0.9.0-beta.1"
+description = "Patch-clamp electrophysiology data analysis tool"
 authors = [
-  { name="Charlie K.", email="your_email@example.com" }
+  { name="Charles Kissell", email="kissell.r@northeastern.edu" }
 ]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 
 dependencies = [
-  "PySide6>=6.0.0",
-  "matplotlib>=3.6",
-  "numpy>=1.23",
-  "pandas>=1.5",
-  "scipy>=1.9"
+  "PySide6>=6.2.0",
+  "pandas>=1.3.0",
+  "numpy>=1.20.0",
+  "scipy>=1.7.0",
+  "matplotlib>=3.6.0",
+  "pyabf">=2.3.0"
+
 ]
 
 [project.optional-dependencies]
 test = [
-  "pytest",
-  "pytest-qt",
+  "pytest"
 ]
 
 [project.scripts]
