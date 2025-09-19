@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
       fail-fast: false  # Continue testing other combinations if one fails
     
@@ -23,6 +23,23 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgl1-mesa-glx \
+          libglib2.0-0 \
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-xinerama0 \
+          libxcb-xfixes0 \
+          xvfb
     
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
@@ -39,6 +56,17 @@ jobs:
     - name: Install additional test dependencies
       run: |
         pip install pytest pytest-xvfb
+    
+    - name: Run tests (Ubuntu)
+      if: runner.os == 'Linux'
+      env:
+        CI: true
+        QT_QPA_PLATFORM: offscreen
+        DISPLAY: ":99"
+      run: |
+        # Start virtual display for any GUI components that might need it
+        xvfb-run -a --server-args="-screen 0 1024x768x24 -ac +extension GLX" \
+          pytest tests/ -v --tb=short -m "not gui and not ci_skip"
     
     - name: Run tests (macOS)
       if: runner.os == 'macOS'
