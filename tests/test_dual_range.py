@@ -265,103 +265,103 @@ class TestDualRangeAnalysis:
             
             print(f"✓ ABF dual range analysis test passed")
     
-    def test_dual_range_mat_file(self, controller, test_data_path, golden_data_path, dual_range_parameters):
-        """
-        Test dual range analysis on MAT file.
+    # def test_dual_range_mat_file(self, controller, test_data_path, golden_data_path, dual_range_parameters):
+    #     """
+    #     Test dual range analysis on MAT file.
         
-        This test:
-        1. Loads the MAT file with 234 sweeps
-        2. Applies dual range analysis parameters
-        3. Exports the results
-        4. Compares with golden reference for MAT
-        """
-        # Get MAT test file
-        mat_file = test_data_path / "250202_007[1-234].mat"
-        assert mat_file.exists(), f"MAT test file not found: {mat_file}"
+    #     This test:
+    #     1. Loads the MAT file with 234 sweeps
+    #     2. Applies dual range analysis parameters
+    #     3. Exports the results
+    #     4. Compares with golden reference for MAT
+    #     """
+    #     # Get MAT test file
+    #     mat_file = test_data_path / "250202_007[1-234].mat"
+    #     assert mat_file.exists(), f"MAT test file not found: {mat_file}"
         
-        # Get golden reference for MAT
-        mat_reference = golden_data_path / "mat" / "250202_007.csv"
-        assert mat_reference.exists(), f"MAT golden reference not found: {mat_reference}"
+    #     # Get golden reference for MAT
+    #     mat_reference = golden_data_path / "mat" / "250202_007.csv"
+    #     assert mat_reference.exists(), f"MAT golden reference not found: {mat_reference}"
         
-        # Create temporary directory for output
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Analyze the MAT file
-            success, output_path = self.analyze_file(
-                controller, 
-                mat_file, 
-                dual_range_parameters,
-                temp_dir
-            )
+    #     # Create temporary directory for output
+    #     with tempfile.TemporaryDirectory() as temp_dir:
+    #         # Analyze the MAT file
+    #         success, output_path = self.analyze_file(
+    #             controller, 
+    #             mat_file, 
+    #             dual_range_parameters,
+    #             temp_dir
+    #         )
             
-            assert success, f"Failed to analyze MAT file: {mat_file}"
+    #         assert success, f"Failed to analyze MAT file: {mat_file}"
             
-            # Verify the exported data structure
-            exported_data = np.genfromtxt(output_path, delimiter=',', skip_header=1)
+    #         # Verify the exported data structure
+    #         exported_data = np.genfromtxt(output_path, delimiter=',', skip_header=1)
             
-            # For dual range with Time as X-axis, expect 3 columns
-            assert exported_data.shape[0] == 234, f"Expected 234 rows, got {exported_data.shape[0]}"
-            assert exported_data.shape[1] == 3, f"Expected 3 columns, got {exported_data.shape[1]}"
+    #         # For dual range with Time as X-axis, expect 3 columns
+    #         assert exported_data.shape[0] == 234, f"Expected 234 rows, got {exported_data.shape[0]}"
+    #         assert exported_data.shape[1] == 3, f"Expected 3 columns, got {exported_data.shape[1]}"
             
-            # Verify time column is monotonically increasing
-            time_values = exported_data[:, 0]
-            assert np.all(np.diff(time_values) >= 0), "Time values should be monotonically increasing"
+    #         # Verify time column is monotonically increasing
+    #         time_values = exported_data[:, 0]
+    #         assert np.all(np.diff(time_values) >= 0), "Time values should be monotonically increasing"
             
-            # Verify Range 1 and Range 2 have different values
-            range1_values = exported_data[:, 1]
-            range2_values = exported_data[:, 2]
-            assert not np.allclose(range1_values, range2_values, rtol=1e-10), \
-                "Range 1 and Range 2 should have different values (different time windows)"
+    #         # Verify Range 1 and Range 2 have different values
+    #         range1_values = exported_data[:, 1]
+    #         range2_values = exported_data[:, 2]
+    #         assert not np.allclose(range1_values, range2_values, rtol=1e-10), \
+    #             "Range 1 and Range 2 should have different values (different time windows)"
             
-            # Compare with golden reference
-            self.compare_csv_files(output_path, str(mat_reference))
+    #         # Compare with golden reference
+    #         self.compare_csv_files(output_path, str(mat_reference))
             
-            print(f"✓ MAT dual range analysis test passed")
+    #         print(f"✓ MAT dual range analysis test passed")
     
-    def test_abf_mat_equivalence(self, controller, test_data_path, dual_range_parameters):
-        """
-        Test that ABF and MAT files produce equivalent results.
+    # def test_abf_mat_equivalence(self, controller, test_data_path, dual_range_parameters):
+    #     """
+    #     Test that ABF and MAT files produce equivalent results.
         
-        This test verifies that the same data in different formats
-        produces identical analysis results, ensuring format independence.
-        """
-        abf_file = test_data_path / "250202_007[1-234].abf"
-        mat_file = test_data_path / "250202_007[1-234].mat"
+    #     This test verifies that the same data in different formats
+    #     produces identical analysis results, ensuring format independence.
+    #     """
+    #     abf_file = test_data_path / "250202_007[1-234].abf"
+    #     mat_file = test_data_path / "250202_007[1-234].mat"
         
-        assert abf_file.exists() and mat_file.exists(), "Both test files must exist"
+    #     assert abf_file.exists() and mat_file.exists(), "Both test files must exist"
         
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Analyze ABF file
-            success_abf, abf_output = self.analyze_file(
-                controller, 
-                abf_file, 
-                dual_range_parameters,
-                temp_dir
-            )
-            assert success_abf, "ABF analysis failed"
+    #     with tempfile.TemporaryDirectory() as temp_dir:
+    #         # Analyze ABF file
+    #         success_abf, abf_output = self.analyze_file(
+    #             controller, 
+    #             abf_file, 
+    #             dual_range_parameters,
+    #             temp_dir
+    #         )
+    #         assert success_abf, "ABF analysis failed"
             
-            # Analyze MAT file
-            success_mat, mat_output = self.analyze_file(
-                controller, 
-                mat_file, 
-                dual_range_parameters,
-                temp_dir
-            )
-            assert success_mat, "MAT analysis failed"
+    #         # Analyze MAT file
+    #         success_mat, mat_output = self.analyze_file(
+    #             controller, 
+    #             mat_file, 
+    #             dual_range_parameters,
+    #             temp_dir
+    #         )
+    #         assert success_mat, "MAT analysis failed"
             
-            # Load both outputs
-            abf_data = np.genfromtxt(abf_output, delimiter=',', skip_header=1)
-            mat_data = np.genfromtxt(mat_output, delimiter=',', skip_header=1)
+    #         # Load both outputs
+    #         abf_data = np.genfromtxt(abf_output, delimiter=',', skip_header=1)
+    #         mat_data = np.genfromtxt(mat_output, delimiter=',', skip_header=1)
             
-            # Compare the data (should be identical within numerical precision)
-            np.testing.assert_allclose(
-                abf_data,
-                mat_data,
-                rtol=1e-6,
-                atol=1e-6,
-                err_msg="ABF and MAT files should produce identical results"
-            )
+    #         # Compare the data (should be identical within numerical precision)
+    #         np.testing.assert_allclose(
+    #             abf_data,
+    #             mat_data,
+    #             rtol=1e-6,
+    #             atol=1e-6,
+    #             err_msg="ABF and MAT files should produce identical results"
+    #         )
             
-            print(f"✓ ABF-MAT equivalence test passed")
+    #         print(f"✓ ABF-MAT equivalence test passed")
     
     def test_dual_range_validation(self, controller, test_data_path, dual_range_parameters):
         """

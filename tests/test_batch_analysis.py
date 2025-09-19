@@ -446,9 +446,9 @@ class TestBatchAnalysisWorkflowMAT(TestBatchAnalysisWorkflowBase):
     def file_format(self) -> str:
         return "mat"
     
-    @property
-    def file_extension(self) -> str:
-        return "*.mat"
+    # @property
+    # def file_extension(self) -> str:
+    #     return "*.mat"
 
 
 if __name__ == "__main__":

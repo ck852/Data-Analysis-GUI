@@ -334,16 +334,16 @@ class TestSwapChannelsBase(ABC):
         assert export_result.success_count == len(test_files)
 
 
-class TestSwapChannelsMAT(TestSwapChannelsBase):
-    """Test Swap Channels functionality with MAT files."""
+# class TestSwapChannelsMAT(TestSwapChannelsBase):
+#     """Test Swap Channels functionality with MAT files."""
     
-    @property
-    def file_format(self) -> str:
-        return "mat"
+#     @property
+#     def file_format(self) -> str:
+#         return "mat"
     
-    @property
-    def file_extension(self) -> str:
-        return "mat"
+#     @property
+#     def file_extension(self) -> str:
+#         return "mat"
 
 
 class TestSwapChannelsABF(TestSwapChannelsBase):

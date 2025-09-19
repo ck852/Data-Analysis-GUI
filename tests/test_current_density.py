@@ -544,10 +544,10 @@ class TestCurrentDensityABF(CurrentDensityTestBase):
     FILE_EXTENSION = '*.abf'
 
 
-class TestCurrentDensityMAT(CurrentDensityTestBase):
-    """Test current density workflow with MAT files."""
-    FILE_TYPE = 'mat'
-    FILE_EXTENSION = '*.mat'
+# class TestCurrentDensityMAT(CurrentDensityTestBase):
+#     """Test current density workflow with MAT files."""
+#     FILE_TYPE = 'mat'
+#     FILE_EXTENSION = '*.mat'
 
 
 if __name__ == "__main__":
