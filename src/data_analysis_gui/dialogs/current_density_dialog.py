@@ -71,7 +71,7 @@ class CurrentDensityDialog(QDialog):
     def init_ui(self):
         """Initialize the UI."""
         layout = QVBoxLayout(self)
-        self.resize(600, 800)
+        self.resize(600, 600)
 
         # Instructions
         instructions = QLabel(
