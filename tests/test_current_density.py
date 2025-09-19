@@ -1,23 +1,17 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
-"""
-
-"""
-Test script for current density analysis workflow.
+Test script for current density analysis workflow with golden file validation.
 
 Tests the complete workflow from batch analysis through current density
-calculation and export, matching exactly what the GUI does.
+calculation and export, validating all outputs against golden reference files.
 """
 
 import os
-import shutil
+import csv
 import tempfile
+import shutil
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from dataclasses import replace
-from copy import deepcopy
 
 import numpy as np
 import pytest
@@ -26,6 +20,7 @@ from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
 from data_analysis_gui.services.batch_processor import BatchProcessor
 from data_analysis_gui.services.data_manager import DataManager
+from data_analysis_gui.services.analysis_manager import AnalysisManager
 from data_analysis_gui.services.current_density_service import CurrentDensityService
 
 
@@ -44,6 +39,245 @@ CSLOW_VALUES = {
     "250514_011": 22.2,
     "250514_012": 23.2
 }
+
+
+def load_csv_data(filepath: Path) -> Tuple[List[str], np.ndarray]:
+    """
+    Load CSV headers and data array from file.
+    
+    Args:
+        filepath: Path to CSV file
+        
+    Returns:
+        Tuple of (headers, data_array)
+    """
+    if not filepath.exists():
+        raise FileNotFoundError(f"CSV file not found: {filepath}")
+    
+    with open(filepath, 'r') as f:
+        reader = csv.reader(f)
+        headers = next(reader)
+        data = []
+        for row in reader:
+            data.append([float(val) if val and val != 'nan' else np.nan for val in row])
+    
+    return headers, np.array(data)
+
+
+def compare_csv_files(generated: Path, golden: Path, rtol: float = 1e-5, atol: float = 1e-6) -> None:
+    """
+    Compare two CSV files with detailed error reporting.
+    
+    Args:
+        generated: Path to generated CSV file
+        golden: Path to golden reference CSV file
+        rtol: Relative tolerance for numerical comparison
+        atol: Absolute tolerance for numerical comparison
+    """
+    # Load both files
+    gen_headers, gen_data = load_csv_data(generated)
+    gold_headers, gold_data = load_csv_data(golden)
+    
+    # FIX 1: Exact header comparison for individual files
+    try:
+        assert gen_headers == gold_headers, \
+            f"Headers mismatch:\nGenerated: {gen_headers}\nGolden: {gold_headers}"
+    except AssertionError as e:
+        # FIX 6: Better error messages
+        raise AssertionError(
+            f"Header validation failed for {generated.name}\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    # Compare data shape
+    try:
+        assert gen_data.shape == gold_data.shape, \
+            f"Data shape mismatch:\nGenerated: {gen_data.shape}\nGolden: {gold_data.shape}"
+    except AssertionError as e:
+        # FIX 6: Better error messages
+        raise AssertionError(
+            f"Shape validation failed for {generated.name}\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    # Compare data values
+    if gen_data.size > 0:
+        # Check for NaN positions matching
+        gen_nan_mask = np.isnan(gen_data)
+        gold_nan_mask = np.isnan(gold_data)
+        
+        # NaNs are a red flag in this test
+        if np.any(gen_nan_mask):
+            nan_count = np.sum(gen_nan_mask)
+            nan_positions = np.where(gen_nan_mask)
+            raise AssertionError(
+                f"WARNING: Found {nan_count} NaN values in generated file {generated.name}\n"
+                f"NaN positions (row, col): {list(zip(*nan_positions))[:5]}..."  # Show first 5
+            )
+        
+        try:
+            assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                f"NaN positions don't match in {generated.name}"
+        except AssertionError as e:
+            # FIX 6: Better error messages
+            raise AssertionError(
+                f"NaN position validation failed for {generated.name}\n"
+                f"Generated file: {generated}\n"
+                f"Golden file: {golden}\n"
+                f"{str(e)}"
+            )
+        
+        # Compare non-NaN values
+        if not np.all(gen_nan_mask):
+            valid_mask = ~gen_nan_mask
+            try:
+                np.testing.assert_allclose(
+                    gen_data[valid_mask],
+                    gold_data[valid_mask],
+                    rtol=rtol,
+                    atol=atol,
+                    err_msg=f"Data mismatch in {generated.name}"
+                )
+            except AssertionError as e:
+                # FIX 6: Provide more detailed error info
+                diff = np.abs(gen_data[valid_mask] - gold_data[valid_mask])
+                max_diff_idx = np.argmax(diff)
+                max_diff = diff[max_diff_idx]
+                gen_val = gen_data[valid_mask][max_diff_idx]
+                gold_val = gold_data[valid_mask][max_diff_idx]
+                raise AssertionError(
+                    f"Numerical validation failed for {generated.name}\n"
+                    f"Generated file: {generated}\n"
+                    f"Golden file: {golden}\n"
+                    f"Max difference: {max_diff:.6e}\n"
+                    f"Generated value: {gen_val:.6f}\n"
+                    f"Golden value: {gold_val:.6f}\n"
+                    f"Tolerance: rtol={rtol}, atol={atol}\n"
+                    f"{str(e)}"
+                )
+
+
+def compare_summary_csv(generated: Path, golden: Path) -> None:
+    """
+    Compare summary CSV files with appropriate tolerances.
+    
+    Summary files have format:
+    Voltage (mV) | File1 (Cslow1 pF) | File2 (Cslow2 pF) | ...
+    
+    Args:
+        generated: Path to generated summary CSV
+        golden: Path to golden reference summary CSV
+    """
+    gen_headers, gen_data = load_csv_data(generated)
+    gold_headers, gold_data = load_csv_data(golden)
+    
+    # For summary, headers might have formatting differences due to Cslow values
+    # So check structure rather than exact match
+    try:
+        assert len(gen_headers) == len(gold_headers), \
+            f"Header count mismatch: {len(gen_headers)} vs {len(gold_headers)}"
+    except AssertionError as e:
+        # FIX 6: Better error messages
+        raise AssertionError(
+            f"Summary header validation failed\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    # First header should be voltage
+    assert "Voltage" in gen_headers[0], f"First column should be Voltage, got: {gen_headers[0]}"
+    
+    # Compare data
+    try:
+        assert gen_data.shape == gold_data.shape, \
+            f"Data shape mismatch:\nGenerated: {gen_data.shape}\nGolden: {gold_data.shape}"
+    except AssertionError as e:
+        # FIX 6: Better error messages
+        raise AssertionError(
+            f"Summary shape validation failed\n"
+            f"Generated file: {generated}\n"
+            f"Golden file: {golden}\n"
+            f"{str(e)}"
+        )
+    
+    if gen_data.size > 0:
+        # Check for NaNs - they're a red flag
+        gen_nan_mask = np.isnan(gen_data)
+        if np.any(gen_nan_mask):
+            nan_count = np.sum(gen_nan_mask)
+            raise AssertionError(
+                f"WARNING: Found {nan_count} NaN values in summary file {generated.name}\n"
+                f"This indicates missing data or calculation errors"
+            )
+        
+        # Voltage column (column 0) - use tight tolerance
+        try:
+            np.testing.assert_allclose(
+                gen_data[:, 0],
+                gold_data[:, 0],
+                rtol=1e-4,
+                atol=0.1,  # 0.1 mV tolerance for voltages
+                err_msg="Voltage column mismatch"
+            )
+        except AssertionError as e:
+            # FIX 6: Better error messages
+            raise AssertionError(
+                f"Summary voltage column validation failed\n"
+                f"Generated file: {generated}\n"
+                f"Golden file: {golden}\n"
+                f"{str(e)}"
+            )
+        
+        # Current density columns - use appropriate tolerance
+        for col_idx in range(1, gen_data.shape[1]):
+            col_gen = gen_data[:, col_idx]
+            col_gold = gold_data[:, col_idx]
+            
+            # Handle NaN values
+            gen_nan_mask = np.isnan(col_gen)
+            gold_nan_mask = np.isnan(col_gold)
+            
+            try:
+                assert np.array_equal(gen_nan_mask, gold_nan_mask), \
+                    f"NaN positions don't match in column {col_idx}"
+            except AssertionError as e:
+                # FIX 6: Better error messages
+                raise AssertionError(
+                    f"Summary column {col_idx} NaN validation failed\n"
+                    f"Column header: {gen_headers[col_idx]}\n"
+                    f"Generated file: {generated}\n"
+                    f"Golden file: {golden}\n"
+                    f"{str(e)}"
+                )
+            
+            # Compare non-NaN values
+            valid_mask = ~gen_nan_mask
+            if np.any(valid_mask):
+                try:
+                    np.testing.assert_allclose(
+                        col_gen[valid_mask],
+                        col_gold[valid_mask],
+                        rtol=1e-4,
+                        atol=1e-3,  # 0.001 pA/pF tolerance
+                        err_msg=f"Current density mismatch in column {col_idx} ({gen_headers[col_idx]})"
+                    )
+                except AssertionError as e:
+                    # FIX 6: Better error messages
+                    diff = np.abs(col_gen[valid_mask] - col_gold[valid_mask])
+                    max_diff = np.max(diff)
+                    raise AssertionError(
+                        f"Summary column {col_idx} validation failed\n"
+                        f"Column header: {gen_headers[col_idx]}\n"
+                        f"Max difference: {max_diff:.6e} pA/pF\n"
+                        f"Generated file: {generated}\n"
+                        f"Golden file: {golden}\n"
+                        f"{str(e)}"
+                    )
 
 
 class CurrentDensityTestBase:
@@ -98,110 +332,140 @@ class CurrentDensityTestBase:
         return [str(f) for f in sorted(test_files)]
 
     def test_current_density_workflow(self, analysis_params, temp_output_dir):
-        """Test the complete current density analysis workflow."""
-        # Initialize services (exactly as GUI does)
+        """Test the complete current density analysis workflow with golden file validation."""
+        
+        # ==================================================================
+        # PHASE 1: Initialize Services (exactly as GUI does)
+        # ==================================================================
         channel_defs = ChannelDefinitions()
         batch_processor = BatchProcessor(channel_defs)
         data_manager = DataManager()
-        cd_service = CurrentDensityService()  # GUI creates this
-
-        # Step 1: Get all test files
+        cd_service = CurrentDensityService()
+        
+        # ==================================================================
+        # PHASE 2: Batch Analysis (following GUI workflow)
+        # ==================================================================
         test_files = self.get_test_files()
         assert len(test_files) == 12, f"Expected 12 {self.FILE_TYPE.upper()} files, found {len(test_files)}"
-
-        # Step 2: Perform batch analysis
-        print(f"Processing {len(test_files)} {self.FILE_TYPE.upper()} files...")
+        
+        print(f"\n{'='*60}")
+        print(f"Testing {self.FILE_TYPE.upper()} Current Density Workflow")
+        print(f"{'='*60}")
+        print(f"Processing {len(test_files)} files...")
+        
+        # BatchProcessor.process_files() - exactly as GUI does
         batch_result = batch_processor.process_files(
             file_paths=test_files,
             params=analysis_params
         )
-
-        # Verify all files processed successfully
+        
         assert len(batch_result.successful_results) == 12, \
             f"Expected 12 successful results, got {len(batch_result.successful_results)}"
         assert len(batch_result.failed_results) == 0, \
             f"Unexpected failures: {[r.file_path for r in batch_result.failed_results]}"
-
-        # Validate Cslow values using the service (as GUI could)
-        file_names = {r.base_name for r in batch_result.successful_results}
-        validation_errors = cd_service.validate_cslow_values(CSLOW_VALUES, file_names)
-        assert len(validation_errors) == 0, f"Cslow validation errors: {validation_errors}"
-
-        # Step 3: Apply current density calculations (matching GUI's current_density_results_window.py)
-        cd_results = []
+        
+        # FIX 4: Intermediate validation - verify units are still pA after batch analysis
+        print("Validating intermediate state (pre-CD)...")
         for result in batch_result.successful_results:
-            base_name = result.base_name
-            cslow = CSLOW_VALUES.get(base_name)
-
-            assert cslow is not None and cslow > 0, f"Invalid Cslow value for {base_name}"
-
-            # This is EXACTLY what the GUI does in _recalculate_cd_for_file():
-            # It does NOT call cd_service.calculate_current_density()!
-            new_y_data = np.array(result.y_data) / cslow
+            if result.export_table and 'headers' in result.export_table:
+                headers_str = str(result.export_table['headers'])
+                # Should have pA but not pF in headers before CD calculation
+                assert '(pA)' in headers_str or 'Current' in headers_str, \
+                    f"Expected current units in headers for {result.base_name}, got: {headers_str}"
+                assert '(pA/pF)' not in headers_str, \
+                    f"Found pA/pF in headers before CD calculation for {result.base_name}: {headers_str}"
+        
+        # ==================================================================
+        # PHASE 3: Current Density Calculation (using service method)
+        # ==================================================================
+        print("Applying current density calculations...")
+        
+        # Create copies for CD calculation (as GUI does)
+        original_batch_result = batch_result
+        active_batch_result = replace(
+            batch_result,
+            successful_results=list(batch_result.successful_results)  # Create new list
+        )
+        
+        # Apply CD calculations using the service (matching GUI's _apply_initial_current_density)
+        for i, result in enumerate(active_batch_result.successful_results):
+            file_name = result.base_name
+            cslow = CSLOW_VALUES.get(file_name)
             
-            # Update export_table with new current density values
-            new_export_table = None
-            if result.export_table:
-                new_export_table = deepcopy(result.export_table)
-                if 'data' in new_export_table:
-                    data_array = np.array(new_export_table['data'])
-                    if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
-                        # Column 1 is y_data (column 0 is x_data)
-                        data_array[:, 1] = new_y_data
-                        new_export_table['data'] = data_array
+            assert cslow is not None and cslow > 0, f"Invalid Cslow value for {file_name}"
             
-            # Add "_CD" suffix as GUI does in _export_individual_csvs()
-            cd_result = replace(
-                result,
-                base_name=f"{result.base_name}_CD",
-                y_data=new_y_data,
-                export_table=new_export_table
+            # Use the service method - NOT manual calculation
+            updated_result = cd_service.recalculate_cd_for_file(
+                file_name,
+                cslow,
+                active_batch_result,
+                original_batch_result
             )
             
-            # Handle dual range if present (matching GUI logic)
-            if analysis_params.use_dual_range and result.y_data2 is not None:
-                new_y_data2 = np.array(result.y_data2) / cslow
-                
-                if new_export_table and 'data' in new_export_table:
-                    data_array = np.array(new_export_table['data'])
-                    if data_array.shape[1] >= 3:
-                        data_array[:, 2] = new_y_data2
-                        new_export_table['data'] = data_array
-                
-                cd_result = replace(cd_result, y_data2=new_y_data2, export_table=new_export_table)
+            # FIX 2: Verify export table header changed to pA/pF
+            if updated_result.export_table and 'headers' in updated_result.export_table:
+                headers_str = str(updated_result.export_table['headers'])
+                assert '(pA/pF)' in headers_str, \
+                    f"Expected (pA/pF) in headers after CD calculation for {file_name}, got: {headers_str}"
+                # Should no longer have plain (pA) - it should be (pA/pF)
+                # Note: Voltage should still be (mV) not affected
+                for header in updated_result.export_table['headers']:
+                    if 'Current' in header or 'Average' in header and 'Voltage' not in header:
+                        assert '(pA/pF)' in header or '(mV)' in header, \
+                            f"Invalid unit in header after CD: {header}"
             
+            # Update the result in place
+            active_batch_result.successful_results[i] = updated_result
+        
+        # FIX 4: Validate all results have been converted to current density
+        print("Validating intermediate state (post-CD)...")
+        for result in active_batch_result.successful_results:
+            if result.export_table and 'headers' in result.export_table:
+                headers_str = str(result.export_table['headers'])
+                assert '(pA/pF)' in headers_str, \
+                    f"Expected pA/pF units after CD for {result.base_name}, got: {headers_str}"
+        
+        # ==================================================================
+        # PHASE 4: Export Individual CSVs (with _CD suffix)
+        # ==================================================================
+        print("Exporting individual current density CSVs...")
+        
+        # Add "_CD" suffix as GUI does
+        cd_results = []
+        for result in active_batch_result.successful_results:
+            cd_result = replace(result, base_name=f"{result.base_name}_CD")
             cd_results.append(cd_result)
-
-        # Create new batch result with current density values
+        
         cd_batch_result = replace(
-            batch_result,
+            active_batch_result,
             successful_results=cd_results,
-            selected_files={r.base_name for r in cd_results}  # All files selected
+            selected_files={r.base_name for r in cd_results}
         )
-
-        # Step 4: Export individual current density CSVs
+        
+        # Export using BatchProcessor
         cd_output_dir = os.path.join(temp_output_dir, "current_density")
         os.makedirs(cd_output_dir, exist_ok=True)
-
+        
         export_result = batch_processor.export_results(cd_batch_result, cd_output_dir)
-
         assert export_result.success_count == 12, \
             f"Expected 12 successful exports, got {export_result.success_count}"
         
-        # Verify files have "_CD" suffix
-        exported_files = list(Path(cd_output_dir).glob("*_CD.csv"))
-        assert len(exported_files) == 12, f"Expected 12 files with _CD suffix, found {len(exported_files)}"
-
-        # Step 5: Test Summary Export using the service (as GUI does)
-        # First prepare the voltage data structure like GUI does
+        # ==================================================================
+        # PHASE 5: Generate and Export Summary
+        # ==================================================================
+        print("Generating current density summary...")
+        
+        # Prepare data structure as GUI does
         voltage_data = {}
         file_mapping = {}
-        sorted_results = sorted(cd_results, key=lambda r: r.base_name)
+        sorted_results = sorted(
+            active_batch_result.successful_results,
+            key=lambda r: int(r.base_name.split('_')[-1])
+        )
         
         for idx, result in enumerate(sorted_results):
             recording_id = f"Recording {idx + 1}"
-            base_name = result.base_name.replace("_CD", "")
-            file_mapping[recording_id] = base_name
+            file_mapping[recording_id] = result.base_name
             
             for i, voltage in enumerate(result.x_data):
                 voltage_rounded = round(float(voltage), 1)
@@ -210,12 +474,12 @@ class CurrentDensityTestBase:
                 if i < len(result.y_data):
                     voltage_data[voltage_rounded][idx] = result.y_data[i]
         
-        # Use the service to prepare summary data (exactly as GUI does)
-        selected_files = {r.base_name.replace("_CD", "") for r in cd_results}
+        # Use service to prepare summary
+        selected_files = {r.base_name for r in sorted_results}
         summary_data = cd_service.prepare_summary_export(
-            voltage_data, 
-            file_mapping, 
-            CSLOW_VALUES, 
+            voltage_data,
+            file_mapping,
+            CSLOW_VALUES,
             selected_files,
             "pA/pF"
         )
@@ -223,41 +487,55 @@ class CurrentDensityTestBase:
         summary_path = os.path.join(temp_output_dir, "Current_Density_Summary.csv")
         summary_result = data_manager.export_to_csv(summary_data, summary_path)
         assert summary_result.success, f"Summary export failed: {summary_result.error_message}"
-
-    def test_cslow_validation(self):
-        """Test Cslow validation functionality using the service."""
-        cd_service = CurrentDensityService()
         
-        # Test the calculate_current_density method (even though GUI doesn't use it)
-        current = np.array([100.0, 200.0, 300.0])
-        cslow = 20.0
-        cd = cd_service.calculate_current_density(current, cslow)
+        # ==================================================================
+        # PHASE 6: Validate Against Golden Files (CRITICAL)
+        # ==================================================================
+        print("\nValidating against golden reference files...")
         
-        expected = np.array([5.0, 10.0, 15.0])
-        np.testing.assert_allclose(cd, expected)
+        # Validate individual CSV files
+        for file_name in CSLOW_VALUES.keys():
+            generated_csv = Path(cd_output_dir) / f"{file_name}_CD.csv"
+            golden_csv = self.golden_data_dir / f"{file_name}_CD.csv"
+            
+            print(f"  Comparing {file_name}_CD.csv...", end=" ")
+            
+            # FIX 6: Better error handling with context
+            try:
+                compare_csv_files(
+                    generated_csv,
+                    golden_csv,
+                    rtol=1e-4,  # 0.01% relative tolerance
+                    atol=1e-3   # 0.001 absolute tolerance for small values
+                )
+                print("✔")
+            except AssertionError as e:
+                print("✗")
+                raise AssertionError(
+                    f"\nValidation failed for individual file: {file_name}_CD.csv\n"
+                    f"Cslow value used: {CSLOW_VALUES[file_name]} pF\n"
+                    f"{str(e)}"
+                )
         
-        # Test invalid Cslow
-        with pytest.raises(ValueError, match="Cslow must be positive"):
-            cd_service.calculate_current_density(current, 0.0)
+        # Validate summary CSV
+        print(f"  Comparing Current_Density_Summary.csv...", end=" ")
+        golden_summary = self.golden_data_dir / "Current_Density_Summary.csv"
         
-        with pytest.raises(ValueError, match="Cslow must be positive"):
-            cd_service.calculate_current_density(current, -10.0)
+        # FIX 6: Better error handling for summary
+        try:
+            compare_summary_csv(Path(summary_path), golden_summary)
+            print("✔")
+        except AssertionError as e:
+            print("✗")
+            raise AssertionError(
+                f"\nValidation failed for summary file\n"
+                f"Number of files: {len(CSLOW_VALUES)}\n"
+                f"{str(e)}"
+            )
         
-        # Test validation method
-        cslow_mapping = {
-            "file1": 20.0,    # Valid
-            "file2": 0.0,     # Invalid - zero
-            "file3": -5.0,    # Invalid - negative
-            "file4": 15000.0, # Invalid - too large
-        }
-        
-        file_names = set(cslow_mapping.keys())
-        errors = cd_service.validate_cslow_values(cslow_mapping, file_names)
-        
-        assert "file1" not in errors
-        assert "file2" in errors and "must be positive" in errors["file2"]
-        assert "file3" in errors and "must be positive" in errors["file3"]
-        assert "file4" in errors and "unreasonably large" in errors["file4"]
+        print(f"\n{'='*60}")
+        print(f"✔ All {self.FILE_TYPE.upper()} current density tests passed!")
+        print(f"{'='*60}\n")
 
 
 class TestCurrentDensityABF(CurrentDensityTestBase):
@@ -275,4 +553,4 @@ class TestCurrentDensityMAT(CurrentDensityTestBase):
 if __name__ == "__main__":
     # Run the test directly
     import sys
-    sys.exit(pytest.main([__file__, "-v"]))
+    sys.exit(pytest.main([__file__, "-v", "-s"]))

@@ -61,11 +61,16 @@ class CurrentDensityService:
             if 'data' in new_export_table:
                 data_array = np.array(new_export_table['data'])
                 if len(data_array.shape) == 2 and data_array.shape[1] >= 2:
+                    #Round voltage to nearest integer
+                    data_array[:, 0] = np.round(data_array[:, 0])
+                    # Column 0 is Voltage, Column 1 is the value to be updated.
                     data_array[:, 1] = new_y_data
                     new_export_table['data'] = data_array
-            
+
             # Update headers
-            CurrentDensityService.update_export_table_headers(new_export_table, is_current_density=True)
+            CurrentDensityService.update_export_table_headers(
+                new_export_table, is_current_density=True, cslow_value=new_cslow
+            )
         
         # Create updated result
         updated_result = replace(
@@ -89,9 +94,17 @@ class CurrentDensityService:
         return updated_result
     
     @staticmethod
-    def update_export_table_headers(export_table: Dict[str, Any], is_current_density: bool = True):
+    def update_export_table_headers(export_table: Dict[str, Any], is_current_density: bool = True, cslow_value: Optional[float] = None):
         """Update export table headers to reflect current density units."""
         if not export_table or 'headers' not in export_table:
+            return
+        
+        if is_current_density and cslow_value is not None:
+            export_table['headers'] = [
+                'Voltage (mV)',
+                'Current Density (pA/pF)',
+                f'Cslow = {cslow_value:.2f} pF'
+            ]
             return
         
         updated_headers = []
@@ -163,7 +176,7 @@ class CurrentDensityService:
                 continue
             
             # Add header with file name and Cslow
-            headers.append(f"{file_name} ({cslow:.2f} pF)")
+            headers.append(f"{file_name}")
             
             # Extract current density values for this file
             cd_values = []
