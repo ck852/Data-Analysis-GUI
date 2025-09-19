@@ -1,6 +1,6 @@
 Welcome to PatchBatch! The purpose of this program is to streamline electrophysiology data analysis workflows by enabling batch-analysis of data files that share the same analysis parameters. I developed this after growing impatient with the long, tedious workflows that require defining the same parameters repeatedly for every file. A full day of patch-clamp recordings could take an hour to extract a current density-voltage relationship from. This is typically a repetitive process that, while not technically complicated, requires significant mental energy to do reproducibly and without errors. I developed this program because I wanted to spend less time and focus on raw data extraction, and more time on data interpretation and further experiments. 
 
-===================================================== HOW TO USE =====================================================
+================================== HOW TO USE ==================================
 
 If you are starting with WCP files, start by converting them to .abf using the native export option in WinWCP. 
 
