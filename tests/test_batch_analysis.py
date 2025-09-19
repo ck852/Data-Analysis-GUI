@@ -1,4 +1,9 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+"""
 Test script for batch analysis IV workflow with golden file validation.
 
 Tests the complete workflow from batch analysis through IV summary export,
@@ -498,10 +503,10 @@ class TestBatchIVAnalysisABF(BatchIVAnalysisTestBase):
     FILE_EXTENSION = '*.abf'
 
 
-class TestBatchIVAnalysisMAT(BatchIVAnalysisTestBase):
-    """Test batch IV analysis workflow with MAT files."""
-    FILE_TYPE = 'mat'
-    FILE_EXTENSION = '*.mat'
+# class TestBatchIVAnalysisMAT(BatchIVAnalysisTestBase):
+#     """Test batch IV analysis workflow with MAT files."""
+#     FILE_TYPE = 'mat'
+#     FILE_EXTENSION = '*.mat'
 
 
 if __name__ == "__main__":

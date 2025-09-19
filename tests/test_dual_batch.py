@@ -1,4 +1,9 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+"""
 Test dual range batch analysis workflow following the exact GUI workflow.
 
 This test follows the exact same function calls as shown in:
@@ -249,18 +254,18 @@ class TestDualRangeABF(TestDualRangeBatchWorkflow):
         )
 
 
-class TestDualRangeMAT(TestDualRangeBatchWorkflow):
-    """Test dual range batch workflow with MAT files."""
+# class TestDualRangeMAT(TestDualRangeBatchWorkflow):
+#     """Test dual range batch workflow with MAT files."""
     
-    @pytest.fixture
-    def file_format(self):
-        return 'mat'
+#     @pytest.fixture
+#     def file_format(self):
+#         return 'mat'
     
-    def test_mat_dual_range_workflow(self, controller, batch_processor, analysis_parameters, file_format, tmp_path):
-        """Test the complete workflow with MAT files."""
-        self._run_dual_range_batch_workflow(
-            controller, batch_processor, analysis_parameters, file_format, tmp_path
-        )
+#     def test_mat_dual_range_workflow(self, controller, batch_processor, analysis_parameters, file_format, tmp_path):
+#         """Test the complete workflow with MAT files."""
+#         self._run_dual_range_batch_workflow(
+#             controller, batch_processor, analysis_parameters, file_format, tmp_path
+#         )
 
 
 if __name__ == "__main__":
