@@ -1,2 +1,0 @@
-[console_scripts]
-data-analysis-gui = data_analysis_gui.main:run
