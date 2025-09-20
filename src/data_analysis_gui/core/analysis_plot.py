@@ -6,12 +6,7 @@ License: MIT (see LICENSE file for details)
 
 # src/data_analysis_gui/core/analysis_plot.py
 """
-Core analysis plot functionality that can be used independently of GUI.
-This module provides all the data processing and plotting logic without
-any GUI dependencies.
-
-PHASE 3 REFACTOR: Converted to stateless pure functions for thread safety
-and memory efficiency. All methods are now static and receive data as parameters.
+Core analysis plot functionality
 """
 
 import numpy as np
@@ -60,24 +55,6 @@ class AnalysisPlotData:
 
 
 class AnalysisPlotter:
-    """
-    PHASE 3 REFACTOR: Stateless plotter for analysis plots.
-
-    All methods are static and pure functions that transform inputs to outputs
-    without side effects. This design ensures:
-    - Thread safety: No shared mutable state between calls
-    - Memory efficiency: No data stored in instances
-    - Testability: Pure functions are easy to test in isolation
-    - Parallelization: Safe for concurrent execution
-
-    Thread Safety Guarantees:
-    - All methods are thread-safe when using 'Agg' backend
-    - Matplotlib Figure creation is thread-local
-    - No global state modifications
-    - Safe for parallel batch processing
-
-    Note: When using GUI backends, external synchronization may be required.
-    """
 
     @staticmethod
     def create_figure(
@@ -137,19 +114,19 @@ class AnalysisPlotter:
                 label="Range 1",
             )[0]
 
-            # Add subtle sweep labels with better positioning
-            for i, sweep_idx in enumerate(sweep_indices):
-                if i < len(x_data) and i < len(y_data):
-                    ax.annotate(
-                        f"{sweep_idx}",
-                        (x_data[i], y_data[i]),
-                        textcoords="offset points",
-                        xytext=(0, 8),
-                        ha="center",
-                        fontsize=8,
-                        color="#606060",
-                        alpha=0.8,
-                    )
+            # # Add subtle sweep labels with better positioning
+            # for i, sweep_idx in enumerate(sweep_indices):
+            #     if i < len(x_data) and i < len(y_data):
+            #         ax.annotate(
+            #             f"{sweep_idx}",
+            #             (x_data[i], y_data[i]),
+            #             textcoords="offset points",
+            #             xytext=(0, 8),
+            #             ha="center",
+            #             fontsize=8,
+            #             color="#606060",
+            #             alpha=0.8,
+            #         )
 
         # Plot Range 2 if available with contrasting style
         if plot_data.use_dual_range and plot_data.y_data2 is not None:
@@ -255,8 +232,6 @@ class AnalysisPlotter:
 
         Returns:
             The created Figure object
-
-        Thread Safety: Safe with 'Agg' backend, file I/O may need synchronization
         """
         figure, _ = AnalysisPlotter.create_figure(
             plot_data, x_label, y_label, title, figsize
@@ -277,9 +252,6 @@ def create_analysis_plot(
     """
     Create an analysis plot from data dictionary.
 
-    PHASE 3 UPDATE: Now uses stateless AnalysisPlotter methods.
-    This function serves as a CLI interface to the plotting functionality.
-
     Args:
         plot_data_dict: Dictionary containing plot data
         x_label: Label for x-axis
@@ -290,9 +262,6 @@ def create_analysis_plot(
 
     Returns:
         Figure object if created, None otherwise
-
-    Thread Safety: Safe with 'Agg' backend when show=False
-                  GUI display (show=True) requires main thread
     """
     plot_data = AnalysisPlotData.from_dict(plot_data_dict)
 
