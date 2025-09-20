@@ -1,11 +1,16 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
-"""
-GUI dialog for displaying analysis plots.
 
+"""
+Dialog for displaying analysis plots in the GUI.
+
+Provides:
+    - Interactive plot display.
+    - Export controls for plot image and data.
 """
 
 import os
@@ -39,12 +44,28 @@ from data_analysis_gui.config.themes import (
 
 class AnalysisPlotDialog(QDialog):
     """
-    Dialog for displaying analysis plot in a separate window.
+    Dialog for displaying an analysis plot in a separate window.
+
+    Features:
+        - Interactive matplotlib plot.
+        - Export plot as image.
+        - Export plot data as CSV.
+        - Themed controls and layout.
     """
 
     def __init__(
         self, parent, plot_data, params, file_path, controller_or_manager=None
     ):
+        """
+        Initialize the AnalysisPlotDialog.
+
+        Args:
+            parent: Parent widget.
+            plot_data: Data for plotting (dict or AnalysisPlotData).
+            params: Analysis parameters.
+            file_path: Path to the analyzed file.
+            controller_or_manager: Controller or manager for export functionality.
+        """
         super().__init__(parent)
 
         # Initialize the formatter
@@ -84,7 +105,9 @@ class AnalysisPlotDialog(QDialog):
         apply_modern_theme(self)
 
     def init_ui(self):
-        """Initialize the user interface"""
+        """
+        Initialize the user interface, including plot canvas, toolbar, and export controls.
+        """
         layout = QVBoxLayout(self)
 
         self.figure, self.ax = AnalysisPlotter.create_figure(
@@ -108,7 +131,12 @@ class AnalysisPlotDialog(QDialog):
         self._add_export_controls(layout)
 
     def _add_export_controls(self, parent_layout):
-        """Add export control buttons with full theme integration."""
+        """
+        Add export control buttons (Export Data, Export Image, Close) to the dialog.
+
+        Args:
+            parent_layout: The layout to which buttons are added.
+        """
         button_layout = QHBoxLayout()
         button_layout.setSpacing(8)
 
@@ -133,9 +161,9 @@ class AnalysisPlotDialog(QDialog):
 
     def export_plot_image(self):
         """
-        Export plot as image using stateless plotter.
+        Export the current plot as an image file.
 
-        PHASE 3: Updated to use static save_figure method.
+        Prompts user for file path and saves the plot using AnalysisPlotter.
         """
         file_path = self.file_dialog_service.get_export_path(
             parent=self,
@@ -159,7 +187,10 @@ class AnalysisPlotDialog(QDialog):
 
     def export_data(self):
         """
-        Export plot data with proper separation of concerns.
+        Export the plot data as a CSV file.
+
+        Uses controller or manager to perform export, if available.
+        Prompts user for file path and shows result status.
         """
         if not self.controller or not self.params:
             QMessageBox.warning(

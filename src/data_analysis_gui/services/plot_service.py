@@ -1,14 +1,12 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-Simplified plotting service for creating visualizations.
-
-This module provides straightforward plotting functionality without
-complex backend abstractions.
+This module provides simplified plotting services for electrophysiology data analysis.
+It offers direct, scientist-friendly functions for visualizing analysis results,
+including single analysis plots, batch plots, and sweep plots.
 """
 
 from typing import Dict, Any, Optional, Tuple, List
@@ -28,14 +26,19 @@ logger = get_logger(__name__)
 
 class PlotService:
     """
-    Creates plots for analysis results.
+    Service for creating visualizations of electrophysiology analysis results.
 
-    Simple, direct plotting methods that scientists can easily understand
-    and modify for their specific visualization needs.
+    This class provides simple, direct plotting methods for common analysis scenarios,
+    such as plotting individual results, batch comparisons, and single sweeps.
+    All methods return Matplotlib Figure objects for further customization or saving.
     """
 
     def __init__(self):
-        """Initialize the plot service."""
+        """
+        Initialize the PlotService.
+
+        Logs initialization for debugging and tracking purposes.
+        """
         logger.info("PlotService initialized")
 
     def create_analysis_plot(
@@ -49,19 +52,19 @@ class PlotService:
         figsize: Tuple[int, int] = (10, 6),
     ) -> Figure:
         """
-        Create a simple analysis plot.
+        Create a plot for a single analysis result, optionally with a second dataset.
 
         Args:
-            x_data: X-axis data
-            y_data: Y-axis data
-            x_label: X-axis label
-            y_label: Y-axis label
-            title: Optional plot title
-            y_data2: Optional second dataset for dual range
-            figsize: Figure size in inches
+            x_data (np.ndarray): Data for the X-axis.
+            y_data (np.ndarray): Data for the Y-axis (primary range).
+            x_label (str): Label for the X-axis.
+            y_label (str): Label for the Y-axis.
+            title (str, optional): Title for the plot.
+            y_data2 (np.ndarray, optional): Data for a secondary range (if present).
+            figsize (Tuple[int, int], optional): Size of the figure in inches.
 
         Returns:
-            Matplotlib Figure object
+            Figure: Matplotlib Figure object containing the plot.
         """
         fig = Figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -93,17 +96,17 @@ class PlotService:
         figsize: Tuple[int, int] = (12, 8),
     ) -> Figure:
         """
-        Create a plot showing multiple file results.
+        Create a plot comparing results from multiple files in a batch analysis.
 
         Args:
-            results: List of file analysis results
-            params: Analysis parameters
-            x_label: X-axis label
-            y_label: Y-axis label
-            figsize: Figure size
+            results (List[FileAnalysisResult]): List of analysis results for each file.
+            params (AnalysisParameters): Parameters used for the analysis.
+            x_label (str): Label for the X-axis.
+            y_label (str): Label for the Y-axis.
+            figsize (Tuple[int, int], optional): Size of the figure in inches.
 
         Returns:
-            Matplotlib Figure object
+            Figure: Matplotlib Figure object containing the batch plot.
         """
         fig = Figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -162,17 +165,17 @@ class PlotService:
         figsize: Tuple[int, int] = (8, 6),
     ) -> Figure:
         """
-        Create a plot for a single sweep.
+        Create a plot for a single sweep of electrophysiology data.
 
         Args:
-            time_ms: Time array in milliseconds
-            data: Data array
-            channel_type: "Voltage" or "Current"
-            sweep_index: Sweep number
-            figsize: Figure size
+            time_ms (np.ndarray): Time values in milliseconds.
+            data (np.ndarray): Sweep data values.
+            channel_type (str): Type of channel ("Voltage" or "Current").
+            sweep_index (int): Index or number of the sweep.
+            figsize (Tuple[int, int], optional): Size of the figure in inches.
 
         Returns:
-            Matplotlib Figure object
+            Figure: Matplotlib Figure object containing the sweep plot.
         """
         fig = Figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -203,12 +206,15 @@ class PlotService:
 
     def save_figure(self, figure: Figure, filepath: str, dpi: int = 300):
         """
-        Save a figure to file.
+        Save a Matplotlib Figure to a file.
 
         Args:
-            figure: Matplotlib Figure to save
-            filepath: Output file path
-            dpi: Resolution in dots per inch
+            figure (Figure): The Matplotlib Figure to save.
+            filepath (str): Path to the output file.
+            dpi (int, optional): Resolution in dots per inch (default: 300).
+
+        Raises:
+            Exception: If saving fails, the exception is logged and re-raised.
         """
         try:
             figure.savefig(filepath, dpi=dpi, bbox_inches="tight")
@@ -220,13 +226,13 @@ class PlotService:
     @staticmethod
     def get_axis_labels(params: AnalysisParameters) -> Tuple[str, str]:
         """
-        Get axis labels from analysis parameters.
+        Generate axis labels based on analysis parameters.
 
         Args:
-            params: Analysis parameters
+            params (AnalysisParameters): Parameters specifying axis configuration.
 
         Returns:
-            Tuple of (x_label, y_label)
+            Tuple[str, str]: X-axis label and Y-axis label as strings.
         """
         # Get current units from params if available
         current_units = "pA"  # default

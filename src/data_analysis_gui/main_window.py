@@ -1,12 +1,29 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-Main Window - Simplified Version with Always-Active Controls
-All controls and settings are adjustable at any time, regardless of file loading state.
+Main application window for the PatchBatch Electrophysiology Data Analysis Tool.
+
+This module implements the primary user interface for analyzing patch-clamp 
+electrophysiology data. It serves as the central coordinator between:
+- User interactions (file loading, parameter adjustment, analysis requests)
+- Data processing backend (controller, analysis engine)
+- Visualization components (plot manager, analysis dialogs)
+
+The MainWindow class handles:
+1. File I/O operations for ABF and MAT format data files
+2. Real-time sweep visualization with adjustable analysis ranges
+3. Parameter configuration for various analysis modes (IV curves, peaks, time series)
+4. Batch processing coordination for multiple file analysis
+5. Session state persistence to remember user preferences
+
+Key design principles:
+- Controls remain active at all times (no complex enable/disable logic)
+- Settings auto-save on change to preserve user workflow
+- Separation of concerns: UI logic here, analysis logic in controllers
+- Signal/slot pattern for loose coupling between components
 """
 
 import os
@@ -73,8 +90,18 @@ logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     """
-    Main application window with simplified control management.
-    All controls are always active, removing complexity around file loading states.
+    Main application window for PatchBatch Electrophysiology Data Analysis Tool.
+
+    This class manages the core GUI, including file operations, sweep navigation,
+    analysis parameter configuration, plotting, and batch processing. Controls remain
+    active at all times, streamlining user interaction and minimizing state complexity.
+
+    Key Features:
+        - Modern, compact themed UI
+        - Always-active controls for efficient workflow
+        - Persistent session settings
+        - Real-time plot updates and analysis visualization
+        - Batch analysis and export support
     """
 
     # Application events
@@ -178,7 +205,12 @@ class MainWindow(QMainWindow):
         self._connect_signals()
 
     def _create_menus(self):
-        """Create application menus (styling handled by apply_modern_theme)"""
+        """
+        Create and configure application menus.
+
+        Includes File menu (Open, Exit) and Analysis menu (Swap Channels, Batch Analyze).
+        Menu styling is handled by the modern theme system.
+        """
         menubar = self.menuBar()
 
         # File menu
@@ -213,7 +245,13 @@ class MainWindow(QMainWindow):
         analysis_menu.addAction(self.batch_action)
 
     def _create_toolbar(self):
-        """Create toolbar with proper theme styling"""
+        """
+        Construct the main toolbar with themed controls.
+
+        Toolbar provides file operations, sweep navigation, channel selection,
+        current units, file information, cursor centering, and channel toggling.
+        All controls are styled and sized for a compact, modern appearance.
+        """
         toolbar = QToolBar("Main")
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
@@ -323,7 +361,12 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
 
     def _connect_signals(self):
-        """Connect all signals"""
+        """
+        Connect UI signals to their respective logic handlers.
+
+        Ensures that user actions and control changes trigger appropriate updates,
+        including auto-saving settings and synchronizing plot/cursor states.
+        """
         # Control panel
         self.control_panel.analysis_requested.connect(self._generate_analysis)
         self.control_panel.export_requested.connect(self._export_data)
@@ -358,7 +401,12 @@ class MainWindow(QMainWindow):
         self.plot_manager.line_state_changed.connect(self._on_cursor_moved)
 
     def _open_file(self):
-        """Open file using controller"""
+        """
+        Prompt the user to select a data file and load it via the controller.
+
+        Opens a file dialog for supported formats, loads the selected file,
+        and updates the UI. Emits file_loaded signal on success.
+        """
         file_types = (
             "Data files (*.mat *.abf);;"
             "MAT files (*.mat);;"
@@ -392,7 +440,12 @@ class MainWindow(QMainWindow):
             # Error handling is done by controller callbacks
 
     def _on_file_loaded(self, file_info: FileInfo):
-        """Handle successful file load"""
+        """
+        Respond to successful file load and update UI components.
+
+        Updates file labels, sweep count, revalidates ranges, synchronizes channel swap state,
+        and populates the sweep selection combo box.
+        """
         # Update file labels with proper theme styling
         self.file_label.setText(f"File: {file_info.name}")
         style_label(self.file_label, "normal")  # Switch from muted to normal
@@ -434,8 +487,11 @@ class MainWindow(QMainWindow):
         """
         Handle channel toggle switch state changes.
 
+        Attempts to swap channel assignments via the controller. Updates control panel,
+        plot, and UI state accordingly. Displays warnings if swap fails.
+
         Args:
-            is_swapped: True if toggle is in swapped position, False otherwise
+            is_swapped (bool): True if toggle is in swapped position, False otherwise.
         """
         # Always try to swap - the controller will handle the state
         result = self.controller.swap_channels()
@@ -474,15 +530,24 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Cannot Update Channels", result["reason"])
 
     def _on_sweep_changed(self):
-        """Update plot when sweep selection changes"""
+        """
+        Update the plot when the sweep selection changes.
+        """
         self._update_plot()
 
     def _on_channel_changed(self):
-        """Update plot when channel selection changes"""
+        """
+        Update the plot when the channel selection changes.
+        """
         self._update_plot()
 
     def _on_current_units_changed(self):
-        """Handle current units selection change"""
+        """
+        Handle changes to the current units selection.
+
+        Updates the control panel and plot to reflect the selected units.
+        Displays a status message indicating the new units.
+        """
         self.current_units = self.current_units_combo.currentText()
 
         # Update the control panel with new units
@@ -495,7 +560,12 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"Current units set to {self.current_units}", 3000)
 
     def _update_plot(self):
-        """Update the sweep plot using controller and centralized formatter"""
+        """
+        Refresh the sweep plot using controller data and centralized formatting.
+
+        Retrieves plot data for the selected sweep and channel, applies formatted labels,
+        and updates the plot manager display.
+        """
         if not self.controller.has_data():
             return
 
@@ -538,7 +608,12 @@ class MainWindow(QMainWindow):
             logger.debug(f"Could not load sweep {sweep}: {result.error_message}")
 
     def _generate_analysis(self):
-        """Generate analysis plot using controller"""
+        """
+        Generate and display an analysis plot using the controller.
+
+        Validates data availability, retrieves analysis parameters, performs analysis,
+        and displays results in a dedicated dialog. Handles errors and empty results gracefully.
+        """
         if not self.controller.has_data():
             QMessageBox.warning(self, "No Data", "Please load a data file first.")
             return
@@ -596,7 +671,11 @@ class MainWindow(QMainWindow):
         self.analysis_completed.emit()
 
     def _export_data(self):
-        """Export data using controller"""
+        """
+        Export analysis data using the controller.
+
+        Presents a file dialog for export location, performs export, and displays success or error messages.
+        """
         if not self.controller.has_data():
             QMessageBox.warning(self, "No Data", "Please load a data file first.")
             return
@@ -630,7 +709,12 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export Failed", result.error_message)
 
     def _swap_channels(self):
-        """Swap channels using controller - called by menu action"""
+        """
+        Swap channel assignments using the controller.
+
+        Updates toggle, control panel, and plot to reflect new state. Auto-saves settings and displays status.
+        Handles errors if swap is not possible.
+        """
         result = self.controller.swap_channels()
 
         if result["success"]:
@@ -661,7 +745,11 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "Cannot Update Channels", result["reason"])
 
     def _batch_analyze(self):
-        """Open batch analysis dialog"""
+        """
+        Open the batch analysis dialog.
+
+        Passes current analysis parameters and batch processor to the dialog for batch processing.
+        """
         # Get current parameters
         params = self.control_panel.get_parameters()
 
@@ -670,7 +758,12 @@ class MainWindow(QMainWindow):
         dialog.show()
 
     def _toggle_dual_range(self, enabled):
-        """Toggle dual range cursors"""
+        """
+        Toggle dual range cursors on the plot.
+
+        Args:
+            enabled (bool): True to enable dual range, False to disable.
+        """
         if enabled:
             vals = self.control_panel.get_range_values()
             self.plot_manager.toggle_dual_range(
@@ -680,7 +773,9 @@ class MainWindow(QMainWindow):
             self.plot_manager.toggle_dual_range(False, 0, 0)
 
     def _sync_cursors_to_plot(self):
-        """Sync cursor positions from control panel to plot"""
+        """
+        Synchronize cursor positions from the control panel to the plot manager.
+        """
         vals = self.control_panel.get_range_values()
         self.plot_manager.update_range_lines(
             vals["range1_start"],
@@ -692,8 +787,9 @@ class MainWindow(QMainWindow):
 
     def _auto_save_settings(self):
         """
-        Automatically save current settings whenever they change.
-        This ensures user preferences are preserved even if they don't generate an analysis.
+        Automatically save current user settings whenever they change.
+
+        Ensures user preferences are preserved across sessions. Silent on failure.
         """
         try:
             settings = extract_settings_from_main_window(self)
@@ -704,7 +800,13 @@ class MainWindow(QMainWindow):
             # Don't show error to user for auto-save failures
 
     def _sync_cursor_to_control(self, line_id, position):
-        """Sync cursor position from plot to control panel"""
+        """
+        Synchronize cursor position from the plot to the control panel.
+
+        Args:
+            line_id (str): Identifier for the cursor line.
+            position (float): New position value for the cursor.
+        """
         if line_id and position is not None:
             mapping = {
                 "range1_start": "start1",
@@ -716,35 +818,55 @@ class MainWindow(QMainWindow):
                 self.control_panel.update_range_value(mapping[line_id], position)
 
     def _on_cursor_moved(self, action, line_id, position):
-        """Handle cursor movement from plot"""
+        """
+        Handle cursor movement events from the plot manager.
+
+        Args:
+            action (str): Type of cursor action (e.g., "dragged").
+            line_id (str): Identifier for the cursor line.
+            position (float): New position value for the cursor.
+        """
         if action == "dragged":
             self._sync_cursor_to_control(line_id, position)
 
     # Navigation methods
     def _start_navigation(self, direction):
-        """Start continuous navigation"""
+        """
+        Start continuous sweep navigation in the specified direction.
+
+        Args:
+            direction (callable): Function to invoke for navigation.
+        """
         direction()
         self.navigation_direction = direction
         self.hold_timer.start(150)
 
     def _stop_navigation(self):
-        """Stop continuous navigation"""
+        """
+        Stop continuous sweep navigation.
+        """
         self.hold_timer.stop()
         self.navigation_direction = None
 
     def _continue_navigation(self):
-        """Continue navigation while held"""
+        """
+        Continue sweep navigation while navigation button is held.
+        """
         if self.navigation_direction:
             self.navigation_direction()
 
     def _next_sweep(self):
-        """Go to next sweep"""
+        """
+        Navigate to the next sweep in the sweep combo box.
+        """
         idx = self.sweep_combo.currentIndex()
         if idx < self.sweep_combo.count() - 1:
             self.sweep_combo.setCurrentIndex(idx + 1)
 
     def _prev_sweep(self):
-        """Go to previous sweep"""
+        """
+        Navigate to the previous sweep in the sweep combo box.
+        """
         idx = self.sweep_combo.currentIndex()
         if idx > 0:
             self.sweep_combo.setCurrentIndex(idx - 1)

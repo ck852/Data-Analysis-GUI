@@ -31,38 +31,33 @@ from data_analysis_gui.config.logging import (
 logger = get_logger(__name__)
 
 
+
 class AnalysisEngine:
     """
-    Pure orchestrator for analysis workflow.
+    Orchestrator for electrophysiology data analysis workflow.
 
-    This class coordinates between specialized components to perform analysis.
-    All dependencies are injected, making it highly testable and flexible.
-    With no caching, each analysis is completely independent and thread-safe.
+    Coordinates between injected components to perform analysis, compute metrics, and format results for plotting and export.
+    All dependencies are injected, making the engine highly testable and flexible. No caching is performed; each analysis is independent and thread-safe.
 
     Responsibilities:
-    - Orchestrate analysis workflow
-    - Coordinate between components
+        - Orchestrate analysis workflow
+        - Coordinate between components
 
-    Does NOT:
-    - Create its own dependencies
-    - Cache results
-    - Format data
-    - Compute metrics
-    - Extract data
+    Limitations:
+        - Does NOT create its own dependencies
+        - Does NOT cache results
+        - Does NOT format data, compute metrics, or extract data directly
+
+    Args:
+        data_extractor (DataExtractor): Component for extracting data from datasets.
+        metrics_calculator (MetricsCalculator): Component for computing metrics.
+        plot_formatter (PlotFormatter): Component for formatting data for plots/exports.
 
     Example:
-        >>> # Production usage with real components
         >>> engine = AnalysisEngine(
         ...     data_extractor=DataExtractor(channel_defs),
         ...     metrics_calculator=MetricsCalculator(),
         ...     plot_formatter=PlotFormatter()
-        ... )
-
-        >>> # Test usage with mocks
-        >>> engine = AnalysisEngine(
-        ...     data_extractor=mock_extractor,
-        ...     metrics_calculator=mock_calculator,
-        ...     plot_formatter=mock_formatter
         ... )
     """
 
@@ -73,15 +68,15 @@ class AnalysisEngine:
         plot_formatter: PlotFormatter,
     ):
         """
-        Initialize engine with injected dependencies.
+        Initialize the AnalysisEngine with injected dependencies.
 
         Args:
-            data_extractor: Component for extracting data from datasets
-            metrics_calculator: Component for computing metrics
-            plot_formatter: Component for formatting data for plots/exports
+            data_extractor (DataExtractor): Component for extracting data from datasets.
+            metrics_calculator (MetricsCalculator): Component for computing metrics.
+            plot_formatter (PlotFormatter): Component for formatting data for plots/exports.
 
         Raises:
-            ValidationError: If required dependencies are None
+            ValidationError: If any required dependency is None.
         """
         logger.info("Initializing AnalysisEngine with injected dependencies")
 
@@ -104,22 +99,21 @@ class AnalysisEngine:
         self, dataset: ElectrophysiologyDataset, params: AnalysisParameters
     ) -> List[SweepMetrics]:
         """
-        Perform complete analysis of a dataset.
+        Perform complete analysis of an electrophysiology dataset.
 
-        This is the main entry point for analysis. It orchestrates the entire
-        workflow of extracting data and computing metrics.
+        Orchestrates extraction of sweep data and computation of metrics for all valid sweeps.
 
         Args:
-            dataset: The dataset to analyze
-            params: Analysis parameters defining ranges, measures, etc.
+            dataset (ElectrophysiologyDataset): The dataset to analyze.
+            params (AnalysisParameters): Analysis parameters defining ranges, measures, etc.
 
         Returns:
-            List of computed metrics for all valid sweeps
+            List[SweepMetrics]: List of computed metrics for all valid sweeps.
 
         Raises:
-            ValidationError: If inputs are invalid
-            DataError: If dataset is empty or corrupted
-            ProcessingError: If no valid metrics could be computed
+            ValidationError: If inputs are invalid.
+            DataError: If dataset is empty or corrupted.
+            ProcessingError: If no valid metrics could be computed.
         """
         # Validate inputs
         if dataset is None:
@@ -150,11 +144,11 @@ class AnalysisEngine:
         Get analysis results formatted for plotting.
 
         Args:
-            dataset: The dataset to analyze
-            params: Analysis parameters
+            dataset (ElectrophysiologyDataset): The dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
 
         Returns:
-            Dictionary with plot-ready data
+            Dict[str, Any]: Dictionary containing plot-ready data.
         """
         try:
             # Get metrics through main analysis method
@@ -175,11 +169,11 @@ class AnalysisEngine:
         Get analysis results formatted for export.
 
         Args:
-            dataset: The dataset to analyze
-            params: Analysis parameters
+            dataset (ElectrophysiologyDataset): The dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
 
         Returns:
-            Dictionary with 'headers', 'data', and 'format_spec'
+            Dict[str, Any]: Dictionary with 'headers', 'data', and 'format_spec' for export.
         """
         # Get plot data first
         plot_data = self.get_plot_data(dataset, params)
@@ -194,16 +188,16 @@ class AnalysisEngine:
         Get single sweep data formatted for plotting.
 
         Args:
-            dataset: The dataset containing the sweep
-            sweep_index: Identifier of the sweep to plot
-            channel_type: "Voltage" or "Current"
+            dataset (ElectrophysiologyDataset): The dataset containing the sweep.
+            sweep_index (str): Identifier of the sweep to plot.
+            channel_type (str): Channel type to plot ("Voltage" or "Current").
 
         Returns:
-            Dictionary with sweep plot data
+            Dict[str, Any]: Dictionary with sweep plot data.
 
         Raises:
-            ValidationError: If inputs are invalid
-            DataError: If sweep not found or data extraction fails
+            ValidationError: If inputs are invalid.
+            DataError: If sweep not found or data extraction fails.
         """
         # Extract channel data
         time_ms, data_matrix, channel_id = self.data_extractor.extract_channel_for_plot(
@@ -229,12 +223,12 @@ class AnalysisEngine:
         Get comprehensive peak analysis across multiple peak types.
 
         Args:
-            dataset: The dataset to analyze
-            params: Analysis parameters
-            peak_types: List of peak types to analyze (default: all types)
+            dataset (ElectrophysiologyDataset): The dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
+            peak_types (Optional[List[str]]): List of peak types to analyze. Defaults to all types.
 
         Returns:
-            Dictionary with peak analysis data for each type
+            Dict[str, Any]: Dictionary with peak analysis data for each type.
         """
         if peak_types is None:
             peak_types = ["Absolute", "Positive", "Negative", "Peak-Peak"]
@@ -269,18 +263,17 @@ class AnalysisEngine:
         """
         Compute metrics for all sweeps in the dataset.
 
-        This method orchestrates the computation but delegates all actual
-        work to the injected components.
+        Orchestrates extraction and computation for each sweep, delegating work to injected components.
 
         Args:
-            dataset: Dataset to analyze
-            params: Analysis parameters
+            dataset (ElectrophysiologyDataset): Dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
 
         Returns:
-            List of computed metrics
+            List[SweepMetrics]: List of computed metrics for all valid sweeps.
 
         Raises:
-            ProcessingError: If no valid metrics could be computed
+            ProcessingError: If no valid metrics could be computed.
         """
         metrics = []
         failed_sweeps = []
@@ -347,14 +340,13 @@ def create_analysis_engine(channel_definitions) -> AnalysisEngine:
     """
     Factory function to create an AnalysisEngine with default components.
 
-    This provides a convenient way to create a fully configured engine
-    while still allowing for dependency injection in tests.
+    Provides a convenient way to create a fully configured engine for production use, while still allowing for dependency injection in tests.
 
     Args:
-        channel_definitions: Channel configuration
+        channel_definitions: Channel configuration object.
 
     Returns:
-        Configured AnalysisEngine instance
+        AnalysisEngine: Configured AnalysisEngine instance.
 
     Example:
         >>> from data_analysis_gui.core.channel_definitions import ChannelDefinitions

@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -54,9 +55,26 @@ logger = get_logger(__name__)
 
 
 class BatchResultsWindow(QMainWindow):
-    """Window for displaying batch analysis results with file selection."""
+    """
+    Window for displaying batch analysis results with file selection and export options.
+
+    Provides:
+        - File selection and summary.
+        - Interactive batch plot.
+        - Export controls for CSVs, plots, IV summary, and current density analysis.
+    """
 
     def __init__(self, parent, batch_result, batch_service, plot_service, data_service):
+        """
+        Initialize the BatchResultsWindow.
+
+        Args:
+            parent: Parent widget.
+            batch_result: Batch analysis result object.
+            batch_service: Service for batch operations.
+            plot_service: Service for plotting.
+            data_service: Service for data export.
+        """
         super().__init__(parent)
 
         # Initialize selection state if not present
@@ -93,7 +111,9 @@ class BatchResultsWindow(QMainWindow):
         style_main_window(self)
 
     def init_ui(self):
-        """Initialize the UI."""
+        """
+        Initialize the user interface, including file list, plot, and export controls.
+        """
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
@@ -130,7 +150,12 @@ class BatchResultsWindow(QMainWindow):
         self._update_plot()
 
     def _create_file_list_panel(self) -> QWidget:
-        """Create the file list panel."""
+        """
+        Create the file list panel with selection controls and summary.
+
+        Returns:
+            QWidget: Panel containing file list and controls.
+        """
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
@@ -165,7 +190,15 @@ class BatchResultsWindow(QMainWindow):
         return panel
 
     def _sort_results(self, results):
-        """Sort results numerically by file name."""
+        """
+        Sort batch results numerically by file name.
+
+        Args:
+            results: List of batch result objects.
+
+        Returns:
+            List: Sorted batch result objects.
+        """
 
         def extract_number(file_name):
             match = re.search(r"_(\d+)", file_name)
@@ -179,7 +212,9 @@ class BatchResultsWindow(QMainWindow):
         return sorted(results, key=lambda r: extract_number(r.base_name))
 
     def _populate_file_list(self):
-        """Populate the file list with sorted results and colors."""
+        """
+        Populate the file list widget with sorted results and color mapping.
+        """
         sorted_results = self._sort_results(self.batch_result.successful_results)
 
         # Generate color mapping
@@ -193,7 +228,9 @@ class BatchResultsWindow(QMainWindow):
             self.file_list.add_file(result.base_name, color)
 
     def _update_plot(self):
-        """Update the plot based on selected files."""
+        """
+        Update the plot to reflect selected files and current analysis parameters.
+        """
         sorted_results = self._sort_results(self.batch_result.successful_results)
 
         self.plot_widget.set_data(
@@ -204,12 +241,16 @@ class BatchResultsWindow(QMainWindow):
         self._update_summary()
 
     def _on_selection_changed(self):
-        """Handle file selection changes."""
+        """
+        Handle changes in file selection and update plot and summary.
+        """
         self.plot_widget.update_visibility(self.selection_state.get_selected_files())
         self._update_summary()
 
     def _update_summary(self):
-        """Update the summary label using theme utilities."""
+        """
+        Update the summary label to show the number of selected files.
+        """
         selected = len(self.selection_state.get_selected_files())
         total = len(self.batch_result.successful_results)
 
@@ -221,7 +262,12 @@ class BatchResultsWindow(QMainWindow):
         )
 
     def _add_export_controls(self, layout):
-        """Add export controls."""
+        """
+        Add export controls for CSVs, plots, IV summary, and current density analysis.
+
+        Args:
+            layout: The layout to which export controls are added.
+        """
         export_group = QGroupBox("Export Options")
         style_group_box(export_group)
 
@@ -258,7 +304,12 @@ class BatchResultsWindow(QMainWindow):
         export_plot_btn.clicked.connect(self._export_plot)
 
     def _is_iv_analysis(self):
-        """Check if this is an IV analysis."""
+        """
+        Check if the current analysis is an IV (current-voltage) analysis.
+
+        Returns:
+            bool: True if IV analysis, False otherwise.
+        """
         params = self.batch_result.parameters
         return (
             params.x_axis.channel == "Voltage"
@@ -267,7 +318,12 @@ class BatchResultsWindow(QMainWindow):
         )
 
     def _get_filtered_results(self):
-        """Get results filtered by current selection."""
+        """
+        Get batch results filtered by current file selection.
+
+        Returns:
+            List: Filtered batch result objects.
+        """
         selected_files = self.selection_state.get_selected_files()
         filtered = [
             r
@@ -277,7 +333,11 @@ class BatchResultsWindow(QMainWindow):
         return self._sort_results(filtered)
 
     def _export_iv_summary(self):
-        """Export IV summary for selected files only."""
+        """
+        Export IV summary for selected files only.
+
+        Prompts user for export location and writes summary CSV.
+        """
         from data_analysis_gui.core.iv_analysis import (
             IVAnalysisService,
             IVSummaryExporter,
@@ -344,7 +404,11 @@ class BatchResultsWindow(QMainWindow):
                 QMessageBox.critical(self, "Export Failed", str(e))
 
     def _export_individual_csvs(self):
-        """Export individual CSVs for selected files only."""
+        """
+        Export individual CSV files for selected batch results.
+
+        Prompts user for output directory and writes CSVs.
+        """
         filtered_results = self._get_filtered_results()
 
         if not filtered_results:
@@ -382,7 +446,11 @@ class BatchResultsWindow(QMainWindow):
                 QMessageBox.critical(self, "Export Failed", str(e))
 
     def _export_plot(self):
-        """Export current plot (with selected files only)."""
+        """
+        Export the current plot (with selected files only).
+
+        Prompts user for export location and saves plot image.
+        """
         if not self.plot_widget.figure:
             QMessageBox.warning(self, "No Plot", "No plot to export.")
             return
@@ -404,7 +472,11 @@ class BatchResultsWindow(QMainWindow):
                 QMessageBox.critical(self, "Export Failed", str(e))
 
     def _open_current_density_analysis(self):
-        """Open current density analysis dialog."""
+        """
+        Open the current density analysis dialog for selected files.
+
+        Launches dialog and, if completed, shows results window.
+        """
         from dataclasses import replace
 
         batch_with_selection = replace(

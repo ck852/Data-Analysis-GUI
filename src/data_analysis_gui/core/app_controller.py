@@ -43,8 +43,17 @@ logger = get_logger(__name__)
 
 
 @dataclass
+
 class AnalysisOperationResult:
-    """Result wrapper for analysis operations."""
+    """
+    Result wrapper for analysis operations.
+
+    Attributes:
+        success (bool): Whether the operation was successful.
+        data (Optional[AnalysisResult]): The analysis result data, if successful.
+        error_message (Optional[str]): Error message if the operation failed.
+        error_type (Optional[str]): Type of error encountered, if any.
+    """
 
     success: bool
     data: Optional[AnalysisResult] = None
@@ -53,8 +62,17 @@ class AnalysisOperationResult:
 
 
 @dataclass
+
 class PlotDataResult:
-    """Result wrapper for plot data operations."""
+    """
+    Result wrapper for plot data operations.
+
+    Attributes:
+        success (bool): Whether the operation was successful.
+        data (Optional[PlotData]): The plot data, if successful.
+        error_message (Optional[str]): Error message if the operation failed.
+        error_type (Optional[str]): Type of error encountered, if any.
+    """
 
     success: bool
     data: Optional[PlotData] = None
@@ -63,8 +81,17 @@ class PlotDataResult:
 
 
 @dataclass
+
 class PeakAnalysisOperationResult:
-    """Result wrapper for peak analysis operations."""
+    """
+    Result wrapper for peak analysis operations.
+
+    Attributes:
+        success (bool): Whether the operation was successful.
+        data (Optional[PeakAnalysisResult]): The peak analysis result, if successful.
+        error_message (Optional[str]): Error message if the operation failed.
+        error_type (Optional[str]): Type of error encountered, if any.
+    """
 
     success: bool
     data: Optional[PeakAnalysisResult] = None
@@ -73,8 +100,17 @@ class PeakAnalysisOperationResult:
 
 
 @dataclass
+
 class FileLoadResult:
-    """Result wrapper for file loading operations."""
+    """
+    Result wrapper for file loading operations.
+
+    Attributes:
+        success (bool): Whether the file was loaded successfully.
+        file_info (Optional[FileInfo]): Information about the loaded file.
+        error_message (Optional[str]): Error message if the operation failed.
+        error_type (Optional[str]): Type of error encountered, if any.
+    """
 
     success: bool
     file_info: Optional[FileInfo] = None
@@ -87,10 +123,19 @@ class FileLoadResult:
 # =========================
 
 
+
 class ApplicationController:
     """
-    Application controller with proper service management.
-    Services can be injected or created internally.
+    Main application controller for PatchBatch Electrophysiology Data Analysis Tool.
+    Manages core services, dependency injection, and provides high-level operations for data analysis, batch processing, and export.
+
+    Services can be injected or created internally. Provides compatibility aliases for legacy code.
+
+    Args:
+        channel_definitions (Optional[ChannelDefinitions]): Channel configuration. Created if not provided.
+        data_manager (Optional[DataManager]): Data management service. Created if not provided.
+        analysis_manager (Optional[AnalysisManager]): Analysis service. Created if not provided.
+        batch_processor (Optional[BatchProcessor]): Batch processing service. Created if not provided.
     """
 
     def __init__(
@@ -144,10 +189,10 @@ class ApplicationController:
 
     def get_services(self) -> Dict[str, Any]:
         """
-        Get all services for external use.
+        Retrieve all core services managed by the controller for external use.
 
         Returns:
-            Dictionary of service references
+            Dict[str, Any]: Dictionary containing references to data_manager, analysis_manager, batch_processor, and channel_definitions.
         """
         return {
             "data_manager": self.data_manager,
@@ -164,16 +209,14 @@ class ApplicationController:
         self, file_paths: List[str], params: AnalysisParameters
     ) -> BatchAnalysisResult:
         """
-        Run a batch analysis over multiple files.
-
-        Simple sequential processing for clarity and reliability.
+        Run batch analysis over multiple files using the batch processor.
 
         Args:
-            file_paths: List of files to analyze
-            params: Analysis parameters to use
+            file_paths (List[str]): List of file paths to analyze.
+            params (AnalysisParameters): Analysis parameters to use for each file.
 
         Returns:
-            BatchAnalysisResult with all results
+            BatchAnalysisResult: Object containing results for all processed files, including successful and failed analyses.
         """
         try:
             return self.batch_processor.process_files(
@@ -196,7 +239,14 @@ class ApplicationController:
         output_directory: str,
     ) -> BatchExportResult:
         """
-        Export all successful results of a batch run to CSV files.
+        Export all successful results of a batch analysis run to CSV files in the specified output directory.
+
+        Args:
+            batch_result (BatchAnalysisResult): The batch analysis results to export.
+            output_directory (str): Directory path to save exported CSV files.
+
+        Returns:
+            BatchExportResult: Object containing export results and summary information.
         """
         try:
             return self.batch_processor.export_results(batch_result, output_directory)
@@ -214,9 +264,13 @@ class ApplicationController:
 
     def load_file(self, file_path: str) -> FileLoadResult:
         """
-        Load a data file using DataManager.
+        Load a data file using the DataManager service.
 
-        FAIL-CLOSED: Always returns a FileLoadResult, never None.
+        Args:
+            file_path (str): Path to the data file to load.
+
+        Returns:
+            FileLoadResult: Object containing file information if successful, or error details if failed. Always returns a FileLoadResult (never None).
         """
         try:
             logger.info(f"Loading file: {file_path}")
@@ -283,13 +337,23 @@ class ApplicationController:
             )
 
     def has_data(self) -> bool:
-        """Check if data is currently loaded."""
+        """
+        Check if a dataset is currently loaded and not empty.
+
+        Returns:
+            bool: True if data is loaded and not empty, False otherwise.
+        """
         return self.current_dataset is not None and not self.current_dataset.is_empty()
 
     def perform_analysis(self, params: AnalysisParameters) -> AnalysisOperationResult:
         """
-        Perform analysis with typed parameters (single file).
-        FAIL-CLOSED: Always returns a result object, never None.
+        Perform analysis on the currently loaded dataset using the provided parameters.
+
+        Args:
+            params (AnalysisParameters): Analysis parameters for the operation.
+
+        Returns:
+            AnalysisOperationResult: Object containing the analysis result or error details. Always returns a result object (never None).
         """
         if not self.has_data():
             logger.warning("No data loaded for analysis")
@@ -320,7 +384,14 @@ class ApplicationController:
         self, params: AnalysisParameters, file_path: str
     ) -> ExportResult:
         """
-        Export analyzed data (single file).
+        Export analyzed data for the currently loaded dataset to a CSV file.
+
+        Args:
+            params (AnalysisParameters): Analysis parameters for export.
+            file_path (str): Path to the output CSV file.
+
+        Returns:
+            ExportResult: Object containing export status, number of records exported, and error details if any.
         """
         if not self.has_data():
             logger.warning("No data loaded for export")
@@ -349,8 +420,14 @@ class ApplicationController:
         self, sweep_index: str, channel_type: str
     ) -> PlotDataResult:
         """
-        Get data for plotting a single sweep.
-        FAIL-CLOSED: Always returns a result object, never None.
+        Retrieve data for plotting a single sweep from the currently loaded dataset.
+
+        Args:
+            sweep_index (str): Index or name of the sweep to plot.
+            channel_type (str): Type of channel to plot (e.g., 'voltage', 'current').
+
+        Returns:
+            PlotDataResult: Object containing plot data or error details. Always returns a result object (never None).
         """
         if not self.has_data():
             logger.warning("No data loaded for sweep plot")
@@ -381,8 +458,14 @@ class ApplicationController:
         self, params: AnalysisParameters, peak_types: List[str] = None
     ) -> PeakAnalysisOperationResult:
         """
-        Perform comprehensive peak analysis.
-        FAIL-CLOSED: Always returns a result object, never None.
+        Perform comprehensive peak analysis on the currently loaded dataset.
+
+        Args:
+            params (AnalysisParameters): Analysis parameters for peak detection.
+            peak_types (List[str], optional): List of peak types to analyze. Defaults to None.
+
+        Returns:
+            PeakAnalysisOperationResult: Object containing peak analysis results or error details. Always returns a result object (never None).
         """
         if not self.has_data():
             logger.warning("No data loaded for peak analysis")
@@ -413,7 +496,13 @@ class ApplicationController:
 
     def get_suggested_export_filename(self, params: AnalysisParameters) -> str:
         """
-        Get suggested filename for export (single file).
+        Generate a suggested filename for exporting analysis results for the currently loaded file.
+
+        Args:
+            params (AnalysisParameters): Analysis parameters to inform filename generation.
+
+        Returns:
+            str: Suggested filename for export.
         """
         source_path = self.loaded_file_path or "analysis"
         try:
@@ -424,8 +513,11 @@ class ApplicationController:
 
     def swap_channels(self):
         """
-        Swap channel definitions, returning new state.
-        This now works even if no data is loaded.
+        Swap the voltage and current channel definitions.
+        This operation works even if no data is loaded. If data is loaded, updates the dataset with the new definitions.
+
+        Returns:
+            dict: Dictionary with 'success' (bool) and 'is_swapped' (bool) indicating the new state.
         """
         # Always swap the channel definitions state
         self.channel_definitions.swap_channels()
@@ -439,7 +531,10 @@ class ApplicationController:
 
     def get_channel_configuration(self) -> Dict[str, int]:
         """
-        Get current channel configuration.
+        Retrieve the current channel configuration for voltage and current channels.
+
+        Returns:
+            Dict[str, int]: Dictionary with keys 'voltage' and 'current' mapping to their respective channel indices.
         """
         return {
             "voltage": self.channel_definitions.get_voltage_channel(),

@@ -24,18 +24,21 @@ from data_analysis_gui.config.logging import get_logger
 logger = get_logger(__name__)
 
 
+
 class DataExtractor:
     """
-    Extracts time series data from datasets with validation.
-    Handles channel mapping and data integrity checks.
+    Extracts and validates time series data from electrophysiology datasets.
+    
+    This class provides methods to extract sweep and channel data, ensuring proper channel mapping,
+    data integrity, and compatibility with downstream analysis and plotting tools.
     """
 
     def __init__(self, channel_definitions: ChannelDefinitions):
         """
-        Initialize with channel configuration.
+        Initialize the DataExtractor with channel configuration.
 
         Args:
-            channel_definitions: Channel mapping configuration
+            channel_definitions (ChannelDefinitions): Channel mapping configuration object.
         """
         self.channel_definitions = channel_definitions
 
@@ -43,18 +46,18 @@ class DataExtractor:
         self, dataset: ElectrophysiologyDataset, sweep_index: str
     ) -> Dict[str, np.ndarray]:
         """
-        Extract time series data for a sweep.
+        Extract time series data for a specific sweep, including voltage and current channels.
 
         Args:
-            dataset: Dataset to extract from
-            sweep_index: Sweep identifier
+            dataset (ElectrophysiologyDataset): Dataset object containing sweeps and channel data.
+            sweep_index (str): Identifier for the sweep to extract.
 
         Returns:
-            Dict with 'time_ms', 'voltage', 'current' arrays
+            Dict[str, np.ndarray]: Dictionary with keys 'time_ms', 'voltage', and 'current', each containing a numpy array.
 
         Raises:
-            ValidationError: If inputs invalid
-            DataError: If sweep not found or data corrupted
+            ValidationError: If required arguments are None or invalid.
+            DataError: If the sweep is not found, data is missing, or time array contains NaN values.
         """
         validate_not_none(dataset, "dataset")
         validate_not_none(sweep_index, "sweep_index")
@@ -83,7 +86,7 @@ class DataExtractor:
                 },
             )
 
-        # Log warnings for NaN but don't fail
+        # Log warnings for NaN but don't fail for voltage/current
         if np.any(np.isnan(time_ms)):
             raise DataError(f"Time array contains NaN for sweep {sweep_index}")
 
@@ -99,19 +102,22 @@ class DataExtractor:
         self, dataset: ElectrophysiologyDataset, sweep_index: str, channel_type: str
     ) -> Tuple[np.ndarray, np.ndarray, int]:
         """
-        Extract single channel data formatted for plotting.
+        Extract data for a single channel (voltage or current) and format for plotting.
 
         Args:
-            dataset: Dataset to extract from
-            sweep_index: Sweep identifier
-            channel_type: "Voltage" or "Current"
+            dataset (ElectrophysiologyDataset): Dataset object containing sweeps and channel data.
+            sweep_index (str): Identifier for the sweep to extract.
+            channel_type (str): Type of channel to extract; must be "Voltage" or "Current".
 
         Returns:
-            Tuple of (time_ms, data_matrix, channel_id)
+            Tuple[np.ndarray, np.ndarray, int]:
+                - time_ms: 1D numpy array of time values in milliseconds
+                - data_matrix: 2D numpy array (shape: [time, channels]) with extracted channel data populated in the correct column
+                - channel_id: Integer channel index used for extraction
 
         Raises:
-            ValidationError: If channel_type invalid
-            DataError: If extraction fails
+            ValidationError: If channel_type is not "Voltage" or "Current".
+            DataError: If extraction fails or channel_id is out of bounds.
         """
         if channel_type not in ["Voltage", "Current"]:
             raise ValidationError(

@@ -23,12 +23,13 @@ class ElectrophysiologyDataset:
     """
     Container for electrophysiology data with multiple sweeps and channels.
 
-    This class provides a unified interface for accessing sweep data regardless
-    of the original file format. All time values are stored in milliseconds.
+    Provides a format-agnostic, unified interface for managing and accessing electrophysiology recordings.
+    All time values are stored in milliseconds. Supports sweep and channel operations, metadata management,
+    and compatibility with various file formats.
 
     Attributes:
-        _sweeps: Dictionary mapping sweep indices to (time, data) tuples
-        metadata: Dictionary containing dataset metadata
+        _sweeps (Dict[str, Tuple[np.ndarray, np.ndarray]]): Maps sweep indices to (time, data) tuples.
+        metadata (Dict[str, Any]): Stores dataset metadata such as channel labels, units, sampling rate, format, etc.
 
     Example:
         >>> dataset = ElectrophysiologyDataset()
@@ -38,7 +39,11 @@ class ElectrophysiologyDataset:
     """
 
     def __init__(self):
-        """Initialize an empty dataset."""
+        """
+        Initialize an empty ElectrophysiologyDataset.
+
+        All metadata fields are set to default values.
+        """
         self._sweeps: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
         self.metadata: Dict[str, Any] = {
             "channel_labels": [],  # List of channel names
@@ -57,12 +62,12 @@ class ElectrophysiologyDataset:
         Add a sweep to the dataset.
 
         Args:
-            sweep_index: Unique identifier for the sweep
-            time_ms: Time vector in milliseconds (N,)
-            data_matrix: Data matrix with shape (N, C) where N=samples, C=channels
+            sweep_index (str): Unique identifier for the sweep.
+            time_ms (np.ndarray): 1D array of time values in milliseconds (length N).
+            data_matrix (np.ndarray): 2D array of shape (N, C) where N=samples, C=channels.
 
         Raises:
-            ValueError: If time and data dimensions don't match
+            ValueError: If time and data dimensions do not match.
         """
         # Validate inputs
         time_ms = np.asarray(time_ms)
@@ -89,10 +94,10 @@ class ElectrophysiologyDataset:
 
     def sweeps(self) -> Iterable[str]:
         """
-        Get an iterable of all sweep indices.
+        Get an iterable of all sweep indices in the dataset.
 
         Returns:
-            Iterable of sweep index strings
+            Iterable[str]: Iterable of sweep index strings.
 
         Example:
             >>> for sweep_idx in dataset.sweeps():
@@ -102,14 +107,14 @@ class ElectrophysiologyDataset:
 
     def get_sweep(self, sweep_index: str) -> Optional[Tuple[np.ndarray, np.ndarray]]:
         """
-        Get time and data for a specific sweep.
+        Retrieve time and data for a specific sweep.
 
         Args:
-            sweep_index: The sweep identifier
+            sweep_index (str): The sweep identifier.
 
         Returns:
-            Tuple of (time_ms, data_matrix) or None if sweep doesn't exist
-            time_ms has shape (N,), data_matrix has shape (N, C)
+            Optional[Tuple[np.ndarray, np.ndarray]]: Tuple of (time_ms, data_matrix) if sweep exists,
+            otherwise None. time_ms has shape (N,), data_matrix has shape (N, C).
         """
         return self._sweeps.get(sweep_index)
 
@@ -120,12 +125,12 @@ class ElectrophysiologyDataset:
         Get time and data for a specific channel in a sweep.
 
         Args:
-            sweep_index: The sweep identifier
-            channel_id: The channel index (0-based)
+            sweep_index (str): The sweep identifier.
+            channel_id (int): The channel index (0-based).
 
         Returns:
-            Tuple of (time_ms, channel_data) where both are 1D arrays,
-            or (None, None) if sweep doesn't exist or channel is out of range
+            Tuple[Optional[np.ndarray], Optional[np.ndarray]]: Tuple of (time_ms, channel_data) as 1D arrays,
+            or (None, None) if sweep does not exist or channel is out of range.
 
         Example:
             >>> time, voltage = dataset.get_channel_vector("1", 0)
@@ -148,10 +153,10 @@ class ElectrophysiologyDataset:
 
     def channel_count(self) -> int:
         """
-        Get the maximum number of channels across all sweeps.
+        Get the maximum number of channels across all sweeps in the dataset.
 
         Returns:
-            Maximum channel count in the dataset
+            int: Maximum channel count in the dataset.
         """
         return self.metadata.get("channel_count", 0)
 
@@ -160,7 +165,7 @@ class ElectrophysiologyDataset:
         Get the total number of sweeps in the dataset.
 
         Returns:
-            Number of sweeps
+            int: Number of sweeps in the dataset.
         """
         return len(self._sweeps)
 
@@ -169,7 +174,7 @@ class ElectrophysiologyDataset:
         Check if the dataset contains any sweeps.
 
         Returns:
-            True if no sweeps are loaded
+            bool: True if no sweeps are loaded, False otherwise.
         """
         return len(self._sweeps) == 0
 
@@ -178,10 +183,10 @@ class ElectrophysiologyDataset:
         Get the duration of a specific sweep in milliseconds.
 
         Args:
-            sweep_index: The sweep identifier
+            sweep_index (str): The sweep identifier.
 
         Returns:
-            Duration in milliseconds or None if sweep doesn't exist
+            Optional[float]: Duration in milliseconds, or None if sweep doesn't exist.
         """
         sweep_data = self.get_sweep(sweep_index)
         if sweep_data is None:
@@ -198,7 +203,7 @@ class ElectrophysiologyDataset:
         Get the maximum sweep duration across all sweeps in the dataset.
 
         Returns:
-            Maximum sweep time in milliseconds, or 0 if no sweeps.
+            float: Maximum sweep time in milliseconds, or 0.0 if no sweeps.
         """
         if self.is_empty():
             return 0.0
@@ -216,10 +221,10 @@ class ElectrophysiologyDataset:
         Estimate the sampling rate for a sweep or the dataset.
 
         Args:
-            sweep_index: Specific sweep to check, or None for first sweep
+            sweep_index (str, optional): Specific sweep to check, or None for first sweep.
 
         Returns:
-            Sampling rate in Hz or None if cannot be determined
+            Optional[float]: Sampling rate in Hz, or None if cannot be determined.
         """
         # Use provided sweep or get first one
         if sweep_index is None:
@@ -243,7 +248,9 @@ class ElectrophysiologyDataset:
         return self.metadata.get("sampling_rate_hz")
 
     def clear(self) -> None:
-        """Clear all data from the dataset."""
+        """
+        Remove all sweeps and reset metadata to default values.
+        """
         self._sweeps.clear()
         self.metadata = {
             "channel_labels": [],
@@ -256,11 +263,21 @@ class ElectrophysiologyDataset:
         }
 
     def __len__(self) -> int:
-        """Return the number of sweeps in the dataset."""
+        """
+        Return the number of sweeps in the dataset.
+
+        Returns:
+            int: Number of sweeps.
+        """
         return len(self._sweeps)
 
     def __repr__(self) -> str:
-        """Return string representation of the dataset."""
+        """
+        Return a string representation of the dataset summarizing sweeps, channels, and format.
+
+        Returns:
+            str: String summary of the dataset.
+        """
         return (
             f"ElectrophysiologyDataset("
             f"sweeps={self.sweep_count()}, "
@@ -272,10 +289,10 @@ class ElectrophysiologyDataset:
         """
         Update the dataset's channel metadata based on new channel definitions.
 
-        This is used when channels are swapped after the dataset is loaded.
+        This is used when channels are swapped or remapped after the dataset is loaded.
 
         Args:
-            channel_map: ChannelDefinitions instance with updated mapping
+            channel_map (Any): ChannelDefinitions instance with updated mapping.
         """
         if channel_map is None:
             return
@@ -320,10 +337,9 @@ class ElectrophysiologyDataset:
 
 class DatasetLoader:
     """
-    Static methods for loading electrophysiology data from various formats.
+    Static methods for loading electrophysiology data from various file formats.
 
-    This class provides format detection and loading capabilities for
-    different file types used in electrophysiology recordings.
+    Provides format detection, loading, and channel mapping for supported file types used in electrophysiology recordings.
     """
 
     # Supported file extensions and their formats
@@ -338,13 +354,13 @@ class DatasetLoader:
     @staticmethod
     def detect_format(file_path: Union[str, Path]) -> Optional[str]:
         """
-        Detect the file format based on extension.
+        Detect the file format based on file extension.
 
         Args:
-            file_path: Path to the file
+            file_path (Union[str, Path]): Path to the file.
 
         Returns:
-            Format string ('matlab', 'axon', etc.) or None if unknown
+            Optional[str]: Format string (e.g., 'matlab', 'axon'), or None if unknown.
         """
         file_path = Path(file_path)
         extension = file_path.suffix.lower()
@@ -355,18 +371,18 @@ class DatasetLoader:
         file_path: Union[str, Path], channel_map: Optional[Any] = None
     ) -> ElectrophysiologyDataset:
         """
-        Load a dataset from file with automatic format detection.
+        Load a dataset from file with automatic format detection and channel mapping.
 
         Args:
-            file_path: Path to the data file
-            channel_map: Optional ChannelDefinitions instance for channel mapping
+            file_path (Union[str, Path]): Path to the data file.
+            channel_map (Any, optional): ChannelDefinitions instance for channel mapping.
 
         Returns:
-            Loaded dataset
+            ElectrophysiologyDataset: Loaded dataset.
 
         Raises:
-            ValueError: If file format is not supported
-            FileNotFoundError: If file doesn't exist
+            ValueError: If file format is not supported.
+            FileNotFoundError: If file does not exist.
         """
         file_path = Path(file_path)
 
@@ -397,7 +413,19 @@ class DatasetLoader:
     def load_abf(
         file_path: Union[str, Path], channel_map: Optional[Any] = None
     ) -> ElectrophysiologyDataset:
-        """Load an ABF file."""
+        """
+        Load an Axon Binary Format (ABF) file containing electrophysiology data.
+
+        Args:
+            file_path (Union[str, Path]): Path to the ABF file.
+            channel_map (Any, optional): ChannelDefinitions instance for channel mapping.
+
+        Returns:
+            ElectrophysiologyDataset: Loaded dataset.
+
+        Raises:
+            ImportError: If pyabf is not installed.
+        """
         try:
             from data_analysis_gui.core.loaders.abf_loader import load_abf
         except ImportError as e:
@@ -412,22 +440,22 @@ class DatasetLoader:
         file_path: Union[str, Path], channel_map: Optional[Any] = None
     ) -> ElectrophysiologyDataset:
         """
-        Load a MATLAB file containing electrophysiology data.
+        Load a MATLAB (.mat) file containing electrophysiology data.
 
-        This method expects MAT files with the structure:
-        - T{n}: Time vectors for sweep n
-        - Y{n}: Data matrices for sweep n
+        Expects MAT files with the structure:
+            - T{n}: Time vectors for sweep n
+            - Y{n}: Data matrices for sweep n
 
         Args:
-            file_path: Path to the MAT file
-            channel_map: Optional ChannelDefinitions instance for channel labeling
+            file_path (Union[str, Path]): Path to the MAT file.
+            channel_map (Any, optional): ChannelDefinitions instance for channel labeling.
 
         Returns:
-            Dataset containing all sweeps from the MAT file
+            ElectrophysiologyDataset: Dataset containing all sweeps from the MAT file.
 
         Raises:
-            IOError: If file cannot be read
-            ValueError: If file structure is invalid
+            IOError: If file cannot be read.
+            ValueError: If file structure is invalid.
         """
         file_path = Path(file_path)
 
@@ -506,11 +534,11 @@ class DatasetLoader:
         dataset: ElectrophysiologyDataset, channel_map: Any
     ) -> None:
         """
-        Apply channel definitions to dataset metadata.
+        Apply channel definitions to dataset metadata, updating channel labels and units.
 
         Args:
-            dataset: Dataset to update
-            channel_map: ChannelDefinitions instance
+            dataset (ElectrophysiologyDataset): Dataset to update.
+            channel_map (Any): ChannelDefinitions instance.
         """
         # Update channel labels based on mapping
         num_channels = dataset.channel_count()

@@ -1,14 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-"""
+
 Window for displaying and interacting with current density analysis results.
 
-This module provides a UI window for viewing and editing current density
-calculations. All business logic is delegated to CurrentDensityService.
-
+This module provides a user interface window for viewing, editing, and exporting
+current density calculations. All business logic is delegated to CurrentDensityService.
 """
 
 import re
@@ -53,7 +52,13 @@ logger = get_logger(__name__)
 
 
 class CurrentDensityResultsWindow(QMainWindow):
-    """Window for displaying current density results with interactive features."""
+    """
+    Main window for displaying current density analysis results.
+
+    Provides interactive features for viewing, editing, and exporting current density
+    calculations. Integrates with CurrentDensityService for business logic and supports
+    batch operations and plotting.
+    """
 
     def __init__(
         self,
@@ -63,6 +68,16 @@ class CurrentDensityResultsWindow(QMainWindow):
         data_service,
         batch_service=None,
     ):
+        """
+        Initialize the CurrentDensityResultsWindow.
+
+        Args:
+            parent: Parent widget.
+            batch_result (BatchAnalysisResult): Batch analysis results.
+            cslow_mapping (Dict[str, float]): Mapping of file names to Cslow values.
+            data_service: Service for data export operations.
+            batch_service: Optional batch export service.
+        """
         super().__init__(parent)
 
         self.original_batch_result = batch_result
@@ -100,7 +115,9 @@ class CurrentDensityResultsWindow(QMainWindow):
         style_main_window(self)
 
     def init_ui(self):
-        """Initialize the UI with file list, plot, and controls."""
+        """
+        Set up the user interface, including file list, plot, and export controls.
+        """
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
@@ -133,7 +150,12 @@ class CurrentDensityResultsWindow(QMainWindow):
         self._update_plot()
 
     def _create_left_panel(self) -> QWidget:
-        """Create the left panel with file list and controls."""
+        """
+        Create the left panel containing the file list and selection controls.
+
+        Returns:
+            QWidget: The constructed left panel widget.
+        """
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
@@ -160,7 +182,12 @@ class CurrentDensityResultsWindow(QMainWindow):
         return panel
 
     def _add_export_controls(self, layout):
-        """Add export buttons to the bottom of the window."""
+        """
+        Add export buttons (individual CSVs, summary CSV, plot) to the window.
+
+        Args:
+            layout: The layout to which export controls are added.
+        """
         button_layout = QHBoxLayout()
 
         export_individual_btn = QPushButton("Export Individual CSVs...")
@@ -183,7 +210,15 @@ class CurrentDensityResultsWindow(QMainWindow):
         layout.addLayout(button_layout)
 
     def _sort_results(self, results):
-        """Sort results numerically based on filename."""
+        """
+        Sort analysis results numerically based on filename.
+
+        Args:
+            results: List of analysis results.
+
+        Returns:
+            List: Sorted results.
+        """
 
         def extract_number(file_name):
             match = re.search(r"_(\d+)", file_name)
@@ -192,7 +227,9 @@ class CurrentDensityResultsWindow(QMainWindow):
         return sorted(results, key=lambda r: extract_number(r.base_name))
 
     def _populate_file_list(self):
-        """Fill the file list with data from the batch result."""
+        """
+        Populate the file list widget with batch analysis results.
+        """
         sorted_results = self._sort_results(self.active_batch_result.successful_results)
         color_mapping = self.plot_widget._generate_color_mapping(sorted_results)
 
@@ -205,7 +242,9 @@ class CurrentDensityResultsWindow(QMainWindow):
         self._update_summary()
 
     def _apply_initial_current_density(self):
-        """Apply initial current density calculations to all files."""
+        """
+        Apply initial current density calculations to all files using Cslow values.
+        """
         original_results = {
             r.base_name: r for r in self.original_batch_result.successful_results
         }
@@ -227,7 +266,13 @@ class CurrentDensityResultsWindow(QMainWindow):
         logger.debug(f"Applied initial current density calculations.")
 
     def _on_cslow_changed(self, file_name: str, new_cslow: float):
-        """Handle live recalculation when a Cslow value is changed."""
+        """
+        Handle recalculation of current density when a Cslow value is changed.
+
+        Args:
+            file_name (str): Name of the file whose Cslow value changed.
+            new_cslow (float): New Cslow value.
+        """
         try:
             # Find the index
             target_index = next(
@@ -269,7 +314,9 @@ class CurrentDensityResultsWindow(QMainWindow):
             logger.warning(f"Invalid Cslow value for {file_name}: {e}")
 
     def _update_plot(self):
-        """Update the plot based on the current selections and data."""
+        """
+        Update the plot to reflect current selections and data.
+        """
         sorted_results = self._sort_results(self.active_batch_result.successful_results)
         self.plot_widget.set_data(
             sorted_results,
@@ -280,13 +327,20 @@ class CurrentDensityResultsWindow(QMainWindow):
         self._update_summary()
 
     def _update_summary(self):
-        """Update the summary label text."""
+        """
+        Update the summary label to show the number of selected files.
+        """
         selected = len(self.selection_state.get_selected_files())
         total = len(self.active_batch_result.successful_results)
         self.summary_label.setText(f"{selected} of {total} files selected")
 
     def _validate_all_cslow_values(self) -> bool:
-        """Validate Cslow values for all selected files before exporting."""
+        """
+        Validate Cslow values for all selected files before exporting.
+
+        Returns:
+            bool: True if all Cslow values are valid and positive, False otherwise.
+        """
         for row in range(self.file_list.rowCount()):
             cslow_widget = self.file_list.cellWidget(row, 3)
             if cslow_widget and hasattr(cslow_widget, "text"):
@@ -298,7 +352,11 @@ class CurrentDensityResultsWindow(QMainWindow):
         return True
 
     def _export_individual_csvs(self):
-        """Export individual CSVs for selected files with current density values."""
+        """
+        Export individual CSV files for selected files with current density values.
+
+        Shows a warning if no files are selected or if Cslow values are invalid.
+        """
         selected_files = self.selection_state.get_selected_files()
         if not selected_files:
             QMessageBox.warning(self, "No Data", "No files selected for export.")
@@ -364,7 +422,11 @@ class CurrentDensityResultsWindow(QMainWindow):
             QMessageBox.critical(self, "Export Failed", f"Export failed: {str(e)}")
 
     def _export_summary(self):
-        """Export current density summary after validating inputs."""
+        """
+        Export a summary CSV of current density results after validating inputs.
+
+        Shows a warning if Cslow values are invalid or if export fails.
+        """
         if not self._validate_all_cslow_values():
             QMessageBox.warning(
                 self,
@@ -423,7 +485,11 @@ class CurrentDensityResultsWindow(QMainWindow):
             QMessageBox.critical(self, "Export Failed", f"Export failed: {str(e)}")
 
     def _export_plot(self):
-        """Export the current plot to an image file."""
+        """
+        Export the current plot to an image file.
+
+        Shows a message box on success or failure.
+        """
         file_path = self.file_dialog_service.get_export_path(
             self,
             "current_density_plot.png",

@@ -27,9 +27,21 @@ from data_analysis_gui.config.plot_style import (
 )
 
 
+
 @dataclass
 class AnalysisPlotData:
-    """Data structure for analysis plots"""
+    """
+    Data structure for analysis plots.
+
+    Attributes:
+        x_data (np.ndarray): X-axis data points.
+        y_data (np.ndarray): Y-axis data points for primary range.
+        sweep_indices (List[int]): Indices of sweeps included in the plot.
+        use_dual_range (bool): Whether dual range plotting is enabled.
+        y_data2 (Optional[np.ndarray]): Y-axis data for secondary range, if applicable.
+        y_label_r1 (Optional[str]): Label for primary range Y-axis.
+        y_label_r2 (Optional[str]): Label for secondary range Y-axis.
+    """
 
     x_data: np.ndarray
     y_data: np.ndarray
@@ -41,7 +53,15 @@ class AnalysisPlotData:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AnalysisPlotData":
-        """Create from dictionary for backward compatibility"""
+        """
+        Create an AnalysisPlotData instance from a dictionary for backward compatibility.
+
+        Args:
+            data (Dict[str, Any]): Dictionary containing plot data fields.
+
+        Returns:
+            AnalysisPlotData: Instance populated from the dictionary.
+        """
         return cls(
             x_data=np.array(data.get("x_data", [])),
             y_data=np.array(data.get("y_data", [])),
@@ -53,7 +73,12 @@ class AnalysisPlotData:
         )
 
 
+
 class AnalysisPlotter:
+    """
+    Provides static methods for creating, configuring, and saving analysis plots using matplotlib.
+    All methods are stateless and thread-safe for non-GUI operations.
+    """
 
     @staticmethod
     def create_figure(
@@ -64,7 +89,17 @@ class AnalysisPlotter:
         figsize: Tuple[int, int] = (8, 6),
     ) -> Tuple[Figure, Axes]:
         """
-        Create and configure a matplotlib figure with modern styling.
+        Create and configure a matplotlib figure for analysis plots with modern styling.
+
+        Args:
+            plot_data (AnalysisPlotData): Data to plot.
+            x_label (str): Label for the X-axis.
+            y_label (str): Label for the Y-axis.
+            title (str): Title of the plot.
+            figsize (Tuple[int, int], optional): Size of the figure in inches. Defaults to (8, 6).
+
+        Returns:
+            Tuple[Figure, Axes]: The created matplotlib Figure and Axes objects.
         """
         # Apply global style
         apply_plot_style()
@@ -89,7 +124,14 @@ class AnalysisPlotter:
         ax: Axes, plot_data: AnalysisPlotData, x_label: str, y_label: str, title: str
     ) -> None:
         """
-        Configure the plot with modern styling.
+        Configure the matplotlib Axes object with analysis plot data and modern styling.
+
+        Args:
+            ax (Axes): Matplotlib Axes to configure.
+            plot_data (AnalysisPlotData): Data to plot.
+            x_label (str): Label for the X-axis.
+            y_label (str): Label for the Y-axis.
+            title (str): Title of the plot.
         """
         x_data = plot_data.x_data
         y_data = plot_data.y_data
@@ -152,7 +194,13 @@ class AnalysisPlotter:
         ax: Axes, x_data: np.ndarray, y_data: np.ndarray, padding_factor: float = 0.05
     ) -> None:
         """
-        Apply padding to both axes for better visualization.
+        Apply padding to both axes for improved visualization and layout.
+
+        Args:
+            ax (Axes): Matplotlib Axes to adjust.
+            x_data (np.ndarray): X-axis data points.
+            y_data (np.ndarray): Y-axis data points.
+            padding_factor (float, optional): Fractional padding to apply. Defaults to 0.05.
         """
         ax.relim()
         ax.autoscale_view()
@@ -175,17 +223,15 @@ class AnalysisPlotter:
     @staticmethod
     def save_figure(figure: Figure, filepath: str, dpi: int = 300) -> None:
         """
-        Save figure to file.
-
-        Pure function that performs I/O operation.
+        Save a matplotlib figure to a file.
 
         Args:
-            figure: Matplotlib figure to save
-            filepath: Output file path
-            dpi: Resolution in dots per inch
+            figure (Figure): Matplotlib figure to save.
+            filepath (str): Output file path.
+            dpi (int, optional): Resolution in dots per inch. Defaults to 300.
 
-        Thread Safety: File I/O may require external synchronization
-                      if multiple threads write to same directory
+        Note:
+            File I/O may require external synchronization if multiple threads write to the same directory.
         """
         figure.tight_layout()
         figure.savefig(filepath, dpi=dpi, bbox_inches="tight")
@@ -201,22 +247,19 @@ class AnalysisPlotter:
         dpi: int = 300,
     ) -> Figure:
         """
-        Convenience method to create and save a plot in one operation.
-
-        Combines figure creation and saving for common use case.
-        Pure function that returns the created figure.
+        Create and save an analysis plot in a single operation.
 
         Args:
-            plot_data: Data to plot
-            x_label: X-axis label
-            y_label: Y-axis label
-            title: Plot title
-            filepath: Output file path
-            figsize: Figure size
-            dpi: Resolution
+            plot_data (AnalysisPlotData): Data to plot.
+            x_label (str): X-axis label.
+            y_label (str): Y-axis label.
+            title (str): Plot title.
+            filepath (str): Output file path for saving the plot.
+            figsize (Tuple[int, int], optional): Figure size in inches. Defaults to (8, 6).
+            dpi (int, optional): Resolution in dots per inch. Defaults to 300.
 
         Returns:
-            The created Figure object
+            Figure: The created matplotlib Figure object.
         """
         figure, _ = AnalysisPlotter.create_figure(
             plot_data, x_label, y_label, title, figsize
@@ -235,18 +278,21 @@ def create_analysis_plot(
     show: bool = False,
 ) -> Optional[Figure]:
     """
-    Create an analysis plot from data dictionary.
+    Create an analysis plot from a data dictionary and optionally save or display it.
 
     Args:
-        plot_data_dict: Dictionary containing plot data
-        x_label: Label for x-axis
-        y_label: Label for y-axis
-        title: Plot title
-        output_path: Optional path to save the plot
-        show: Whether to display the plot (requires GUI backend)
+        plot_data_dict (Dict[str, Any]): Dictionary containing plot data fields.
+        x_label (str): Label for the X-axis.
+        y_label (str): Label for the Y-axis.
+        title (str): Title of the plot.
+        output_path (Optional[str], optional): Path to save the plot. If None, plot is not saved.
+        show (bool, optional): Whether to display the plot (requires GUI backend). Defaults to False.
 
     Returns:
-        Figure object if created, None otherwise
+        Optional[Figure]: The created matplotlib Figure object if successful, None otherwise.
+
+    Note:
+        Displaying plots with show=True is not thread-safe and should only be called from the main thread.
     """
     plot_data = AnalysisPlotData.from_dict(plot_data_dict)
 

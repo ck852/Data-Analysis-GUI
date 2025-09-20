@@ -26,7 +26,11 @@ from data_analysis_gui.core.params import AnalysisParameters
 
 
 class ModelValidationError(ValueError):
-    """Raised when model validation fails."""
+    """
+    Exception raised when model validation fails.
+
+    This error is used throughout model classes to indicate invalid or inconsistent data.
+    """
 
     pass
 
@@ -39,10 +43,25 @@ class ModelValidationError(ValueError):
 @dataclass(frozen=True)
 class AnalysisResult:
     """
-    Result of an analysis operation with plot-ready data.
+    Represents the result of an analysis operation with plot-ready data.
 
-    This model represents the output of analysis operations, containing
-    both the data arrays and metadata needed for plotting and export.
+    Contains both primary and optional dual-range data arrays, labels, and metadata
+    required for plotting and exporting analysis results.
+
+    Args:
+        x_data (np.ndarray): X-axis data for the primary range.
+        y_data (np.ndarray): Y-axis data for the primary range.
+        x_label (str): Label for the X-axis.
+        y_label (str): Label for the Y-axis.
+        x_data2 (Optional[np.ndarray]): X-axis data for the secondary range (if dual-range enabled).
+        y_data2 (Optional[np.ndarray]): Y-axis data for the secondary range (if dual-range enabled).
+        y_label_r1 (Optional[str]): Label for Y-axis (range 1).
+        y_label_r2 (Optional[str]): Label for Y-axis (range 2).
+        sweep_indices (List[str]): List of sweep identifiers.
+        use_dual_range (bool): Whether dual-range data is used.
+
+    Raises:
+        ModelValidationError: If data arrays are inconsistent or required fields are missing.
     """
 
     x_data: np.ndarray
@@ -61,7 +80,12 @@ class AnalysisResult:
     use_dual_range: bool = False
 
     def __post_init__(self):
-        """Validate data consistency after initialization."""
+        """
+        Validate data consistency after initialization.
+
+        Ensures that all arrays are numpy arrays and that their lengths match.
+        Validates dual-range data if enabled.
+        """
         # Ensure numpy arrays
         if not isinstance(self.x_data, np.ndarray):
             object.__setattr__(self, "x_data", np.array(self.x_data))
@@ -99,7 +123,12 @@ class AnalysisResult:
 
     @property
     def has_data(self) -> bool:
-        """Check if the result contains valid data."""
+        """
+        Returns whether the result contains valid (non-empty) data arrays.
+
+        Returns:
+            bool: True if both x_data and y_data are non-empty, False otherwise.
+        """
         return len(self.x_data) > 0 and len(self.y_data) > 0
 
 
@@ -108,8 +137,17 @@ class PlotData:
     """
     Data structure for plotting a single sweep.
 
-    Contains the time series data and metadata needed to display
-    a single sweep in the plot manager.
+    Contains time series data and metadata for displaying a single sweep in the plot manager.
+
+    Args:
+        time_ms (np.ndarray): Time values in milliseconds.
+        data_matrix (np.ndarray): 2D array of sweep data (rows: time, columns: channels).
+        channel_id (int): Index of the channel to plot.
+        sweep_index (str): Identifier for the sweep.
+        channel_type (str): Type of channel ('Voltage' or 'Current').
+
+    Raises:
+        ModelValidationError: If data dimensions or channel info are invalid.
     """
 
     time_ms: np.ndarray
@@ -119,7 +157,11 @@ class PlotData:
     channel_type: str
 
     def __post_init__(self):
-        """Validate data consistency."""
+        """
+        Validate data consistency after initialization.
+
+        Ensures arrays are numpy arrays and checks dimensions and channel info.
+        """
         # Ensure numpy arrays
         if not isinstance(self.time_ms, np.ndarray):
             object.__setattr__(self, "time_ms", np.array(self.time_ms))
@@ -159,6 +201,15 @@ class PeakAnalysisResult:
 
     Contains comprehensive peak analysis data for different peak modes
     (Absolute, Positive, Negative, Peak-Peak).
+
+    Args:
+        peak_data (Dict[str, Any]): Dictionary of peak type to peak data arrays.
+        x_data (np.ndarray): X-axis data for peak analysis.
+        x_label (str): Label for the X-axis.
+        sweep_indices (List[str]): List of sweep identifiers.
+
+    Raises:
+        ModelValidationError: If peak data is missing or inconsistent.
     """
 
     peak_data: Dict[str, Any]
@@ -167,7 +218,11 @@ class PeakAnalysisResult:
     sweep_indices: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        """Validate peak data structure."""
+        """
+        Validate peak data structure after initialization.
+
+        Ensures peak data is present and all arrays are consistent in length.
+        """
         if not isinstance(self.x_data, np.ndarray):
             object.__setattr__(self, "x_data", np.array(self.x_data))
 
@@ -191,8 +246,17 @@ class FileInfo:
     """
     Information about a loaded data file.
 
-    Provides metadata about the loaded file for GUI display and
-    parameter configuration.
+    Provides metadata about the loaded file for GUI display and parameter configuration.
+
+    Args:
+        name (str): Filename of the loaded data file.
+        path (str): Full path to the data file.
+        sweep_count (int): Number of sweeps in the file.
+        sweep_names (List[str]): List of sweep names.
+        max_sweep_time (Optional[float]): Maximum sweep time in seconds.
+
+    Raises:
+        ModelValidationError: If file info is missing or inconsistent.
     """
 
     name: str
@@ -202,7 +266,11 @@ class FileInfo:
     max_sweep_time: Optional[float] = None
 
     def __post_init__(self):
-        """Validate file information."""
+        """
+        Validate file information after initialization.
+
+        Ensures all required fields are present and consistent.
+        """
         if not self.name:
             raise ModelValidationError("File name cannot be empty")
 
@@ -223,7 +291,12 @@ class FileInfo:
 
     @property
     def base_name(self) -> str:
-        """Get the base filename without extension."""
+        """
+        Returns the base filename without extension.
+
+        Returns:
+            str: The base filename.
+        """
         return Path(self.name).stem
 
 
@@ -232,8 +305,19 @@ class AnalysisPlotData:
     """
     Data structure for analysis plots.
 
-    Consolidates data needed for creating analysis plots with support
-    for single and dual-range analysis.
+    Consolidates data needed for creating analysis plots with support for single and dual-range analysis.
+
+    Args:
+        x_data (np.ndarray): X-axis data for the plot.
+        y_data (np.ndarray): Y-axis data for the plot.
+        sweep_indices (List[str]): List of sweep identifiers.
+        use_dual_range (bool): Whether dual-range data is used.
+        y_data2 (Optional[np.ndarray]): Y-axis data for the secondary range.
+        y_label_r1 (Optional[str]): Label for Y-axis (range 1).
+        y_label_r2 (Optional[str]): Label for Y-axis (range 2).
+
+    Raises:
+        ModelValidationError: If data arrays are inconsistent or required fields are missing.
     """
 
     x_data: np.ndarray
@@ -245,7 +329,12 @@ class AnalysisPlotData:
     y_label_r2: Optional[str] = None
 
     def __post_init__(self):
-        """Validate plot data consistency."""
+        """
+        Validate plot data consistency after initialization.
+
+        Ensures all arrays are numpy arrays and their lengths match.
+        Validates dual-range data if enabled.
+        """
         # Ensure numpy arrays
         if not isinstance(self.x_data, np.ndarray):
             object.__setattr__(self, "x_data", np.array(self.x_data))
@@ -279,7 +368,24 @@ class AnalysisPlotData:
 
 @dataclass(frozen=True)
 class FileAnalysisResult:
-    """Result of analyzing a single file in batch processing."""
+    """
+    Result of analyzing a single file in batch processing.
+
+    Stores the outcome of analysis for a single file, including data arrays, export info,
+    error messages, and processing time.
+
+    Args:
+        file_path (str): Full path to the analyzed file.
+        base_name (str): Base filename (without extension).
+        success (bool): Whether analysis was successful.
+        x_data (np.ndarray): Primary X-axis data.
+        y_data (np.ndarray): Primary Y-axis data.
+        x_data2 (Optional[np.ndarray]): Secondary X-axis data (if dual-range).
+        y_data2 (Optional[np.ndarray]): Secondary Y-axis data (if dual-range).
+        export_table (Optional[Dict[str, Any]]): Exported table data.
+        error_message (Optional[str]): Error message if analysis failed.
+        processing_time (float): Time taken to process the file (seconds).
+    """
 
     file_path: str
     base_name: str
@@ -299,7 +405,24 @@ class FileAnalysisResult:
 
 @dataclass(frozen=True)
 class BatchAnalysisResult:
-    """Complete result of batch analysis operation."""
+    """
+    Complete result of batch analysis operation.
+
+    Stores all successful and failed file analysis results, parameters used, timing, and selected files.
+
+    Args:
+        successful_results (List[FileAnalysisResult]): List of successful file results.
+        failed_results (List[FileAnalysisResult]): List of failed file results.
+        parameters (AnalysisParameters): Parameters used for analysis.
+        start_time (float): Batch analysis start time (seconds since epoch).
+        end_time (float): Batch analysis end time (seconds since epoch).
+        selected_files (Optional[Set[str]]): Set of selected file base names.
+
+    Properties:
+        total_files (int): Total number of files processed.
+        success_rate (float): Percentage of successful files.
+        processing_time (float): Total processing time in seconds.
+    """
 
     successful_results: List[FileAnalysisResult]
     failed_results: List[FileAnalysisResult]
@@ -309,7 +432,11 @@ class BatchAnalysisResult:
     selected_files: Optional[Set[str]] = None
 
     def __post_init__(self):
-        """Initialize selected_files if not provided."""
+        """
+        Initialize selected_files if not provided.
+
+        If selected_files is None, initializes with all successful file base names.
+        """
         if self.selected_files is None:
             # Initialize with all successful file names
             object.__setattr__(
@@ -333,7 +460,20 @@ class BatchAnalysisResult:
 
 @dataclass(frozen=True)
 class BatchExportResult:
-    """Result of batch export operation."""
+    """
+    Result of batch export operation.
+
+    Stores the outcome of exporting batch analysis results, including export results,
+    output directory, and total records exported.
+
+    Args:
+        export_results (List[ExportResult]): List of export results for each file.
+        output_directory (str): Directory where exports were saved.
+        total_records (int): Total number of records exported.
+
+    Properties:
+        success_count (int): Number of successful exports.
+    """
 
     export_results: List["ExportResult"]
     output_directory: str
@@ -341,6 +481,12 @@ class BatchExportResult:
 
     @property
     def success_count(self) -> int:
+        """
+        Returns the number of successful exports.
+
+        Returns:
+            int: Count of successful export results.
+        """
         return sum(1 for r in self.export_results if r.success)
 
 
@@ -349,8 +495,16 @@ class ExportResult:
     """
     Result of an export operation.
 
-    Provides detailed information about the outcome of data export,
-    including error messages for debugging failed exports.
+    Provides detailed information about the outcome of data export, including error messages for debugging failed exports.
+
+    Args:
+        success (bool): Whether the export was successful.
+        file_path (Optional[str]): Path to the exported file (if successful).
+        records_exported (int): Number of records exported.
+        error_message (Optional[str]): Error message if export failed.
+
+    Raises:
+        ModelValidationError: If export result fields are inconsistent.
     """
 
     success: bool
@@ -359,7 +513,11 @@ class ExportResult:
     error_message: Optional[str] = None
 
     def __post_init__(self):
-        """Validate export result consistency."""
+        """
+        Validate export result consistency after initialization.
+
+        Ensures that success, file_path, records_exported, and error_message are consistent.
+        """
         if self.success:
             if not self.file_path:
                 raise ModelValidationError("Successful export must have a file_path")
@@ -390,10 +548,16 @@ class ChannelConfiguration:
     """
     Configuration for channel assignments.
 
-    Defines which physical channels correspond to voltage and current
-    measurements, with support for channel swapping.
+    Defines which physical channels correspond to voltage and current measurements, with support for channel swapping.
+    This class is mutable to allow dynamic channel swapping.
 
-    Note: This is NOT frozen because it needs to be mutable for channel swapping.
+    Args:
+        voltage_channel (int): Index of the voltage channel.
+        current_channel (int): Index of the current channel.
+        is_swapped (bool): Whether channels are currently swapped.
+
+    Raises:
+        ModelValidationError: If channel indices are invalid or duplicate.
     """
 
     voltage_channel: int = 0
@@ -401,7 +565,11 @@ class ChannelConfiguration:
     is_swapped: bool = False
 
     def __post_init__(self):
-        """Validate channel configuration."""
+        """
+        Validate channel configuration after initialization.
+
+        Ensures channel indices are valid and not duplicated.
+        """
         if self.voltage_channel < 0:
             raise ModelValidationError(
                 f"voltage_channel must be non-negative, got {self.voltage_channel}"
@@ -416,7 +584,12 @@ class ChannelConfiguration:
             )
 
     def swap(self) -> None:
-        """Swap the channel assignments."""
+        """
+        Swap the channel assignments for voltage and current.
+
+        After swapping, voltage_channel and current_channel are exchanged,
+        and is_swapped is toggled.
+        """
         self.voltage_channel, self.current_channel = (
             self.current_channel,
             self.voltage_channel,

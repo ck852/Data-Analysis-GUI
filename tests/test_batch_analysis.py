@@ -1,15 +1,20 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
+Test script for batch IV analysis workflow with golden file validation.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
 """
-Test script for batch analysis IV workflow with golden file validation.
+This test suite validates the complete batch IV analysis workflow, including:
+- Batch analysis of electrophysiology files
+- IV summary export
+- Individual CSV export
+- Validation of outputs against golden reference files
 
-Tests the complete workflow from batch analysis through IV summary export,
-validating all outputs against golden reference files. This test follows
-the exact workflow that occurs when using the GUI.
+The workflow mirrors the GUI process and ensures correctness of all exported data.
 """
 
 import os
@@ -32,13 +37,13 @@ from data_analysis_gui.core.iv_analysis import IVAnalysisService, IVSummaryExpor
 
 def load_csv_data(filepath: Path) -> Tuple[List[str], np.ndarray]:
     """
-    Load CSV headers and data array from file.
+    Load CSV headers and data array from a file.
 
     Args:
-        filepath: Path to CSV file
+        filepath (Path): Path to the CSV file.
 
     Returns:
-        Tuple of (headers, data_array)
+        Tuple[List[str], np.ndarray]: Headers and data array.
     """
     if not filepath.exists():
         raise FileNotFoundError(f"CSV file not found: {filepath}")
@@ -57,13 +62,16 @@ def compare_csv_files(
     generated: Path, golden: Path, rtol: float = 1e-5, atol: float = 1e-6
 ) -> None:
     """
-    Compare two CSV files with detailed error reporting.
+    Compare two CSV files for header and numerical data equality.
 
     Args:
-        generated: Path to generated CSV file
-        golden: Path to golden reference CSV file
-        rtol: Relative tolerance for numerical comparison
-        atol: Absolute tolerance for numerical comparison
+        generated (Path): Path to generated CSV file.
+        golden (Path): Path to golden reference CSV file.
+        rtol (float): Relative tolerance for numerical comparison.
+        atol (float): Absolute tolerance for numerical comparison.
+
+    Raises:
+        AssertionError: If any mismatch is found.
     """
     # Load both files
     gen_headers, gen_data = load_csv_data(generated)
@@ -147,12 +155,15 @@ def compare_iv_summary_csv(generated: Path, golden: Path) -> None:
     """
     Compare IV summary CSV files with appropriate tolerances.
 
-    IV Summary files have format:
-    Voltage (mV) | File1 (pA) | File2 (pA) | ...
+    IV summary files format:
+        Voltage (mV) | File1 (pA) | File2 (pA) | ...
 
     Args:
-        generated: Path to generated summary CSV
-        golden: Path to golden reference summary CSV
+        generated (Path): Path to generated summary CSV.
+        golden (Path): Path to golden reference summary CSV.
+
+    Raises:
+        AssertionError: If any mismatch is found.
     """
     gen_headers, gen_data = load_csv_data(generated)
     gold_headers, gold_data = load_csv_data(golden)
@@ -253,7 +264,12 @@ def compare_iv_summary_csv(generated: Path, golden: Path) -> None:
 
 
 class BatchIVAnalysisTestBase:
-    """Base class for batch IV analysis workflow tests."""
+    """
+    Base class for batch IV analysis workflow tests.
+
+    Subclasses should specify FILE_TYPE and FILE_EXTENSION.
+    Provides fixtures and utility methods for batch analysis validation.
+    """
 
     # Subclasses should define these
     FILE_TYPE = None  # 'abf' or 'mat'
@@ -261,7 +277,12 @@ class BatchIVAnalysisTestBase:
 
     @property
     def sample_data_dir(self) -> Path:
-        """Get the sample data directory for this file type."""
+        """
+        Get the sample data directory for the current file type.
+
+        Returns:
+            Path: Directory containing sample data files.
+        """
         # Using uppercase directory names as shown in filetree
         if self.FILE_TYPE == "abf":
             return Path("tests/fixtures/sample_data/IV+CD/ABF")
@@ -270,16 +291,21 @@ class BatchIVAnalysisTestBase:
 
     @property
     def golden_data_dir(self) -> Path:
-        """Get the golden data directory for this file type."""
+        """
+        Get the golden data directory for the current file type.
+
+        Returns:
+            Path: Directory containing golden reference files.
+        """
         return Path(f"tests/fixtures/golden_data/golden_IV/{self.FILE_TYPE}")
 
     @pytest.fixture
     def analysis_params(self):
         """
-        Create analysis parameters matching the GUI state as specified:
-        - dual_range = False
-        - range1_start = 150.1, range1_end = 649.2
-        - X axis = Average Voltage, Y axis = Average Current
+        Create analysis parameters matching the GUI state.
+
+        Returns:
+            AnalysisParameters: Configured analysis parameters.
         """
         return AnalysisParameters(
             range1_start=150.1,
@@ -295,14 +321,26 @@ class BatchIVAnalysisTestBase:
 
     @pytest.fixture
     def temp_output_dir(self):
-        """Create a temporary directory for test outputs."""
+        """
+        Create a temporary directory for test outputs.
+
+        Yields:
+            str: Path to the temporary output directory.
+        """
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
         # Cleanup
         shutil.rmtree(temp_dir)
 
     def get_test_files(self) -> List[str]:
-        """Get all test files from the sample data directory."""
+        """
+        Get all test files from the sample data directory.
+
+        Returns:
+            List[str]: List of file paths.
+
+        Skips test if no files are found.
+        """
         if not self.sample_data_dir.exists():
             pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
 
@@ -317,7 +355,23 @@ class BatchIVAnalysisTestBase:
     def test_batch_iv_analysis_workflow(self, analysis_params, temp_output_dir):
         """
         Test the complete batch IV analysis workflow with golden file validation.
-        This follows the exact workflow from the batch analysis workflow diagram.
+
+        Steps:
+            1. Set analysis parameters
+            2. Initialize services
+            3. Load files
+            4. Run batch analysis
+            5. Validate results
+            6. Export IV summary
+            7. Export individual CSVs
+            8. Validate outputs against golden files
+
+        Args:
+            analysis_params (AnalysisParameters): Analysis parameters fixture.
+            temp_output_dir (str): Temporary output directory fixture.
+
+        Raises:
+            AssertionError: If any validation fails.
         """
 
         # ==================================================================
@@ -543,14 +597,22 @@ class BatchIVAnalysisTestBase:
 
 
 class TestBatchIVAnalysisABF(BatchIVAnalysisTestBase):
-    """Test batch IV analysis workflow with ABF files."""
+    """
+    Test batch IV analysis workflow with ABF files.
+
+    Inherits from BatchIVAnalysisTestBase.
+    """
 
     FILE_TYPE = "abf"
     FILE_EXTENSION = "*.abf"
 
 
 # class TestBatchIVAnalysisMAT(BatchIVAnalysisTestBase):
-#     """Test batch IV analysis workflow with MAT files."""
+#     """
+#     Test batch IV analysis workflow with MAT files.
+#
+#     Inherits from BatchIVAnalysisTestBase.
+#     """
 #     FILE_TYPE = 'mat'
 #     FILE_EXTENSION = '*.mat'
 

@@ -1,8 +1,12 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
+Dialog for entering slow capacitance values for current density calculations.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
+
 """
 Dialog for entering slow capacitance values for current density calculations.
 
@@ -45,9 +49,21 @@ logger = get_logger(__name__)
 
 
 class CurrentDensityDialog(QDialog):
-    """Dialog for entering Cslow values for each file."""
+    """
+    Dialog for entering Cslow (slow capacitance) values for each file.
+
+    Allows users to input capacitance values in picofarads (pF) for current density calculations.
+    Provides bulk entry, validation, and status feedback for each file.
+    """
 
     def __init__(self, parent, batch_result: BatchAnalysisResult):
+        """
+        Initialize the dialog.
+
+        Args:
+            parent: Parent widget.
+            batch_result (BatchAnalysisResult): Batch analysis result containing file info.
+        """
         super().__init__(parent)
         self.batch_result = batch_result
         self.cslow_inputs = {}  # filename -> QLineEdit
@@ -64,7 +80,9 @@ class CurrentDensityDialog(QDialog):
         apply_compact_layout(self)
 
     def init_ui(self):
-        """Initialize the UI."""
+        """
+        Initialize the dialog UI components and layout.
+        """
         layout = QVBoxLayout(self)
         self.resize(600, 600)
 
@@ -124,7 +142,9 @@ class CurrentDensityDialog(QDialog):
         set_all_btn.clicked.connect(self._set_all_values)
 
     def _populate_table(self):
-        """Populate table with files and input fields."""
+        """
+        Populate the table with file names and input fields for Cslow values.
+        """
         results = sorted(
             self.batch_result.successful_results,
             key=lambda r: self._extract_number(r.base_name),
@@ -151,7 +171,15 @@ class CurrentDensityDialog(QDialog):
             self.table.setItem(row, 2, status_item)
 
     def _extract_number(self, filename: str) -> int:
-        """Extract number from filename for sorting."""
+        """
+        Extract a numeric identifier from the filename for sorting.
+
+        Args:
+            filename (str): File name string.
+
+        Returns:
+            int: Extracted number or 0 if not found.
+        """
         match = re.search(r"_(\d+)", filename)
         if match:
             return int(match.group(1))
@@ -159,7 +187,12 @@ class CurrentDensityDialog(QDialog):
         return int(numbers[-1]) if numbers else 0
 
     def _update_status(self, row: int):
-        """Update status indicator for a row."""
+        """
+        Update the status indicator for a given row based on input validity.
+
+        Args:
+            row (int): Row index in the table.
+        """
         cslow_input = self.table.cellWidget(row, 1)
         status_item = self.table.item(row, 2)
 
@@ -173,7 +206,15 @@ class CurrentDensityDialog(QDialog):
                 status_item.setText("")
 
     def _is_valid_number(self, text: str) -> bool:
-        """Check if text is a valid positive number."""
+        """
+        Check if the provided text is a valid positive number.
+
+        Args:
+            text (str): Input text.
+
+        Returns:
+            bool: True if valid positive float, False otherwise.
+        """
         try:
             value = float(text)
             return value > 0
@@ -181,7 +222,9 @@ class CurrentDensityDialog(QDialog):
             return False
 
     def _set_all_values(self):
-        """Set all Cslow values to the default value."""
+        """
+        Set all Cslow input fields to the default value entered by the user.
+        """
         default_value = self.default_input.text().strip()
         if not self._is_valid_number(default_value):
             QMessageBox.warning(
@@ -195,7 +238,11 @@ class CurrentDensityDialog(QDialog):
             cslow_input.setText(default_value)
 
     def _validate_and_accept(self):
-        """Validate all inputs before accepting."""
+        """
+        Validate all Cslow inputs before accepting the dialog.
+
+        Shows a warning if any selected file is missing a valid value.
+        """
         missing_files = []
         selected_files = getattr(self.batch_result, "selected_files", set())
 
@@ -217,7 +264,12 @@ class CurrentDensityDialog(QDialog):
         self.accept()
 
     def get_cslow_mapping(self) -> Dict[str, float]:
-        """Get the mapping of filenames to Cslow values."""
+        """
+        Get the mapping of filenames to entered Cslow values.
+
+        Returns:
+            Dict[str, float]: Mapping of file names to capacitance values.
+        """
         mapping = {}
         for filename, cslow_input in self.cslow_inputs.items():
             text = cslow_input.text().strip()
@@ -226,7 +278,12 @@ class CurrentDensityDialog(QDialog):
         return mapping
 
     def keyPressEvent(self, event):
-        """Handle keyboard events for copy/paste support."""
+        """
+        Handle keyboard events for copy/paste support.
+
+        Args:
+            event: QKeyEvent instance.
+        """
         # Check for paste shortcut: Ctrl+V on Windows/Linux, Cmd+V on Mac
         is_paste = (
             event.modifiers() == Qt.KeyboardModifier.ControlModifier
@@ -242,7 +299,9 @@ class CurrentDensityDialog(QDialog):
             super().keyPressEvent(event)
 
     def _handle_paste(self):
-        """Handle paste operation for bulk input."""
+        """
+        Handle paste operation for bulk input of Cslow values from clipboard.
+        """
         clipboard = QApplication.clipboard()
         text = clipboard.text()
         if not text:

@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -7,11 +8,11 @@ License: MIT (see LICENSE file for details)
 """
 Test module for Swap Channels functionality with batch analysis.
 
-This test validates the channel swapping feature by:
-1. Loading MAT/ABF files with swapped channel configuration
-2. Activating the swap channels feature
-3. Running batch analysis with specific parameters
-4. Comparing outputs against golden reference data
+This module validates the channel swapping feature by:
+    1. Loading MAT/ABF files with swapped channel configuration.
+    2. Activating the swap channels feature.
+    3. Running batch analysis with specific parameters.
+    4. Comparing outputs against golden reference data.
 """
 
 import pytest
@@ -39,7 +40,13 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 @pytest.fixture
 def temp_output_dir():
-    """Create a temporary directory for test outputs."""
+    """
+    Create a temporary directory for test outputs.
+
+    Yields:
+        Path to the temporary output directory.
+    Cleans up the directory after the test completes.
+    """
     temp_dir = tempfile.mkdtemp(prefix="test_swap_channels_")
     yield Path(temp_dir)
     # Cleanup after test
@@ -48,13 +55,23 @@ def temp_output_dir():
 
 @pytest.fixture
 def channel_definitions():
-    """Create channel definitions with swapping capability."""
+    """
+    Create channel definitions with swapping capability.
+
+    Returns:
+        ChannelDefinitions instance with default voltage/current channels.
+    """
     return ChannelDefinitions(voltage_channel=0, current_channel=1)
 
 
 @pytest.fixture
 def analysis_parameters():
-    """Create analysis parameters matching the test requirements."""
+    """
+    Create analysis parameters matching the test requirements.
+
+    Returns:
+        AnalysisParameters instance configured for dual range and swapped channels.
+    """
     return AnalysisParameters(
         range1_start=50.60,
         range1_end=548.65,
@@ -72,7 +89,15 @@ def analysis_parameters():
 
 @pytest.fixture
 def batch_processor(channel_definitions):
-    """Create batch processor with swapped channels."""
+    """
+    Create a BatchProcessor with swapped channels.
+
+    Args:
+        channel_definitions (ChannelDefinitions): ChannelDefinitions instance to swap.
+
+    Returns:
+        BatchProcessor instance with swapped channel configuration.
+    """
     # First swap the channels
     channel_definitions.swap_channels()
     return BatchProcessor(channel_definitions)
@@ -80,12 +105,29 @@ def batch_processor(channel_definitions):
 
 @pytest.fixture
 def controller(channel_definitions):
-    """Create application controller with channel definitions."""
+    """
+    Create an ApplicationController with channel definitions.
+
+    Args:
+        channel_definitions (ChannelDefinitions): ChannelDefinitions instance.
+
+    Returns:
+        ApplicationController instance.
+    """
     return ApplicationController(channel_definitions=channel_definitions)
 
 
 def get_data_files(directory: Path, extension: str) -> List[Path]:
-    """Get all data files in a directory with given extension, sorted numerically."""
+    """
+    Retrieve all data files in a directory with the given extension, sorted numerically.
+
+    Args:
+        directory (Path): Directory to search.
+        extension (str): File extension to filter by.
+
+    Returns:
+        List[Path]: Sorted list of data file paths.
+    """
     data_files = list(directory.glob(f"*.{extension}"))
     # Sort by the numeric part in the filename
     data_files.sort(key=lambda x: int(x.stem.split("_")[-1].split("[")[0]))
@@ -93,7 +135,15 @@ def get_data_files(directory: Path, extension: str) -> List[Path]:
 
 
 def load_csv_data(csv_path: Path) -> Dict[str, Any]:
-    """Load CSV data into a structured format for comparison."""
+    """
+    Load CSV data into a structured format for comparison.
+
+    Args:
+        csv_path (Path): Path to the CSV file.
+
+    Returns:
+        Dict[str, Any]: Dictionary with 'headers' and 'values' keys.
+    """
     data = {"headers": [], "values": []}
 
     with open(csv_path, "r") as f:
@@ -125,12 +175,12 @@ def compare_csv_files(
     Compare two CSV files with tolerance for floating point differences.
 
     Args:
-        generated_path: Path to generated CSV file
-        golden_path: Path to golden reference CSV file
-        tolerance: Numerical tolerance for float comparisons
+        generated_path (Path): Path to generated CSV file.
+        golden_path (Path): Path to golden reference CSV file.
+        tolerance (float): Numerical tolerance for float comparisons.
 
     Returns:
-        True if files match within tolerance
+        bool: True if files match within tolerance, False otherwise.
     """
     generated_data = load_csv_data(generated_path)
     golden_data = load_csv_data(golden_path)
@@ -170,28 +220,51 @@ def compare_csv_files(
 
 
 class TestSwapChannelsBase(ABC):
-    """Base class for testing Swap Channels functionality with batch analysis."""
+    """
+    Base class for testing Swap Channels functionality with batch analysis.
+    Provides common test logic for MAT and ABF formats.
+    """
 
     @property
     @abstractmethod
     def file_format(self) -> str:
-        """Return the file format being tested ('mat' or 'abf')."""
+        """
+        Return the file format being tested ('mat' or 'abf').
+
+        Returns:
+            str: File format.
+        """
         pass
 
     @property
     @abstractmethod
     def file_extension(self) -> str:
-        """Return the file extension for this format."""
+        """
+        Return the file extension for this format.
+
+        Returns:
+            str: File extension.
+        """
         pass
 
     @property
     def sample_data_dir(self) -> Path:
-        """Return the sample data directory for this format."""
+        """
+        Return the sample data directory for this format.
+
+        Returns:
+            Path: Directory containing sample data files.
+        """
         return FIXTURES_DIR / "sample_data" / "swapped" / self.file_format
 
     @property
     def golden_data_dir(self) -> Path:
-        """Return the golden data directory for this format."""
+        """
+        Return the golden data directory for this format.
+
+        Returns:
+            Path: Directory containing golden reference data files.
+        """
         return (
             FIXTURES_DIR
             / "golden_data"
@@ -200,7 +273,13 @@ class TestSwapChannelsBase(ABC):
         )
 
     def test_single_file_swap_channels(self, controller, analysis_parameters):
-        """Test channel swapping on a single file."""
+        """
+        Test channel swapping on a single file.
+
+        Args:
+            controller (ApplicationController): Controller instance.
+            analysis_parameters (AnalysisParameters): Analysis parameters for test.
+        """
         # Load a single test file
         test_file = self.sample_data_dir / f"240809_001[1-12].{self.file_extension}"
 
@@ -236,8 +315,14 @@ class TestSwapChannelsBase(ABC):
     def test_batch_analysis_with_swapped_channels(
         self, batch_processor, analysis_parameters, temp_output_dir
     ):
-        """Test batch analysis with swapped channels and compare to golden data."""
+        """
+        Test batch analysis with swapped channels and compare to golden data.
 
+        Args:
+            batch_processor (BatchProcessor): BatchProcessor instance.
+            analysis_parameters (AnalysisParameters): Analysis parameters for test.
+            temp_output_dir (Path): Temporary output directory.
+        """
         # Skip if sample data directory doesn't exist
         if not self.sample_data_dir.exists():
             pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
@@ -291,8 +376,12 @@ class TestSwapChannelsBase(ABC):
                 pytest.skip(f"Golden CSV not found: {golden_csv}")
 
     def test_full_workflow_with_controller(self, temp_output_dir):
-        """Test complete workflow using ApplicationController."""
+        """
+        Test complete workflow using ApplicationController.
 
+        Args:
+            temp_output_dir (Path): Temporary output directory.
+        """
         # Skip if sample data doesn't exist
         if not self.sample_data_dir.exists():
             pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
@@ -357,22 +446,44 @@ class TestSwapChannelsBase(ABC):
 
 
 class TestSwapChannelsABF(TestSwapChannelsBase):
-    """Test Swap Channels functionality with ABF files."""
+    """
+    Test Swap Channels functionality with ABF files.
+    Inherits common logic from TestSwapChannelsBase.
+    """
 
     @property
     def file_format(self) -> str:
+        """
+        Return the file format being tested.
+
+        Returns:
+            str: "abf"
+        """
         return "abf"
 
     @property
     def file_extension(self) -> str:
+        """
+        Return the file extension for ABF files.
+
+        Returns:
+            str: "abf"
+        """
         return "abf"
 
 
 class TestSwapChannelsGeneral:
-    """General tests for channel swapping that don't depend on file format."""
+    """
+    General tests for channel swapping that don't depend on file format.
+    """
 
     def test_swap_channels_state_persistence(self, channel_definitions):
-        """Test that channel swap state persists correctly."""
+        """
+        Test that channel swap state persists correctly in ChannelDefinitions.
+
+        Args:
+            channel_definitions (ChannelDefinitions): ChannelDefinitions instance.
+        """
         # Initial state
         assert channel_definitions.is_swapped() is False
         assert channel_definitions.get_voltage_channel() == 0
@@ -391,7 +502,12 @@ class TestSwapChannelsGeneral:
         assert channel_definitions.get_current_channel() == 1
 
     def test_analysis_parameters_with_dual_range(self, analysis_parameters):
-        """Test that analysis parameters are correctly configured for dual range."""
+        """
+        Test that analysis parameters are correctly configured for dual range.
+
+        Args:
+            analysis_parameters (AnalysisParameters): Analysis parameters for test.
+        """
         assert analysis_parameters.use_dual_range is True
         assert analysis_parameters.range1_start == 50.60
         assert analysis_parameters.range1_end == 548.65
@@ -407,5 +523,7 @@ class TestSwapChannelsGeneral:
 
 
 if __name__ == "__main__":
-    # Run tests with pytest
+    """
+    Run tests with pytest when executed as a script.
+    """
     pytest.main([__file__, "-v"])

@@ -1,7 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+
+Infrastructure layer for file I/O operations.
+
+Provides concrete implementations for dataset loading, CSV writing, file system
+operations, and path utilities, supporting the data analysis workflow.
 """
 
 """
@@ -23,16 +29,28 @@ logger = get_logger(__name__)
 
 
 class FileDatasetLoader:
-    """Concrete implementation of dataset loading from files."""
+    """
+    Concrete implementation for loading electrophysiology datasets from files.
+
+    Wraps DatasetLoader to separate infrastructure from business logic.
+    """
 
     def load(
         self, filepath: str, channel_config: Optional[ChannelDefinitions]
     ) -> ElectrophysiologyDataset:
         """
-        Load a dataset from a file using the existing DatasetLoader.
+        Load a dataset from a file using DatasetLoader.
 
-        This is a thin wrapper around the existing DatasetLoader,
-        keeping infrastructure separate from business logic.
+        Args:
+            filepath (str): Path to the data file.
+            channel_config (Optional[ChannelDefinitions]): Channel configuration.
+
+        Returns:
+            ElectrophysiologyDataset: Loaded dataset.
+
+        Raises:
+            DataError: If DatasetLoader returns None.
+            FileError: If loading fails.
         """
         logger.debug(f"Loading dataset from {filepath}")
 
@@ -56,7 +74,11 @@ class FileDatasetLoader:
 
 
 class CsvFileWriter:
-    """Concrete implementation for writing CSV files."""
+    """
+    Concrete implementation for writing CSV files.
+
+    Provides methods to write data arrays to CSV and ensure output directories exist.
+    """
 
     def write_csv(
         self,
@@ -65,7 +87,18 @@ class CsvFileWriter:
         headers: List[str],
         format_spec: str = "%.6f",
     ) -> None:
-        """Write data to CSV file."""
+        """
+        Write a NumPy array to a CSV file.
+
+        Args:
+            filepath (str): Output file path.
+            data (np.ndarray): Data to write.
+            headers (List[str]): List of column headers.
+            format_spec (str, optional): Format specification for data values.
+
+        Raises:
+            FileError: If writing fails.
+        """
         logger.debug(f"Writing CSV to {filepath}")
 
         try:
@@ -85,7 +118,15 @@ class CsvFileWriter:
             )
 
     def ensure_directory(self, directory: str) -> None:
-        """Ensure directory exists, creating if necessary."""
+        """
+        Ensure that a directory exists, creating it if necessary.
+
+        Args:
+            directory (str): Directory path.
+
+        Raises:
+            FileError: If directory creation fails.
+        """
         if directory and not os.path.exists(directory):
             logger.debug(f"Creating directory: {directory}")
             try:
@@ -99,18 +140,47 @@ class CsvFileWriter:
 
 
 class FileSystemOperations:
-    """Concrete implementation of file system operations."""
+    """
+    Concrete implementation of file system operations.
+
+    Provides methods for checking existence, readability, writability, and
+    retrieving file metadata.
+    """
 
     def exists(self, path: str) -> bool:
-        """Check if a path exists."""
+        """
+        Check if a path exists.
+
+        Args:
+            path (str): Path to check.
+
+        Returns:
+            bool: True if path exists, False otherwise.
+        """
         return os.path.exists(path)
 
     def is_readable(self, path: str) -> bool:
-        """Check if a file is readable."""
+        """
+        Check if a file is readable.
+
+        Args:
+            path (str): File path.
+
+        Returns:
+            bool: True if file is readable, False otherwise.
+        """
         return os.path.isfile(path) and os.access(path, os.R_OK)
 
     def is_writable(self, path: str) -> bool:
-        """Check if a file/directory is writable."""
+        """
+        Check if a file or directory is writable.
+
+        Args:
+            path (str): Path to check.
+
+        Returns:
+            bool: True if writable, False otherwise.
+        """
         if os.path.exists(path):
             return os.access(path, os.W_OK)
         # Check parent directory for new files
@@ -118,14 +188,36 @@ class FileSystemOperations:
         return not parent or os.access(parent, os.W_OK)
 
     def get_size(self, path: str) -> int:
-        """Get file size in bytes."""
+        """
+        Get the size of a file in bytes.
+
+        Args:
+            path (str): File path.
+
+        Returns:
+            int: File size in bytes.
+
+        Raises:
+            FileError: If file size cannot be determined.
+        """
         try:
             return os.path.getsize(path)
         except OSError as e:
             raise FileError(f"Could not get file size", details={"path": path}, cause=e)
 
     def get_info(self, path: str) -> Dict[str, Any]:
-        """Get file metadata."""
+        """
+        Get metadata for a file.
+
+        Args:
+            path (str): File path.
+
+        Returns:
+            Dict[str, Any]: Dictionary with file metadata.
+
+        Raises:
+            FileError: If file info cannot be retrieved.
+        """
         try:
             stat = os.stat(path)
             return {
@@ -140,19 +232,32 @@ class FileSystemOperations:
 
 
 class PathUtilities:
-    """Concrete implementation of path manipulation utilities."""
+    """
+    Concrete implementation of path manipulation utilities.
+
+    Provides methods for sanitizing filenames, ensuring unique paths,
+    extracting file numbers, and creating export paths.
+    """
 
     def __init__(self, file_system: Optional[FileSystemOperations] = None):
         """
-        Initialize with optional file system dependency.
+        Initialize PathUtilities with an optional file system dependency.
 
         Args:
-            file_system: File system operations (defaults to FileSystemOperations)
+            file_system (Optional[FileSystemOperations]): File system operations instance.
         """
         self.file_system = file_system or FileSystemOperations()
 
     def sanitize_filename(self, filename: str) -> str:
-        """Remove invalid characters from filename."""
+        """
+        Remove invalid characters from a filename.
+
+        Args:
+            filename (str): Filename to sanitize.
+
+        Returns:
+            str: Sanitized filename.
+        """
         if not filename.strip():
             return "unnamed_file"
 
@@ -169,7 +274,18 @@ class PathUtilities:
         return safe_name if safe_name else "sanitized_file"
 
     def ensure_unique_path(self, path: str) -> str:
-        """Ensure path is unique by appending numbers if needed."""
+        """
+        Ensure a file path is unique by appending a number if needed.
+
+        Args:
+            path (str): Desired file path.
+
+        Returns:
+            str: Unique file path.
+
+        Raises:
+            FileError: If a unique filename cannot be found.
+        """
         if not self.file_system.exists(path):
             return path
 
@@ -194,7 +310,15 @@ class PathUtilities:
         )
 
     def extract_file_number(self, filepath: str) -> int:
-        """Extract number from filename for sorting."""
+        """
+        Extract a numeric identifier from a filename for sorting.
+
+        Args:
+            filepath (str): File path.
+
+        Returns:
+            int: Extracted number, or 0 if not found.
+        """
         filename = os.path.basename(filepath)
         try:
             number_part = filename.split("_")[-1].split(".")[0]
@@ -205,7 +329,17 @@ class PathUtilities:
     def create_export_path(
         self, base_path: str, suffix: str = "", extension: str = ".csv"
     ) -> str:
-        """Create an export path based on input file."""
+        """
+        Create an export file path based on an input file.
+
+        Args:
+            base_path (str): Base file path.
+            suffix (str, optional): Suffix to append to filename.
+            extension (str, optional): File extension.
+
+        Returns:
+            str: Constructed export file path.
+        """
         base_name = Path(base_path).stem
         directory = Path(base_path).parent
         export_name = f"{base_name}{suffix}{extension}"

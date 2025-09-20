@@ -24,7 +24,43 @@ logger = get_logger(__name__)
 
 @dataclass
 class SweepMetrics:
-    """Computed metrics for a single sweep."""
+    """
+    Computed metrics for a single sweep.
+
+    Stores calculated voltage and current metrics for one sweep, including mean, absolute, positive, negative, and peak-to-peak values for up to two ranges.
+
+    Args:
+        sweep_index (str): Identifier for the sweep.
+        time_s (float): Time in seconds for the sweep.
+        voltage_mean_r1 (float): Mean voltage for range 1.
+        voltage_absolute_r1 (float): Absolute peak voltage for range 1.
+        voltage_positive_r1 (float): Maximum positive voltage for range 1.
+        voltage_negative_r1 (float): Minimum negative voltage for range 1.
+        voltage_peakpeak_r1 (float): Peak-to-peak voltage for range 1.
+        current_mean_r1 (float): Mean current for range 1.
+        current_absolute_r1 (float): Absolute peak current for range 1.
+        current_positive_r1 (float): Maximum positive current for range 1.
+        current_negative_r1 (float): Minimum negative current for range 1.
+        current_peakpeak_r1 (float): Peak-to-peak current for range 1.
+        voltage_mean_r2 (Optional[float]): Mean voltage for range 2.
+        voltage_absolute_r2 (Optional[float]): Absolute peak voltage for range 2.
+        voltage_positive_r2 (Optional[float]): Maximum positive voltage for range 2.
+        voltage_negative_r2 (Optional[float]): Minimum negative voltage for range 2.
+        voltage_peakpeak_r2 (Optional[float]): Peak-to-peak voltage for range 2.
+        current_mean_r2 (Optional[float]): Mean current for range 2.
+        current_absolute_r2 (Optional[float]): Absolute peak current for range 2.
+        current_positive_r2 (Optional[float]): Maximum positive current for range 2.
+        current_negative_r2 (Optional[float]): Minimum negative current for range 2.
+        current_peakpeak_r2 (Optional[float]): Peak-to-peak current for range 2.
+
+    Deprecated Properties:
+        voltage_peak_r1: Use voltage_absolute_r1 instead.
+        current_peak_r1: Use current_absolute_r1 instead.
+        voltage_min_r1: Use voltage_negative_r1 instead.
+        voltage_max_r1: Use voltage_positive_r1 instead.
+        current_min_r1: Use current_negative_r1 instead.
+        current_max_r1: Use current_positive_r1 instead.
+    """
 
     sweep_index: str
     time_s: float
@@ -84,7 +120,9 @@ class SweepMetrics:
 class MetricsCalculator:
     """
     Pure calculation of metrics from time series data.
-    Stateless - all methods are essentially static.
+
+    Stateless class for computing voltage and current metrics from time series data arrays.
+    All methods are static and do not maintain state.
     """
 
     @staticmethod
@@ -103,9 +141,24 @@ class MetricsCalculator:
         """
         Compute metrics for a single sweep.
 
+        Args:
+            time_ms (np.ndarray): Time values in milliseconds.
+            voltage (np.ndarray): Voltage data array.
+            current (np.ndarray): Current data array.
+            sweep_index (str): Identifier for the sweep.
+            sweep_number (int): Sweep number (for time calculation).
+            range1_start (float): Start time for range 1 (ms).
+            range1_end (float): End time for range 1 (ms).
+            stimulus_period (float): Period of stimulus (ms).
+            range2_start (Optional[float]): Start time for range 2 (ms).
+            range2_end (Optional[float]): End time for range 2 (ms).
+
+        Returns:
+            SweepMetrics: Computed metrics for the sweep.
+
         Raises:
-            DataError: If no data in specified ranges
-            ProcessingError: If computation fails
+            DataError: If no data in specified ranges.
+            ProcessingError: If computation fails.
         """
         # Validate inputs
         if len(time_ms) == 0:
@@ -162,29 +215,69 @@ class MetricsCalculator:
 
     @staticmethod
     def _safe_mean(data: np.ndarray) -> float:
-        """Calculate mean, returning NaN for empty arrays."""
+        """
+        Calculate the mean of the data array.
+
+        Args:
+            data (np.ndarray): Input data array.
+
+        Returns:
+            float: Mean value, or NaN if array is empty.
+        """
         return np.mean(data) if len(data) > 0 else np.nan
 
     @staticmethod
     def _safe_max(data: np.ndarray) -> float:
-        """Calculate max, returning NaN for empty arrays."""
+        """
+        Calculate the maximum value of the data array.
+
+        Args:
+            data (np.ndarray): Input data array.
+
+        Returns:
+            float: Maximum value, or NaN if array is empty.
+        """
         return np.max(data) if len(data) > 0 else np.nan
 
     @staticmethod
     def _safe_min(data: np.ndarray) -> float:
-        """Calculate min, returning NaN for empty arrays."""
+        """
+        Calculate the minimum value of the data array.
+
+        Args:
+            data (np.ndarray): Input data array.
+
+        Returns:
+            float: Minimum value, or NaN if array is empty.
+        """
         return np.min(data) if len(data) > 0 else np.nan
 
     @staticmethod
     def _absolute_peak(data: np.ndarray) -> float:
-        """Find value with maximum absolute magnitude."""
+        """
+        Find the value with maximum absolute magnitude in the data array.
+
+        Args:
+            data (np.ndarray): Input data array.
+
+        Returns:
+            float: Value with maximum absolute magnitude, or NaN if array is empty.
+        """
         if len(data) == 0:
             return np.nan
         return data[np.abs(data).argmax()]
 
     @staticmethod
     def _peak_to_peak(data: np.ndarray) -> float:
-        """Calculate peak-to-peak amplitude."""
+        """
+        Calculate peak-to-peak amplitude of the data array.
+
+        Args:
+            data (np.ndarray): Input data array.
+
+        Returns:
+            float: Peak-to-peak amplitude, or NaN if array is empty.
+        """
         if len(data) == 0:
             return np.nan
         return np.max(data) - np.min(data)

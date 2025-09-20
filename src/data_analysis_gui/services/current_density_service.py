@@ -1,9 +1,9 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-"""
+
 Service for current density calculations and data preparation.
 
 This module provides utility functions for current density analysis,
@@ -22,7 +22,12 @@ logger = get_logger(__name__)
 
 
 class CurrentDensityService:
-    """Service class for current density calculations and data preparation."""
+    """
+    Service class for current density calculations and data preparation.
+
+    Provides methods for recalculating current density, preparing export tables,
+    validating Cslow values, and transforming analysis results for export.
+    """
 
     @staticmethod
     def recalculate_cd_for_file(
@@ -34,7 +39,17 @@ class CurrentDensityService:
         """
         Recalculate current density for a single file.
 
-        Returns the updated FileAnalysisResult with new current density values.
+        Args:
+            file_name (str): Name of the file to recalculate.
+            new_cslow (float): New Cslow value to use.
+            active_batch_result (BatchAnalysisResult): Current batch result.
+            original_batch_result (BatchAnalysisResult): Original batch result.
+
+        Returns:
+            FileAnalysisResult: Updated result with recalculated current density.
+
+        Raises:
+            ValueError: If the file is not found in results.
         """
         # Find original result
         original_result = next(
@@ -113,7 +128,14 @@ class CurrentDensityService:
         is_current_density: bool = True,
         cslow_value: Optional[float] = None,
     ):
-        """Update export table headers to reflect current density units."""
+        """
+        Update export table headers to reflect current density units.
+
+        Args:
+            export_table (Dict[str, Any]): Export table dictionary.
+            is_current_density (bool, optional): Whether to use current density units.
+            cslow_value (float, optional): Cslow value for header annotation.
+        """
         if not export_table or "headers" not in export_table:
             return
 
@@ -158,14 +180,14 @@ class CurrentDensityService:
         Prepare current density summary data for export.
 
         Args:
-            voltage_data: Dictionary mapping voltages to lists of current density values
-            file_mapping: Dictionary mapping recording IDs to file names
-            cslow_mapping: Dictionary mapping file names to Cslow values
-            selected_files: Set of selected file names to include
-            y_unit: Unit for current density values
+            voltage_data (Dict[float, List[float]]): Maps voltages to current density lists.
+            file_mapping (Dict[str, str]): Maps recording IDs to file names.
+            cslow_mapping (Dict[str, float]): Maps file names to Cslow values.
+            selected_files (Set[str]): Set of selected file names to include.
+            y_unit (str, optional): Unit for current density values.
 
         Returns:
-            Dictionary with 'headers', 'data', and 'format_spec' for CSV export
+            Dict[str, Any]: Dictionary with 'headers', 'data', and 'format_spec' for CSV export.
         """
         # Get sorted voltages
         voltages = sorted(voltage_data.keys())
@@ -228,14 +250,14 @@ class CurrentDensityService:
         Calculate current density from current values and slow capacitance.
 
         Args:
-            current_values: Array of current values in pA
-            cslow: Slow capacitance in pF
+            current_values (np.ndarray): Array of current values in pA.
+            cslow (float): Slow capacitance in pF.
 
         Returns:
-            Array of current density values in pA/pF
+            np.ndarray: Array of current density values in pA/pF.
 
         Raises:
-            ValueError: If cslow is <= 0
+            ValueError: If cslow is not positive.
         """
         if cslow <= 0:
             raise ValueError(f"Cslow must be positive, got {cslow}")
@@ -250,11 +272,11 @@ class CurrentDensityService:
         Validate Cslow values for a set of files.
 
         Args:
-            cslow_mapping: Dictionary mapping file names to Cslow values
-            file_names: Set of file names to validate
+            cslow_mapping (Dict[str, float]): Maps file names to Cslow values.
+            file_names (Set[str]): Set of file names to validate.
 
         Returns:
-            Dictionary mapping file names to error messages (empty if all valid)
+            Dict[str, str]: Maps file names to error messages (empty if all valid).
         """
         errors = {}
 

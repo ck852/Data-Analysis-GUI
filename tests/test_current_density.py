@@ -1,8 +1,14 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+
 Test script for current density analysis workflow with golden file validation.
 
-Tests the complete workflow from batch analysis through current density
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+
+This module tests the complete workflow from batch analysis through current density
 calculation and export, validating all outputs against golden reference files.
+It ensures that intermediate and final results match expected values and formats.
 """
 
 import os
@@ -43,13 +49,16 @@ CSLOW_VALUES = {
 
 def load_csv_data(filepath: Path) -> Tuple[List[str], np.ndarray]:
     """
-    Load CSV headers and data array from file.
+    Load CSV headers and data array from a file.
 
     Args:
-        filepath: Path to CSV file
+        filepath (Path): Path to the CSV file.
 
     Returns:
-        Tuple of (headers, data_array)
+        Tuple[List[str], np.ndarray]: A tuple containing the list of headers and the data array.
+
+    Raises:
+        FileNotFoundError: If the specified CSV file does not exist.
     """
     if not filepath.exists():
         raise FileNotFoundError(f"CSV file not found: {filepath}")
@@ -68,13 +77,16 @@ def compare_csv_files(
     generated: Path, golden: Path, rtol: float = 1e-5, atol: float = 1e-6
 ) -> None:
     """
-    Compare two CSV files with detailed error reporting.
+    Compare two CSV files for header and data consistency, with detailed error reporting.
 
     Args:
-        generated: Path to generated CSV file
-        golden: Path to golden reference CSV file
-        rtol: Relative tolerance for numerical comparison
-        atol: Absolute tolerance for numerical comparison
+        generated (Path): Path to the generated CSV file.
+        golden (Path): Path to the golden reference CSV file.
+        rtol (float, optional): Relative tolerance for numerical comparison. Defaults to 1e-5.
+        atol (float, optional): Absolute tolerance for numerical comparison. Defaults to 1e-6.
+
+    Raises:
+        AssertionError: If headers, shapes, NaN positions, or numerical values do not match within tolerances.
     """
     # Load both files
     gen_headers, gen_data = load_csv_data(generated)
@@ -168,14 +180,17 @@ def compare_csv_files(
 
 def compare_summary_csv(generated: Path, golden: Path) -> None:
     """
-    Compare summary CSV files with appropriate tolerances.
+    Compare summary CSV files for structure and data accuracy, using appropriate tolerances.
 
-    Summary files have format:
-    Voltage (mV) | File1 (Cslow1 pF) | File2 (Cslow2 pF) | ...
+    Summary files have the format:
+        Voltage (mV) | File1 (Cslow1 pF) | File2 (Cslow2 pF) | ...
 
     Args:
-        generated: Path to generated summary CSV
-        golden: Path to golden reference summary CSV
+        generated (Path): Path to the generated summary CSV.
+        golden (Path): Path to the golden reference summary CSV.
+
+    Raises:
+        AssertionError: If header structure, shapes, NaN positions, or numerical values do not match within tolerances.
     """
     gen_headers, gen_data = load_csv_data(generated)
     gold_headers, gold_data = load_csv_data(golden)
@@ -291,7 +306,12 @@ def compare_summary_csv(generated: Path, golden: Path) -> None:
 
 
 class CurrentDensityTestBase:
-    """Base class for current density workflow tests."""
+    """
+    Base class for current density workflow tests.
+
+    Subclasses should specify the file type and extension to test.
+    Provides fixtures and utility methods for running the workflow and validating results.
+    """
 
     # Subclasses should define these
     FILE_TYPE = None  # 'abf' or 'mat'
@@ -299,17 +319,32 @@ class CurrentDensityTestBase:
 
     @property
     def sample_data_dir(self) -> Path:
-        """Get the sample data directory for this file type."""
+        """
+        Get the sample data directory for the specified file type.
+
+        Returns:
+            Path: Path to the sample data directory.
+        """
         return Path(f"tests/fixtures/sample_data/IV+CD/{self.FILE_TYPE}")
 
     @property
     def golden_data_dir(self) -> Path:
-        """Get the golden data directory for this file type."""
+        """
+        Get the golden data directory for the specified file type.
+
+        Returns:
+            Path: Path to the golden data directory.
+        """
         return Path(f"tests/fixtures/golden_data/golden_CD/{self.FILE_TYPE}")
 
     @pytest.fixture
     def analysis_params(self):
-        """Create analysis parameters matching the GUI state."""
+        """
+        Create analysis parameters matching the GUI state.
+
+        Returns:
+            AnalysisParameters: Configured analysis parameters for the test.
+        """
         return AnalysisParameters(
             range1_start=150.1,
             range1_end=649.2,
@@ -324,14 +359,28 @@ class CurrentDensityTestBase:
 
     @pytest.fixture
     def temp_output_dir(self):
-        """Create a temporary directory for test outputs."""
+        """
+        Create a temporary directory for test outputs.
+
+        Yields:
+            str: Path to the temporary output directory.
+
+        Cleans up the directory after the test completes.
+        """
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
         # Cleanup
         shutil.rmtree(temp_dir)
 
     def get_test_files(self) -> List[str]:
-        """Get all test files from the sample data directory."""
+        """
+        Retrieve all test files from the sample data directory.
+
+        Returns:
+            List[str]: Sorted list of test file paths.
+
+        Skips the test if the sample data directory or files are missing.
+        """
         if not self.sample_data_dir.exists():
             pytest.skip(f"Sample data directory not found: {self.sample_data_dir}")
 
@@ -344,7 +393,25 @@ class CurrentDensityTestBase:
         return [str(f) for f in sorted(test_files)]
 
     def test_current_density_workflow(self, analysis_params, temp_output_dir):
-        """Test the complete current density analysis workflow with golden file validation."""
+        """
+        Test the complete current density analysis workflow, including golden file validation.
+
+        Steps:
+            1. Initialize services as the GUI does.
+            2. Perform batch analysis.
+            3. Validate intermediate results (pre- and post-current density calculation).
+            4. Apply current density calculations.
+            5. Export individual current density CSVs.
+            6. Generate and export summary CSV.
+            7. Validate all outputs against golden reference files.
+
+        Args:
+            analysis_params (AnalysisParameters): Analysis parameters for the test.
+            temp_output_dir (str): Temporary directory for output files.
+
+        Raises:
+            AssertionError: If any validation step fails.
+        """
 
         # ==================================================================
         # PHASE 1: Initialize Services (exactly as GUI does)
@@ -561,20 +628,30 @@ class CurrentDensityTestBase:
 
 
 class TestCurrentDensityABF(CurrentDensityTestBase):
-    """Test current density workflow with ABF files."""
+    """
+    Test current density workflow using ABF files.
+
+    Inherits from CurrentDensityTestBase and sets file type and extension for ABF.
+    """
 
     FILE_TYPE = "abf"
     FILE_EXTENSION = "*.abf"
 
 
 # class TestCurrentDensityMAT(CurrentDensityTestBase):
-#     """Test current density workflow with MAT files."""
+#     """
+#     Test current density workflow using MAT files.
+#
+#     Inherits from CurrentDensityTestBase and sets file type and extension for MAT.
+#     """
 #     FILE_TYPE = 'mat'
 #     FILE_EXTENSION = '*.mat'
 
 
 if __name__ == "__main__":
-    # Run the test directly
+    """
+    Run the test directly if this script is executed as the main module.
+    """
     import sys
 
     sys.exit(pytest.main([__file__, "-v", "-s"]))

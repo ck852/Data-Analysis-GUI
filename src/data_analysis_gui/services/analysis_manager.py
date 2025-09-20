@@ -1,10 +1,9 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Simplified analysis management with direct method calls.
 
 This module provides a straightforward interface for performing analysis operations
@@ -37,16 +36,16 @@ class AnalysisManager:
     """
     Manages analysis operations with simple, direct methods.
 
-    This class provides a clean interface for analysis without complex
-    dependency injection. Scientists can easily understand and extend it.
+    Provides a clean, scientist-friendly interface for performing and exporting
+    electrophysiology data analysis. Designed for easy extension and clarity.
     """
 
     def __init__(self, channel_definitions):
         """
-        Initialize with channel definitions.
+        Initialize the AnalysisManager.
 
         Args:
-            channel_definitions: Channel configuration object
+            channel_definitions: Channel configuration object for analysis.
         """
         self.channel_definitions = channel_definitions
         self.engine = create_analysis_engine(channel_definitions)
@@ -58,17 +57,17 @@ class AnalysisManager:
         self, dataset: ElectrophysiologyDataset, params: AnalysisParameters
     ) -> AnalysisResult:
         """
-        Perform analysis on a dataset.
+        Perform analysis on an electrophysiology dataset.
 
         Args:
-            dataset: Dataset to analyze
-            params: Analysis parameters
+            dataset (ElectrophysiologyDataset): Dataset to analyze.
+            params (AnalysisParameters): Parameters for analysis.
 
         Returns:
-            AnalysisResult with plot data
+            AnalysisResult: Object containing analysis and plot data.
 
         Raises:
-            DataError: If analysis fails
+            DataError: If analysis fails or dataset is empty.
         """
         if not dataset or dataset.is_empty():
             raise DataError("Cannot analyze empty dataset")
@@ -121,15 +120,19 @@ class AnalysisManager:
         self, dataset: ElectrophysiologyDataset, sweep_index: str, channel_type: str
     ) -> PlotData:
         """
-        Get data for plotting a single sweep.
+        Retrieve data for plotting a single sweep.
 
         Args:
-            dataset: Dataset containing the sweep
-            sweep_index: Sweep identifier
-            channel_type: "Voltage" or "Current"
+            dataset (ElectrophysiologyDataset): Dataset containing the sweep.
+            sweep_index (str): Identifier for the sweep.
+            channel_type (str): "Voltage" or "Current".
 
         Returns:
-            PlotData for the sweep
+            PlotData: Data for plotting the sweep.
+
+        Raises:
+            ValidationError: If channel type is invalid.
+            DataError: If no data is found for the sweep.
         """
         if channel_type not in ["Voltage", "Current"]:
             raise ValidationError(f"Invalid channel type: {channel_type}")
@@ -155,15 +158,15 @@ class AnalysisManager:
         filepath: str,
     ) -> ExportResult:
         """
-        Analyze and export results to CSV.
+        Analyze a dataset and export results to a CSV file.
 
         Args:
-            dataset: Dataset to analyze
-            params: Analysis parameters
-            filepath: Output file path
+            dataset (ElectrophysiologyDataset): Dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
+            filepath (str): Output file path.
 
         Returns:
-            ExportResult with status
+            ExportResult: Status and details of the export operation.
         """
         if dataset.is_empty():
             return ExportResult(success=False, error_message="Dataset is empty")
@@ -189,15 +192,18 @@ class AnalysisManager:
         peak_types: List[str] = None,
     ) -> PeakAnalysisResult:
         """
-        Perform peak analysis with multiple peak types.
+        Perform peak analysis using specified peak types.
 
         Args:
-            dataset: Dataset to analyze
-            params: Analysis parameters
-            peak_types: List of peak types (default: all types)
+            dataset (ElectrophysiologyDataset): Dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
+            peak_types (List[str], optional): List of peak types (default: all types).
 
         Returns:
-            PeakAnalysisResult with all peak data
+            PeakAnalysisResult: Object containing peak analysis data.
+
+        Raises:
+            DataError: If dataset is empty or analysis fails.
         """
         if dataset.is_empty():
             raise DataError("Cannot analyze empty dataset")
@@ -222,14 +228,14 @@ class AnalysisManager:
         self, dataset: ElectrophysiologyDataset, params: AnalysisParameters
     ) -> Dict[str, Any]:
         """
-        Get raw export table without writing to file.
+        Retrieve the raw export table for a dataset and parameters.
 
         Args:
-            dataset: Dataset to analyze
-            params: Analysis parameters
+            dataset (ElectrophysiologyDataset): Dataset to analyze.
+            params (AnalysisParameters): Analysis parameters.
 
         Returns:
-            Dictionary with 'headers', 'data', and 'format_spec'
+            Dict[str, Any]: Dictionary with 'headers', 'data', and 'format_spec'.
         """
         if dataset.is_empty():
             return {"headers": [], "data": np.array([[]]), "format_spec": "%.6f"}
@@ -237,6 +243,8 @@ class AnalysisManager:
         return self.engine.get_export_table(dataset, params)
 
     def clear_caches(self):
-        """Clear any internal caches."""
+        """
+        Clear any internal analysis engine caches.
+        """
         self.engine.clear_caches()
         logger.debug("Analysis caches cleared")

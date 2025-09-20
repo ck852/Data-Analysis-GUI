@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -10,57 +11,113 @@ from PySide6.QtCore import QTimer
 
 class SelectAllLineEdit(QLineEdit):
     """
-    A QLineEdit that selects all its text when it gains focus,
-    unless specifically told not to.
+    QLineEdit subclass that automatically selects all text when it gains focus.
+
+    Features:
+        - Selects all text on focus-in unless suppressed.
+        - Provides a method to set focus without selecting all text.
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the SelectAllLineEdit.
+
+        Args:
+            *args: Positional arguments for QLineEdit.
+            **kwargs: Keyword arguments for QLineEdit.
+        """
         super().__init__(*args, **kwargs)
         self._select_all_on_focus = True
 
     def focusInEvent(self, event):
+        """
+        Handle focus-in event, selecting all text if enabled.
+
+        Args:
+            event: QFocusEvent
+        """
         super().focusInEvent(event)
         if self._select_all_on_focus:
-            # Use a single-shot timer to ensure selectAll() is called after
-            # the focus-in event has been fully processed.
             QTimer.singleShot(0, self.selectAll)
         # Reset the flag after the event is handled
         self._select_all_on_focus = True
 
     def setFocusAndDoNotSelect(self):
-        """Sets focus to this widget without triggering the select-all behavior."""
+        """
+        Set focus to the widget without triggering select-all behavior.
+        """
         self._select_all_on_focus = False
         self.setFocus()
 
 
 class SelectAllSpinBox(QDoubleSpinBox):
-    """Custom QDoubleSpinBox that selects all text when focused"""
+    """
+    QDoubleSpinBox subclass that selects all text when focused and ignores wheel events.
+
+    Features:
+        - Selects all text on focus-in.
+        - Ignores mouse wheel events to prevent accidental value changes.
+    """
 
     def focusInEvent(self, event):
+        """
+        Handle focus-in event, selecting all text.
+
+        Args:
+            event: QFocusEvent
+        """
         super().focusInEvent(event)
-        # Select all text when the spinbox gets focus
         QTimer.singleShot(0, self.selectAll)
 
     def wheelEvent(self, event):
-        # Ignore the mouse wheel event to prevent scrolling
+        """
+        Ignore mouse wheel events.
+
+        Args:
+            event: QWheelEvent
+        """
         event.ignore()
 
 
 class SelectAllIntSpinBox(QSpinBox):
-    """Custom QSpinBox that selects all text when focused"""
+    """
+    QSpinBox subclass that selects all text when focused and ignores wheel events.
+
+    Features:
+        - Selects all text on focus-in.
+        - Ignores mouse wheel events to prevent accidental value changes.
+    """
 
     def focusInEvent(self, event):
+        """
+        Handle focus-in event, selecting all text.
+
+        Args:
+            event: QFocusEvent
+        """
         super().focusInEvent(event)
-        # Select all text when the spinbox gets focus
         QTimer.singleShot(0, self.selectAll)
 
     def wheelEvent(self, event):
-        # Ignore the mouse wheel event to prevent scrolling
+        """
+        Ignore mouse wheel events.
+
+        Args:
+            event: QWheelEvent
+        """
         event.ignore()
 
 
 class NoScrollComboBox(QComboBox):
-    """ComboBox that ignores wheel events to prevent accidental changes."""
+    """
+    QComboBox subclass that ignores mouse wheel events to prevent accidental selection changes.
+    """
 
     def wheelEvent(self, event):
+        """
+        Ignore mouse wheel events.
+
+        Args:
+            event: QWheelEvent
+        """
         event.ignore()

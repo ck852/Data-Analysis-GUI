@@ -1,14 +1,14 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-Unified data management for loading, validating, and exporting data.
+Unified data management for loading, validating, and exporting electrophysiology data.
 
-This module combines all data-related operations into a single, easy-to-understand
-class that scientist-programmers can extend and modify.
+This module provides a single, extensible class for all data-related operations,
+including loading datasets, validating files, and exporting results.
+Scientist-programmers can easily extend this class to support new formats or workflows.
 """
 
 import os
@@ -30,13 +30,16 @@ class DataManager:
     """
     Manages all data operations: loading, validation, and export.
 
-    This class provides simple, direct methods for working with electrophysiology data.
-    Scientists can easily add new file formats or export methods by extending the
-    appropriate methods.
+    Provides direct, scientist-friendly methods for working with electrophysiology data.
+    Extend this class to add support for new file formats or export types.
     """
 
     def __init__(self):
-        """Initialize the data manager."""
+        """
+        Initialize the DataManager.
+
+        Logs initialization for debugging and tracking purposes.
+        """
         logger.info("DataManager initialized")
 
     # =========================================================================
@@ -47,22 +50,22 @@ class DataManager:
         self, filepath: str, channel_config: Optional[ChannelDefinitions] = None
     ) -> ElectrophysiologyDataset:
         """
-        Load a dataset from a file.
+        Load and validate an electrophysiology dataset from a file.
 
         To add support for a new file format:
-        1. Add format detection in core/dataset.py DatasetLoader.detect_format()
-        2. Add loading method in core/dataset.py DatasetLoader.load_[format]()
+            1. Update DatasetLoader.detect_format() in core/dataset.py.
+            2. Add a corresponding DatasetLoader.load_[format]() method.
 
         Args:
-            filepath: Path to the data file
-            channel_config: Optional channel configuration
+            filepath (str): Path to the data file.
+            channel_config (Optional[ChannelDefinitions]): Optional channel configuration.
 
         Returns:
-            Loaded and validated dataset
+            ElectrophysiologyDataset: Loaded and validated dataset.
 
         Raises:
-            FileError: If file cannot be loaded
-            DataError: If data is invalid
+            FileError: If the file cannot be loaded.
+            DataError: If the data is invalid or empty.
         """
         # Check file exists
         if not os.path.exists(filepath):
@@ -98,14 +101,19 @@ class DataManager:
 
     def export_to_csv(self, data: Dict[str, Any], filepath: str) -> ExportResult:
         """
-        Export data to a CSV file.
+        Export a data table to a CSV file.
 
         Args:
-            data: Dictionary with 'headers' and 'data' keys
-            filepath: Output file path
+            data (Dict[str, Any]): Dictionary containing 'headers' and 'data' keys.
+            filepath (str): Output file path.
 
         Returns:
-            ExportResult with status
+            ExportResult: Object containing export status and details.
+
+        Raises:
+            ValidationError: If the data structure is invalid.
+            DataError: If there is no data to export.
+            FileError: If the file cannot be created.
         """
         try:
             # Validate data
@@ -161,12 +169,12 @@ class DataManager:
         Export multiple data tables to separate CSV files.
 
         Args:
-            data_list: List of data dictionaries to export
-            output_dir: Output directory
-            base_name: Base filename for exports
+            data_list (List[Dict[str, Any]]): List of data dictionaries to export.
+            output_dir (str): Directory to save exported files.
+            base_name (str, optional): Base filename for exports.
 
         Returns:
-            List of ExportResult objects
+            List[ExportResult]: List of results for each export operation.
         """
         results = []
 
@@ -200,15 +208,15 @@ class DataManager:
         self, source_path: str, suffix: str = "_", params: Optional[Any] = None
     ) -> str:
         """
-        Generate a suggested filename for export.
+        Generate a suggested filename for exporting analysis results.
 
         Args:
-            source_path: Original file path
-            suffix: Suffix to add
-            params: Optional analysis parameters for context
+            source_path (str): Original file path.
+            suffix (str, optional): Suffix to append to the filename.
+            params (Optional[Any]): Optional analysis parameters for context.
 
         Returns:
-            Suggested filename
+            str: Suggested filename for export.
         """
         if not source_path:
             return f"analysis{suffix}.csv"
@@ -233,13 +241,16 @@ class DataManager:
 
     def make_unique_path(self, filepath: str) -> str:
         """
-        Make a filepath unique by appending numbers if it exists.
+        Ensure a filepath is unique by appending a numeric suffix if needed.
 
         Args:
-            filepath: Desired filepath
+            filepath (str): Desired filepath.
 
         Returns:
-            Unique filepath
+            str: Unique filepath that does not already exist.
+
+        Raises:
+            FileError: If a unique filename cannot be created.
         """
         if not os.path.exists(filepath):
             return filepath
@@ -260,16 +271,16 @@ class DataManager:
 
     def validate_export_path(self, filepath: str) -> bool:
         """
-        Check if a filepath is valid for export.
+        Validate that a filepath is suitable for export.
 
         Args:
-            filepath: Path to validate
+            filepath (str): Path to validate.
 
         Returns:
-            True if valid
+            bool: True if the path is valid.
 
         Raises:
-            ValidationError: If path is invalid
+            ValidationError: If the path is invalid or not writable.
         """
         if not filepath or not filepath.strip():
             raise ValidationError("Export path cannot be empty")

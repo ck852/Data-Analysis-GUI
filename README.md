@@ -66,6 +66,8 @@ This enables the user to quickly plot both analysis ranges against the sweep tim
 
 It is important to note that the time-course analysis workflow uses an **approximation** of the true sweep times. During a recording, the sweeps do not occur at perfectly spaced intervals that match the exact stimulus repeat period each time. This results in a small deviation in the sweep times that becomes more apparent in longer recordings, on the order of 2 seconds of drift per 100 seconds of recording. This likely varies by experimental setup and is affected by physical hardware constraints. This should not present a major complication for most uses, but is worth considering when analyzing longer recordings. See the "Validation" section for more information.
 
+During initial testing, it was found that there is not a universal standard of which channel in data files contains current data and which contains voltage data. Even within the same lab, all using WinWCP, some setups produce files with the channel identifications swapped. Whether this applies to your data files can be quickly assessed by loading a single file in the main window and clicking through the sweeps. As long as you know what your voltage protocol looks like, it should be easy to identify which channel contains your true voltage data. In the event that your "Current" sweeps look like your voltage protocol, and vice versa, you can toggle the blue button at the top right of the main window to swap your channels. This should restore the expected presentation of current and voltage channels. 
+
 **Note that this software is currently in beta, not all analysis modes and parameter combinations have been tested yet. You are encouraged to validate outputs against WinWCP outputs if using, for example, the swapped channels feature or peak analysis. Testing and final validation of these features is in progress.**
 
 
@@ -111,7 +113,7 @@ A direct comparison of a Current Density vs. Voltage relationship plot produced 
 The disparity in time values as a result of the stimulus repeat period approximation of sweep times is characterized as follows:
 
 
-<img src="images/Time.png" alt="time_comparison" width="450"/>
+<img src="images/dual_range_time.png" alt="time_comparison" width="450"/>
 
 
 The disparity appears to increase with the length of the recordings. While not a concern for many use cases, this could present a concern for very long recordings (> 10 minutes). Mitigation strategies are under consideration.
@@ -121,3 +123,9 @@ The following data validates the Dual Analysis mode by comparing the average cur
 
 
 <img src="images/dual_range_comparison.png" alt="dual_range_comparison" width="750"/>
+
+
+Not all input files have the same channel definitions. To navigate this variable, the program contains a channel swap toggle that enables the user to control which data channel contains voltage information and which contains current. It is assumed that the user can visually recognize whether or not their channel identifications are accurate. The outputs of PatchBatch-analyzed files with such a swapped copnfiguration were compared against WinWCP outputs for the same analysis of the same files. The equipment that produced these data files is used in experiments that measure currents on the order of microamps, as opposed to picoamps, and thus the validation uses a different current magnitude than the other validation methods. The deviation between PatchBatch and WinWCP is larger in absolute magnitude than in the other analysis modes. It also appears to follow a more coherent pattern, increasing along a somewhat definable curve as the measured current increases. However, with a maximum deviation of 0.000454 microamps, this deviation should not present any concerns.
+
+
+<img src="images/swapped_current_comparison.png" alt="swapped_comparison" width="450"/>

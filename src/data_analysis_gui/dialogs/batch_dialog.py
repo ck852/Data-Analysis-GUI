@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -43,7 +44,15 @@ logger = get_logger(__name__)
 
 
 class BatchAnalysisWorker(QThread):
-    """Worker thread for batch analysis."""
+    """
+    Worker thread for performing batch analysis.
+
+    Emits:
+        progress (int, int, str): Progress update (completed, total, filename).
+        file_complete (FileAnalysisResult): Signal when a file is processed.
+        finished (BatchAnalysisResult): Signal when batch is complete.
+        error (str): Signal on error.
+    """
 
     progress = Signal(int, int, str)
     file_complete = Signal(object)  # FileAnalysisResult
@@ -57,7 +66,11 @@ class BatchAnalysisWorker(QThread):
         self.params = params
 
     def run(self):
-        """Run batch analysis in thread."""
+        """
+        Run batch analysis in a separate thread.
+
+        Sets up progress and completion callbacks, processes files, and emits results.
+        """
         try:
             # Set up progress callbacks
             self.batch_service.on_progress = lambda c, t, n: self.progress.emit(c, t, n)
@@ -82,9 +95,25 @@ class BatchAnalysisWorker(QThread):
 
 
 class BatchAnalysisDialog(QDialog):
-    """Dialog for batch analysis with progress tracking."""
+    """
+    Dialog for batch analysis with file selection, progress tracking, and result viewing.
+
+    Provides:
+        - File list management (add, remove, clear).
+        - Progress bar and status updates.
+        - Start/cancel analysis.
+        - View results after completion.
+    """
 
     def __init__(self, parent, batch_service, params):
+        """
+        Initialize the BatchAnalysisDialog.
+
+        Args:
+            parent: Parent widget.
+            batch_service: Service for batch analysis.
+            params: Analysis parameters.
+        """
         super().__init__(parent)
         self.batch_service = batch_service
         self.params = params
@@ -105,7 +134,9 @@ class BatchAnalysisDialog(QDialog):
         apply_compact_layout(self)
 
     def init_ui(self):
-        """Initialize the UI."""
+        """
+        Initialize the user interface, including file list, progress bar, and buttons.
+        """
         layout = QVBoxLayout(self)
 
         # File List Section
@@ -188,7 +219,9 @@ class BatchAnalysisDialog(QDialog):
         self.update_button_states()
 
     def add_files(self):
-        """Add files to the batch list."""
+        """
+        Add files to the batch list via file dialog.
+        """
         file_types = (
             "Data files (*.mat *.abf);;"
             "MAT files (*.mat);;"
@@ -216,7 +249,9 @@ class BatchAnalysisDialog(QDialog):
             self.update_button_states()
 
     def remove_selected(self):
-        """Remove selected files from the batch list."""
+        """
+        Remove selected files from the batch list.
+        """
         selected_items = self.file_list.selectedItems()
         if not selected_items:
             return
@@ -230,14 +265,18 @@ class BatchAnalysisDialog(QDialog):
         self.update_button_states()
 
     def clear_files(self):
-        """Clear all files from the batch list."""
+        """
+        Clear all files from the batch list.
+        """
         self.file_list.clear()
         self.file_paths.clear()
         self.update_file_count()
         self.update_button_states()
 
     def update_file_count(self):
-        """Update the file count label using theme utilities."""
+        """
+        Update the file count label and color based on number of files selected.
+        """
         count = len(self.file_paths)
         self.file_count_label.setText(
             f"{count} file{'s' if count != 1 else ''} selected"
@@ -247,7 +286,9 @@ class BatchAnalysisDialog(QDialog):
         self.file_count_label.setStyleSheet(f"color: {color};")
 
     def update_button_states(self):
-        """Update button enabled states based on current state."""
+        """
+        Update enabled/disabled state of action buttons based on current state.
+        """
         has_files = len(self.file_paths) > 0
         is_running = self.worker is not None and self.worker.isRunning()
         has_results = self.batch_result is not None
@@ -260,7 +301,9 @@ class BatchAnalysisDialog(QDialog):
         self.view_results_btn.setEnabled(has_results)
 
     def start_analysis(self):
-        """Start the batch analysis."""
+        """
+        Start the batch analysis process in a worker thread.
+        """
         if not self.file_paths:
             QMessageBox.warning(self, "No Files", "Please add files to analyze.")
             return
@@ -288,7 +331,9 @@ class BatchAnalysisDialog(QDialog):
         logger.info(f"Started batch analysis of {len(self.file_paths)} files")
 
     def cancel_analysis(self):
-        """Cancel the running analysis."""
+        """
+        Cancel the running batch analysis.
+        """
         if self.worker and self.worker.isRunning():
             self.worker.quit()
             self.worker.wait()
@@ -299,18 +344,35 @@ class BatchAnalysisDialog(QDialog):
             self.update_button_states()
 
     def on_progress(self, completed, total, current_file):
-        """Handle progress updates from worker."""
+        """
+        Handle progress updates from worker thread.
+
+        Args:
+            completed (int): Number of files completed.
+            total (int): Total number of files.
+            current_file (str): Name of current file being processed.
+        """
         self.progress_bar.setValue(completed)
         style_label(self.status_label, "info")  # Updated to use style_label with type
         self.status_label.setText(f"Processing {current_file} ({completed}/{total})")
 
     def on_file_complete(self, result: FileAnalysisResult):
-        """Handle completion of individual file."""
+        """
+        Handle completion of individual file analysis.
+
+        Args:
+            result (FileAnalysisResult): Result of file analysis.
+        """
         status = "✔" if result.success else "✗"
         logger.debug(f"{status} Completed: {result.base_name}")
 
     def on_analysis_finished(self, result: BatchAnalysisResult):
-        """Handle completion of batch analysis."""
+        """
+        Handle completion of batch analysis.
+
+        Args:
+            result (BatchAnalysisResult): Result of batch analysis.
+        """
         self.batch_result = result
 
         success_count = len(result.successful_results)
@@ -335,7 +397,12 @@ class BatchAnalysisDialog(QDialog):
         logger.info(f"Batch analysis complete: {result.success_rate:.1f}% success rate")
 
     def on_error(self, error_msg):
-        """Handle errors from worker."""
+        """
+        Handle errors emitted from worker thread.
+
+        Args:
+            error_msg (str): Error message.
+        """
         QMessageBox.critical(
             self, "Analysis Error", f"Batch analysis failed:\n{error_msg}"
         )
@@ -344,7 +411,12 @@ class BatchAnalysisDialog(QDialog):
         self.update_button_states()
 
     def view_results(self):
-        """Open the results window."""
+        """
+        Open the batch results window to display analysis results.
+
+        Raises:
+            Exception: If results window fails to open.
+        """
         if not self.batch_result:
             return
 

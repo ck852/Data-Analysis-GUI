@@ -17,18 +17,17 @@ from typing import Tuple, Optional, Dict
 
 class ChannelDefinitions:
     """
-    Manages channel assignments for electrophysiology data.
+    Centralized manager for channel assignments in electrophysiology data.
 
-    This class provides a centralized way to define which data channels contain
-    voltage and current measurements. By default, channel 0 contains voltage data
-    and channel 1 contains current data, but these can be swapped or manually
-    configured as needed.
+    Provides flexible configuration for voltage and current channel assignments, supporting swapping,
+    manual configuration, and label/unit retrieval. Eliminates hardcoded channel assumptions and enables
+    robust, production-ready channel management for analysis and UI integration.
 
     Attributes:
-        _voltage_channel (int): The channel ID assigned to voltage data.
-        _current_channel (int): The channel ID assigned to current data.
-        _default_voltage_channel (int): The default channel for voltage (0).
-        _default_current_channel (int): The default channel for current (1).
+        _voltage_channel (int): Channel ID assigned to voltage data.
+        _current_channel (int): Channel ID assigned to current data.
+        _default_voltage_channel (int): Default channel for voltage (0).
+        _default_current_channel (int): Default channel for current (1).
 
     Example:
         >>> channels = ChannelDefinitions()
@@ -45,11 +44,11 @@ class ChannelDefinitions:
 
     def __init__(self, voltage_channel: int = 0, current_channel: int = 1):
         """
-        Initialize channel definitions with specified or default values.
+        Initialize channel definitions with specified or default channel assignments.
 
         Args:
-            voltage_channel: Channel ID for voltage data (default: 0).
-            current_channel: Channel ID for current data (default: 1).
+            voltage_channel (int, optional): Channel ID for voltage data (default: 0).
+            current_channel (int, optional): Channel ID for current data (default: 1).
 
         Raises:
             ValueError: If the same channel is assigned to both voltage and current.
@@ -67,18 +66,44 @@ class ChannelDefinitions:
         self.validate()
 
     def get_available_types(self):
-        """Return the list of selectable channel types for UI combos."""
+        """
+        Get the list of selectable channel types for UI components.
+
+        Returns:
+            list[str]: List of available channel types ("Voltage", "Current").
+        """
         return ["Voltage", "Current"]
 
     # Shims so existing UI code works without refactors
     def get_voltage_channel_id(self) -> int:
+        """
+        Shim for UI compatibility. Get the channel ID assigned to voltage data.
+
+        Returns:
+            int: Channel ID for voltage data.
+        """
         return self.get_voltage_channel()
 
     def get_current_channel_id(self) -> int:
+        """
+        Shim for UI compatibility. Get the channel ID assigned to current data.
+
+        Returns:
+            int: Channel ID for current data.
+        """
         return self.get_current_channel()
 
     def set_assignments(self, voltage_channel: int, current_channel: int):
-        """Atomically set both assignments with validation."""
+        """
+        Atomically set both voltage and current channel assignments with validation.
+
+        Args:
+            voltage_channel (int): Channel ID for voltage data.
+            current_channel (int): Channel ID for current data.
+
+        Raises:
+            ValueError: If assignments are invalid.
+        """
         old_v, old_c = self._voltage_channel, self._current_channel
         try:
             self._voltage_channel = voltage_channel
@@ -90,19 +115,19 @@ class ChannelDefinitions:
 
     def get_voltage_channel(self) -> int:
         """
-        Get the channel ID assigned to voltage data.
+        Get the channel ID currently assigned to voltage data.
 
         Returns:
-            int: The channel ID for voltage data.
+            int: Channel ID for voltage data.
         """
         return self._voltage_channel
 
     def get_current_channel(self) -> int:
         """
-        Get the channel ID assigned to current data.
+        Get the channel ID currently assigned to current data.
 
         Returns:
-            int: The channel ID for current data.
+            int: Channel ID for current data.
         """
         return self._current_channel
 
@@ -110,8 +135,7 @@ class ChannelDefinitions:
         """
         Swap the voltage and current channel assignments.
 
-        This method exchanges the channel assignments so that the channel
-        previously assigned to voltage is now assigned to current, and vice versa.
+        After calling, the channel previously assigned to voltage is now assigned to current, and vice versa.
 
         Example:
             >>> channels = ChannelDefinitions()
@@ -131,11 +155,10 @@ class ChannelDefinitions:
         Manually set the channel ID for voltage data.
 
         Args:
-            channel_id: The channel ID to assign to voltage data.
+            channel_id (int): Channel ID to assign to voltage data.
 
         Raises:
-            ValueError: If channel_id is negative.
-            ValueError: If channel_id is already assigned to current.
+            ValueError: If channel_id is negative or already assigned to current.
         """
         if channel_id < 0:
             raise ValueError(f"Channel ID must be non-negative, got {channel_id}")
@@ -153,11 +176,10 @@ class ChannelDefinitions:
         Manually set the channel ID for current data.
 
         Args:
-            channel_id: The channel ID to assign to current data.
+            channel_id (int): Channel ID to assign to current data.
 
         Raises:
-            ValueError: If channel_id is negative.
-            ValueError: If channel_id is already assigned to voltage.
+            ValueError: If channel_id is negative or already assigned to voltage.
         """
         if channel_id < 0:
             raise ValueError(f"Channel ID must be non-negative, got {channel_id}")
@@ -175,12 +197,11 @@ class ChannelDefinitions:
         Get the label for a specific channel based on its assignment.
 
         Args:
-            channel_id: The channel ID to get the label for.
-            include_units: Whether to include units in the label (default: True).
+            channel_id (int): Channel ID to get the label for.
+            include_units (bool, optional): Whether to include units in the label (default: True).
 
         Returns:
-            str: The channel label, e.g., "Voltage (mV)" or "Current (pA)".
-                 If channel is not assigned, returns "Channel {id}".
+            str: Channel label, e.g., "Voltage (mV)" or "Current (pA)". If channel is not assigned, returns "Channel {id}".
 
         Example:
             >>> channels = ChannelDefinitions()
@@ -207,7 +228,7 @@ class ChannelDefinitions:
 
     def is_swapped(self) -> bool:
         """
-        Check if channels are in a non-default configuration.
+        Check if channels are in a non-default (swapped) configuration.
 
         Returns:
             bool: True if channels are swapped from default, False otherwise.
@@ -229,16 +250,13 @@ class ChannelDefinitions:
         """
         Validate the current channel configuration.
 
-        Ensures that:
-        1. Voltage and current are assigned to different channels
-        2. Channel IDs are non-negative
+        Ensures that voltage and current are assigned to different, non-negative channels.
 
         Returns:
             bool: True if configuration is valid.
 
         Raises:
-            ValueError: If the same channel is assigned to both voltage and current.
-            ValueError: If any channel ID is negative.
+            ValueError: If the same channel is assigned to both voltage and current, or if any channel ID is negative.
         """
         # Check for negative channel IDs
         if self._voltage_channel < 0:
@@ -262,11 +280,7 @@ class ChannelDefinitions:
 
     def reset_to_defaults(self) -> None:
         """
-        Reset channel assignments to their default values.
-
-        Default configuration:
-        - Voltage: Channel 0
-        - Current: Channel 1
+        Reset channel assignments to their default values (Voltage: 0, Current: 1).
         """
         self._voltage_channel = self._default_voltage_channel
         self._current_channel = self._default_current_channel
@@ -276,8 +290,7 @@ class ChannelDefinitions:
         Get the current channel configuration as a dictionary.
 
         Returns:
-            Dict[str, int]: Dictionary with 'voltage' and 'current' keys
-                           mapping to their respective channel IDs.
+            Dict[str, int]: Dictionary with 'voltage' and 'current' keys mapping to their respective channel IDs.
 
         Example:
             >>> channels = ChannelDefinitions()
@@ -291,8 +304,7 @@ class ChannelDefinitions:
         Set channel configuration from a dictionary.
 
         Args:
-            config: Dictionary with 'voltage' and 'current' keys
-                   mapping to channel IDs.
+            config (Dict[str, int]): Dictionary with 'voltage' and 'current' keys mapping to channel IDs.
 
         Raises:
             KeyError: If required keys are missing from config.
@@ -325,13 +337,13 @@ class ChannelDefinitions:
 
     def get_channel_for_type(self, data_type: str) -> int:
         """
-        Get the channel ID for a specific data type.
+        Get the channel ID for a specific data type ('voltage' or 'current').
 
         Args:
-            data_type: Either 'voltage' or 'current' (case-insensitive).
+            data_type (str): Either 'voltage' or 'current' (case-insensitive).
 
         Returns:
-            int: The channel ID for the specified data type.
+            int: Channel ID for the specified data type.
 
         Raises:
             ValueError: If data_type is not 'voltage' or 'current'.
@@ -357,10 +369,10 @@ class ChannelDefinitions:
 
     def get_type_for_channel(self, channel_id: int) -> Optional[str]:
         """
-        Get the data type for a specific channel ID.
+        Get the data type ('voltage' or 'current') for a specific channel ID.
 
         Args:
-            channel_id: The channel ID to query.
+            channel_id (int): Channel ID to query.
 
         Returns:
             Optional[str]: 'voltage', 'current', or None if channel is unassigned.
@@ -398,7 +410,7 @@ class ChannelDefinitions:
         Return a human-readable string of the channel configuration.
 
         Returns:
-            str: Human-readable string showing channel assignments.
+            str: Human-readable string showing channel assignments and swap status.
         """
         status = "swapped" if self.is_swapped() else "default"
         return (

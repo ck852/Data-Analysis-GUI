@@ -5,8 +5,9 @@ License: MIT (see LICENSE file for details)
 """
 
 """
-Modern matplotlib style configuration for scientific plots.
-Provides a clean, professional appearance that complements the GUI.
+Modern matplotlib style configuration for scientific plots in PatchBatch.
+
+Provides a clean, professional appearance that complements the GUI, with centralized color and font settings. All style functions and constants are designed for consistency and maintainability.
 """
 
 import matplotlib.pyplot as plt
@@ -53,10 +54,12 @@ TOOLBAR_CONFIG = {
 
 def get_plot_style() -> Dict[str, Any]:
     """
-    Get matplotlib rcParams for modern scientific plots synchronized with GUI theme.
+    Returns a dictionary of matplotlib rcParams for modern scientific plots.
+
+    The style is synchronized with the PatchBatch GUI theme, including colors, fonts, and sizing. Font family is extracted from the theme typography settings.
 
     Returns:
-        Dictionary of matplotlib rcParams
+        Dict[str, Any]: Dictionary of matplotlib rcParams for use with plt.rcParams.update().
     """
     # Extract font family from theme (handle the CSS font-family string)
     font_family_str = TYPOGRAPHY["font_family"]
@@ -180,7 +183,11 @@ def get_plot_style() -> Dict[str, Any]:
 
 
 def apply_plot_style():
-    """Apply the modern scientific plot style to matplotlib."""
+    """
+    Applies the modern scientific plot style to matplotlib.
+
+    Updates matplotlib's rcParams with the style returned by get_plot_style().
+    """
     plt.rcParams.update(get_plot_style())
 
 
@@ -192,14 +199,14 @@ def style_axis(
     remove_top_right: bool = True,
 ):
     """
-    Apply consistent styling to a single axis using theme settings.
+    Applies consistent styling to a single matplotlib axis using theme settings.
 
     Args:
-        ax: Matplotlib axis object
-        title: Optional title for the plot
-        xlabel: Optional x-axis label
-        ylabel: Optional y-axis label
-        remove_top_right: Whether to remove top and right spines
+        ax: Matplotlib axis object to style.
+        title (str, optional): Title for the plot. Defaults to None.
+        xlabel (str, optional): X-axis label. Defaults to None.
+        ylabel (str, optional): Y-axis label. Defaults to None.
+        remove_top_right (bool, optional): If True, removes top and right spines. Defaults to True.
     """
     # Use the increased font sizes
     plot_font_sizes = {
@@ -250,10 +257,12 @@ def style_axis(
 
 def get_line_styles():
     """
-    Get consistent line styles for different plot types.
+    Returns a dictionary of consistent line styles for different plot types.
+
+    Styles are synchronized with the PatchBatch color palette and designed for clarity in scientific plots.
 
     Returns:
-        Dictionary of line style configurations
+        dict: Dictionary of line style configurations for use in matplotlib plotting.
     """
     return {
         "primary": {
@@ -291,12 +300,12 @@ def get_line_styles():
 
 def format_sweep_plot(ax, sweep_index: int, channel_type: str):
     """
-    Apply specific formatting for sweep plots with theme-synchronized fonts.
+    Applies specific formatting for sweep plots, including theme-synchronized fonts and axis labels.
 
     Args:
-        ax: Matplotlib axis
-        sweep_index: The sweep number
-        channel_type: "Voltage" or "Current"
+        ax: Matplotlib axis to format.
+        sweep_index (int): The sweep number.
+        channel_type (str): "Voltage" or "Current"; determines y-axis units.
     """
     unit = "mV" if channel_type == "Voltage" else "pA"
 
@@ -313,13 +322,13 @@ def format_sweep_plot(ax, sweep_index: int, channel_type: str):
 
 def format_analysis_plot(ax, x_label: str, y_label: str, title: str = None):
     """
-    Apply specific formatting for analysis plots with theme-synchronized fonts.
+    Applies specific formatting for analysis plots, including theme-synchronized fonts and axis labels.
 
     Args:
-        ax: Matplotlib axis
-        x_label: X-axis label
-        y_label: Y-axis label
-        title: Optional plot title
+        ax: Matplotlib axis to format.
+        x_label (str): X-axis label.
+        y_label (str): Y-axis label.
+        title (str, optional): Plot title. Defaults to None.
     """
     style_axis(ax, title=title, xlabel=x_label, ylabel=y_label)
 
@@ -329,12 +338,12 @@ def format_analysis_plot(ax, x_label: str, y_label: str, title: str = None):
 
 def format_batch_plot(ax, x_label: str, y_label: str):
     """
-    Apply specific formatting for batch plots with multiple series using theme fonts.
+    Applies specific formatting for batch plots with multiple series, using theme fonts and legend styling.
 
     Args:
-        ax: Matplotlib axis
-        x_label: X-axis label
-        y_label: Y-axis label
+        ax: Matplotlib axis to format.
+        x_label (str): X-axis label.
+        y_label (str): Y-axis label.
     """
     style_axis(ax, xlabel=x_label, ylabel=y_label)
 
@@ -361,11 +370,12 @@ def format_batch_plot(ax, x_label: str, y_label: str):
 
 def get_toolbar_style() -> str:
     """
-    Get toolbar stylesheet with proper font sizes.
-    Centralized here to maintain single source of truth for plot-related styling.
+    Returns the CSS stylesheet string for the plot toolbar, with proper font sizes and spacing.
+
+    Centralized here to maintain a single source of truth for plot-related styling.
 
     Returns:
-        CSS stylesheet string for toolbar
+        str: CSS stylesheet string for use with Qt toolbars.
     """
     config = TOOLBAR_CONFIG
 

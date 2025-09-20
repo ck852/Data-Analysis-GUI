@@ -12,15 +12,32 @@ from data_analysis_gui.core.params import AnalysisParameters
 
 
 class IVAnalysisService:
-    """Provides services for preparing and analyzing I-V data."""
+    """
+    Provides services for preparing and analyzing I-V (Current-Voltage) data.
+
+    This service transforms raw batch results into formats suitable for I-V curve analysis,
+    supporting both single and dual-range data.
+    """
 
     @staticmethod
     def prepare_iv_data(
         batch_results: Dict[str, Dict[str, Any]], params: AnalysisParameters
     ) -> Tuple[Dict[float, list], Dict[str, str], Optional[Dict[float, list]]]:
         """
-        Transforms raw batch results into a format suitable for I-V curve analysis.
-        Now returns a third element for range 2 data when dual range is used.
+        Transform raw batch results into a format suitable for I-V curve analysis.
+
+        Processes batch results and organizes them by rounded voltage values for each recording.
+        Supports dual-range analysis by returning a third element for range 2 data if enabled.
+
+        Args:
+            batch_results (Dict[str, Dict[str, Any]]): Raw batch results keyed by base filename.
+            params (AnalysisParameters): Analysis parameters, including axis configuration and dual-range flag.
+
+        Returns:
+            Tuple[Dict[float, list], Dict[str, str], Optional[Dict[float, list]]]:
+                - Dictionary mapping rounded voltages to lists of current values (range 1).
+                - Dictionary mapping recording IDs to base filenames.
+                - Dictionary mapping rounded voltages to lists of current values (range 2), or None if not used.
         """
         iv_data_range1: Dict[float, list] = {}
         iv_data_range2: Optional[Dict[float, list]] = (
@@ -79,7 +96,11 @@ class IVAnalysisService:
 
 
 class IVSummaryExporter:
-    """Handles exporting IV summary data without current density calculations."""
+    """
+    Handles exporting IV summary data without current density calculations.
+
+    Prepares summary tables for export, including unit-aware headers and data formatting.
+    """
 
     @staticmethod
     def prepare_summary_table(
@@ -91,14 +112,20 @@ class IVSummaryExporter:
         """
         Prepare IV summary data for export with unit-aware headers.
 
+        Organizes IV data for CSV export, including voltage and current columns for each recording.
+        Handles missing data by inserting NaN values.
+
         Args:
-            iv_data: Dictionary mapping voltages to current values
-            iv_file_mapping: Dictionary mapping recording IDs to file names
-            included_files: Set of file names to include (None = all)
-            current_units: Units for current measurements ('pA', 'nA', or 'μA')
+            iv_data (Dict[float, list]): Dictionary mapping voltages (float) to lists of current values.
+            iv_file_mapping (Dict[str, str]): Dictionary mapping recording IDs to file names.
+            included_files (set, optional): Set of file names to include (None = all files).
+            current_units (str, optional): Units for current measurements ('pA', 'nA', or 'μA'). Defaults to 'pA'.
 
         Returns:
-            Dictionary with 'headers', 'data', and 'format_spec' for CSV export.
+            Dict[str, Any]: Dictionary with keys:
+                - 'headers': List of column headers for export.
+                - 'data': 2D numpy array of export data.
+                - 'format_spec': String format specification for numeric values.
         """
         import numpy as np
 

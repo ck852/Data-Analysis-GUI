@@ -2,16 +2,20 @@ from __future__ import annotations
 
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
+Plot management module for MAT File Sweep Analyzer.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
 """
-Improved plot management module for MAT File Sweep Analyzer.
+This module provides improved plot management for the MAT File Sweep Analyzer.
 
-This version uses Qt signals for complete decoupling from the main window.
-PlotManager is now purely responsible for matplotlib visualization and
-emits neutral signals about plot interactions.
+Features:
+- Uses Qt signals for decoupling from the main window.
+- PlotManager handles matplotlib visualization and emits signals for plot interactions.
+- BatchPlotter provides static methods for non-interactive batch plotting.
 """
 
 import logging
@@ -41,11 +45,13 @@ logger = logging.getLogger(__name__)
 
 class PlotManager(QObject):
     """
-    Manages all plotting operations, including sweep plots, range lines, and interactions.
+    Manages all interactive plotting operations for the application.
 
-    This class encapsulates a Matplotlib Figure and its associated canvas and toolbar,
-    providing a clean interface for plotting data and emitting signals about user
-    interactions. It has NO knowledge of the main window or any external widgets.
+    Responsibilities:
+    - Encapsulates a Matplotlib Figure, canvas, and toolbar.
+    - Handles sweep plots, range lines, and user interactions.
+    - Emits Qt signals for plot updates and line state changes.
+    - Maintains no knowledge of external widgets or main window.
     """
 
     # Define signals for plot interactions
@@ -58,7 +64,10 @@ class PlotManager(QObject):
 
     def __init__(self, figure_size: Tuple[int, int] = (8, 6)):
         """
-        Initializes the plot manager with modern styling.
+        Initialize the PlotManager with modern styling and interactive components.
+
+        Args:
+            figure_size: Tuple specifying the initial figure size (width, height).
         """
         super().__init__()
 
@@ -101,7 +110,9 @@ class PlotManager(QObject):
         self._style_axes()
 
     def _style_axes(self):
-        """Apply modern styling to the axes with updated font sizes."""
+        """
+        Apply modern styling to the plot axes, including font sizes and colors.
+        """
         self.ax.set_facecolor("#FAFBFC")
         self.ax.spines["top"].set_visible(False)
         self.ax.spines["right"].set_visible(False)
@@ -124,17 +135,26 @@ class PlotManager(QObject):
         self.ax.set_axisbelow(True)
 
     def get_plot_widget(self) -> QWidget:
-        """Returns the QWidget containing the plot canvas and toolbar."""
+        """
+        Returns the QWidget containing the plot canvas and toolbar.
+
+        Returns:
+            QWidget: The plot widget for embedding in Qt layouts.
+        """
         return self.plot_widget
 
     def _connect_events(self) -> None:
-        """Connects mouse events to their respective handlers for interactivity."""
+        """
+        Connect mouse events to handlers for interactive line dragging.
+        """
         self.canvas.mpl_connect("pick_event", self._on_pick)
         self.canvas.mpl_connect("motion_notify_event", self._on_drag)
         self.canvas.mpl_connect("button_release_event", self._on_release)
 
     def _initialize_range_lines(self) -> None:
-        """Initializes range lines with modern styling."""
+        """
+        Initialize default range lines with modern styling and emit signals.
+        """
         self.range_lines.clear()
         self._line_ids.clear()
 
@@ -180,8 +200,18 @@ class PlotManager(QObject):
         y_label: Optional[str] = None,
     ) -> None:
         """
-        Updates the plot with new sweep data using modern styling.
-        Now accepts optional title and labels for consistency.
+        Update the plot with new sweep data and styling.
+
+        Args:
+            t: Time array.
+            y: Data array (2D).
+            channel: Channel index to plot.
+            sweep_index: Index of the sweep.
+            channel_type: Type of channel.
+            channel_config: Optional channel configuration.
+            title: Optional plot title.
+            x_label: Optional x-axis label.
+            y_label: Optional y-axis label.
         """
         self.ax.clear()
 
@@ -228,7 +258,16 @@ class PlotManager(QObject):
         start2: Optional[float] = None,
         end2: Optional[float] = None,
     ) -> None:
-        """Updates range lines with proper styling."""
+        """
+        Update the positions and visibility of range lines.
+
+        Args:
+            start1: Start position for range 1.
+            end1: End position for range 1.
+            use_dual_range: Whether to show a second range.
+            start2: Start position for range 2 (if dual range).
+            end2: End position for range 2 (if dual range).
+        """
         # Get style configurations
         range1_style = self.line_styles["range1"]
         range2_style = self.line_styles["range2"]
@@ -332,12 +371,10 @@ class PlotManager(QObject):
 
     def center_nearest_cursor(self) -> Tuple[Optional[str], Optional[float]]:
         """
-        Finds the horizontal center of the current plot view and moves the nearest
-        range line to that position.
+        Center the nearest range line to the horizontal center of the plot view.
 
         Returns:
-            A tuple containing the line ID that was moved and its new
-            x-position, or (None, None) if no action was taken.
+            Tuple[str, float]: The line ID and new x-position, or (None, None).
         """
         if not self.range_lines or not self.ax.has_data():
             logger.warning("Cannot center cursor: No range lines or data available.")
@@ -367,7 +404,12 @@ class PlotManager(QObject):
     # --- Mouse Interaction Handlers ---
 
     def _on_pick(self, event) -> None:
-        """Handles pick events to initiate dragging a line."""
+        """
+        Handle pick events to initiate dragging a range line.
+
+        Args:
+            event: Matplotlib pick event.
+        """
         if isinstance(event.artist, Line2D) and event.artist in self.range_lines:
             self.dragging_line = event.artist
             logger.debug(
@@ -375,7 +417,12 @@ class PlotManager(QObject):
             )
 
     def _on_drag(self, event) -> None:
-        """Handles mouse motion events to drag a selected line."""
+        """
+        Handle mouse motion events to drag a selected range line.
+
+        Args:
+            event: Matplotlib motion event.
+        """
         if self.dragging_line and event.xdata is not None:
             x_pos = float(event.xdata)
             self.dragging_line.set_xdata([x_pos, x_pos])
@@ -387,7 +434,12 @@ class PlotManager(QObject):
             self.redraw()
 
     def _on_release(self, event) -> None:
-        """Handles mouse release events to conclude a drag operation."""
+        """
+        Handle mouse release events to conclude a drag operation.
+
+        Args:
+            event: Matplotlib button release event.
+        """
         if self.dragging_line:
             line_id = self._line_ids.get(self.dragging_line, "unknown")
             x_pos = self.dragging_line.get_xdata()[0]
@@ -395,7 +447,9 @@ class PlotManager(QObject):
             self.dragging_line = None
 
     def clear(self) -> None:
-        """Clears the plot axes completely."""
+        """
+        Clear the plot axes and reset range lines to defaults.
+        """
         # Clear axes - this removes all artists including lines
         self.ax.clear()
 
@@ -423,7 +477,9 @@ class PlotManager(QObject):
         logger.info("Plot cleared.")
 
     def redraw(self) -> None:
-        """Forces a redraw of the plot canvas."""
+        """
+        Force a redraw of the plot canvas.
+        """
         self.canvas.draw_idle()
 
     def update_lines_from_values(
@@ -435,15 +491,14 @@ class PlotManager(QObject):
         end2: Optional[float] = None,
     ) -> None:
         """
-        Updates range line positions without recreating them.
-        This method maintains compatibility with the existing interface.
+        Update range line positions without recreating them.
 
         Args:
-            start1: Start position for range 1
-            end1: End position for range 1
-            use_dual_range: Whether dual range is active
-            start2: Start position for range 2 (if dual range)
-            end2: End position for range 2 (if dual range)
+            start1: Start position for range 1.
+            end1: End position for range 1.
+            use_dual_range: Whether dual range is active.
+            start2: Start position for range 2 (if dual range).
+            end2: End position for range 2 (if dual range).
         """
         # Delegate to the main update method
         self.update_range_lines(start1, end1, use_dual_range, start2, end2)
@@ -453,9 +508,9 @@ class PlotManager(QObject):
         Toggle dual range visualization.
 
         Args:
-            enabled: Whether to enable dual range
-            start2: Start position for range 2
-            end2: End position for range 2
+            enabled: Whether to enable dual range.
+            start2: Start position for range 2.
+            end2: End position for range 2.
         """
         if enabled:
             # Get current range 1 values
@@ -481,7 +536,7 @@ class PlotManager(QObject):
         Get current positions of all range lines.
 
         Returns:
-            Dictionary mapping line IDs to their x positions
+            Dict[str, float]: Mapping of line IDs to their x positions.
         """
         positions = {}
         for line, line_id in self._line_ids.items():
@@ -492,7 +547,16 @@ class PlotManager(QObject):
     def setup_plot_style(
         ax: Axes, title: str = "", xlabel: str = "", ylabel: str = "", grid: bool = True
     ) -> None:
-        """Configure plot appearance with larger font sizes."""
+        """
+        Configure plot appearance with consistent font sizes and optional grid.
+
+        Args:
+            ax: Matplotlib Axes to style.
+            title: Plot title.
+            xlabel: X-axis label.
+            ylabel: Y-axis label.
+            grid: Whether to show grid.
+        """
         # Use the style_axis function from plot_style which has the updated font sizes
         from data_analysis_gui.config.plot_style import style_axis
 
@@ -505,7 +569,14 @@ class PlotManager(QObject):
     def add_padding_to_axes(
         ax: Axes, x_padding_pct: float = 0.05, y_padding_pct: float = 0.05
     ) -> None:
-        """Add padding to plot axes."""
+        """
+        Add padding to plot axes.
+
+        Args:
+            ax: Matplotlib Axes.
+            x_padding_pct: Fractional padding for x-axis.
+            y_padding_pct: Fractional padding for y-axis.
+        """
         x_min, x_max = ax.get_xlim()
         y_min, y_max = ax.get_ylim()
 
@@ -519,7 +590,9 @@ class PlotManager(QObject):
         ax.set_ylim(y_min - y_padding, y_max + y_padding)
 
     def clear_plot(self) -> None:
-        """Alias for clear() to maintain backward compatibility."""
+        """
+        Alias for clear() to maintain backward compatibility.
+        """
         self.clear()
 
 
@@ -527,8 +600,10 @@ class BatchPlotter:
     """
     Provides static methods for creating non-interactive batch plots.
 
-    By making these static, we separate the concern of creating one-off batch plots
-    from the stateful management of the main interactive plot.
+    Responsibilities:
+    - Create figures and axes for batch plotting.
+    - Plot data series with consistent styling.
+    - Finalize plots with legends and layout.
     """
 
     @staticmethod
@@ -539,16 +614,16 @@ class BatchPlotter:
         figsize: Tuple[int, int] = (10, 6),
     ) -> Tuple[Figure, Axes]:
         """
-        Creates a new Figure and Axes for a batch plot with updated font sizes.
+        Create a new Figure and Axes for a batch plot with updated font sizes.
 
         Args:
-            x_label: The label for the x-axis.
-            y_label: The label for the y-axis.
-            title: The plot title. If None, a default is generated.
-            figsize: A tuple for the figure size (width, height) in inches.
+            x_label: Label for the x-axis.
+            y_label: Label for the y-axis.
+            title: Optional plot title.
+            figsize: Figure size (width, height) in inches.
 
         Returns:
-            A tuple containing the created Matplotlib Figure and Axes.
+            Tuple[Figure, Axes]: The created Matplotlib Figure and Axes.
         """
         fig = Figure(figsize=figsize, tight_layout=True)
         ax = fig.add_subplot(111)
@@ -573,15 +648,15 @@ class BatchPlotter:
         **kwargs,
     ) -> None:
         """
-        Plots a data series on the given Axes.
+        Plot a data series on the given Axes.
 
         Args:
-            ax: The Matplotlib Axes to plot on.
-            x_data: The data for the x-axis.
-            y_data: The data for the y-axis.
-            label: The legend label for the data series.
-            marker: The marker and line style.
-            **kwargs: Additional keyword arguments passed to ax.plot().
+            ax: Matplotlib Axes to plot on.
+            x_data: Data for the x-axis.
+            y_data: Data for the y-axis.
+            label: Legend label for the data series.
+            marker: Marker and line style.
+            **kwargs: Additional keyword arguments for ax.plot().
         """
         if x_data.size > 0 and y_data.size > 0:
             ax.plot(x_data, y_data, marker, label=label, **kwargs)
@@ -591,11 +666,11 @@ class BatchPlotter:
     @staticmethod
     def finalize_plot(fig: Figure, ax: Axes) -> None:
         """
-        Finalizes a batch plot by adding a legend with proper font size.
+        Finalize a batch plot by adding a legend and logging completion.
 
         Args:
-            fig: The Matplotlib Figure.
-            ax: The Matplotlib Axes.
+            fig: Matplotlib Figure.
+            ax: Matplotlib Axes.
         """
         if ax.get_legend_handles_labels()[0]:
             # Legend font size is now handled by the rcParams in plot_style

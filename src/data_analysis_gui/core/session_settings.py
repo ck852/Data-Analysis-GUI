@@ -6,7 +6,8 @@ License: MIT (see LICENSE file for details)
 
 """
 Session settings persistence for analysis parameters.
-
+Provides functions to save, load, extract, and apply session settings
+for the electrophysiology data analysis tool.
 """
 
 import json
@@ -21,7 +22,14 @@ SETTINGS_VERSION = "1.0"
 
 
 def get_settings_dir() -> Path:
-    """Get the application settings directory, creating if needed."""
+    """
+    Returns the application settings directory as a Path object.
+
+    The directory is created if it does not exist.
+
+    Returns:
+        Path: The settings directory path.
+    """
     app_config = QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.AppConfigLocation
     )
@@ -32,13 +40,13 @@ def get_settings_dir() -> Path:
 
 def save_session_settings(settings: Dict[str, Any]) -> bool:
     """
-    Save session settings with version info.
+    Saves session settings to disk, including version information.
 
     Args:
-        settings: Complete settings dictionary
+        settings (Dict[str, Any]): Complete settings dictionary.
 
     Returns:
-        True if saved successfully
+        bool: True if saved successfully, False otherwise.
     """
     try:
         settings_file = get_settings_dir() / "session_settings.json"
@@ -56,10 +64,10 @@ def save_session_settings(settings: Dict[str, Any]) -> bool:
 
 def load_session_settings() -> Optional[Dict[str, Any]]:
     """
-    Load session settings, handling version compatibility.
+    Loads session settings from disk, handling version compatibility.
 
     Returns:
-        Settings dictionary if valid, None otherwise
+        Optional[Dict[str, Any]]: Settings dictionary if valid, None otherwise.
     """
     try:
         settings_file = get_settings_dir() / "session_settings.json"
@@ -85,13 +93,13 @@ def load_session_settings() -> Optional[Dict[str, Any]]:
 
 def extract_settings_from_main_window(main_window) -> dict:
     """
-    Extract current settings from MainWindow for saving.
+    Extracts current settings from the MainWindow instance for saving.
 
     Args:
-        main_window: MainWindow instance
+        main_window: MainWindow instance.
 
     Returns:
-        Dictionary of current settings
+        dict: Dictionary of current settings.
     """
     settings = {}
 
@@ -130,11 +138,11 @@ def extract_settings_from_main_window(main_window) -> dict:
 
 def apply_settings_to_main_window(main_window, settings: dict):
     """
-    Apply loaded settings to MainWindow.
+    Applies loaded settings to the MainWindow instance.
 
     Args:
-        main_window: MainWindow instance
-        settings: Dictionary of settings to apply
+        main_window: MainWindow instance.
+        settings (dict): Dictionary of settings to apply.
     """
     # Apply analysis settings
     if "analysis" in settings and hasattr(main_window, "control_panel"):
@@ -195,11 +203,11 @@ def apply_settings_to_main_window(main_window, settings: dict):
 
 def revalidate_ranges_for_file(main_window, max_sweep_time: float):
     """
-    Revalidate and clamp range values after a file is loaded.
+    Revalidates and clamps range values after a file is loaded.
 
     Args:
-        main_window: The MainWindow instance
-        max_sweep_time: Maximum sweep time from the loaded file
+        main_window: The MainWindow instance.
+        max_sweep_time (float): Maximum sweep time from the loaded file.
     """
     if hasattr(main_window, "control_panel"):
         control = main_window.control_panel
@@ -211,12 +219,23 @@ def revalidate_ranges_for_file(main_window, max_sweep_time: float):
         # and validation happens automatically
 
 
-# Backward compatibility functions
 def save_last_session(params: dict) -> None:
-    """Legacy function for compatibility."""
+    """
+    Legacy function for backward compatibility.
+    Saves session settings.
+
+    Args:
+        params (dict): Session parameters.
+    """
     save_session_settings(params)
 
 
 def load_last_session() -> dict:
-    """Legacy function for compatibility."""
+    """
+    Legacy function for backward compatibility.
+    Loads session settings.
+
+    Returns:
+        dict: Loaded session settings.
+    """
     return load_session_settings()

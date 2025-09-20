@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -7,11 +8,8 @@ License: MIT (see LICENSE file for details)
 """
 Test dual range batch analysis workflow following the exact GUI workflow.
 
-This test follows the exact same function calls as shown in:
-- 250918 dual analysis workflow.txt
-- 250919 batch analysis workflow diagram.txt
-
-It uses the actual components rather than duplicating their logic.
+This module tests the dual range batch analysis workflow using both ABF and MAT file formats.
+It follows the same function calls as the GUI and compares results against golden reference files.
 """
 
 import pytest
@@ -28,14 +26,18 @@ from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 class TestDualRangeBatchWorkflow:
     """
     Base class for testing dual range batch analysis workflow.
-    Tests both ABF and MAT file formats using the exact same workflow as the GUI.
+
+    This class tests both ABF and MAT file formats using the exact workflow as the GUI.
+    It provides fixtures and utility methods for running the workflow and validating results.
     """
 
     @pytest.fixture
     def analysis_parameters(self):
         """
-        Create AnalysisParameters exactly as ControlPanel.get_parameters() would.
-        These match the settings specified in the test requirements.
+        Create AnalysisParameters as ControlPanel.get_parameters() would.
+
+        Returns:
+            AnalysisParameters: Configured parameters for dual range analysis.
         """
         return AnalysisParameters(
             # Range 1 settings (50.45 - 249.8 ms)
@@ -58,8 +60,10 @@ class TestDualRangeBatchWorkflow:
     @pytest.fixture
     def controller(self):
         """
-        Create ApplicationController exactly as MainWindow would.
-        This initializes all the services (DataManager, AnalysisManager, BatchProcessor).
+        Create ApplicationController as MainWindow would.
+
+        Returns:
+            ApplicationController: Initialized controller with all services.
         """
         channel_definitions = ChannelDefinitions()
         controller = ApplicationController(channel_definitions=channel_definitions)
@@ -68,19 +72,22 @@ class TestDualRangeBatchWorkflow:
     @pytest.fixture
     def batch_processor(self, controller):
         """
-        Get the BatchProcessor from the controller, as MainWindow would.
+        Get the BatchProcessor from the controller.
+
+        Returns:
+            BatchProcessor: Batch processor instance from the controller.
         """
         return controller.batch_processor
 
     def get_sample_files(self, file_format):
         """
-        Get the sample files for testing, following the filetree structure.
+        Retrieve sample files for testing from the filetree structure.
 
         Args:
-            file_format: 'abf' or 'mat'
+            file_format (str): 'abf' or 'mat'
 
         Returns:
-            List of file paths in the sample_data/dual_range/{format} directory
+            List[str]: List of file paths in the sample_data/dual_range/{format} directory.
         """
         # Define the path to the format-specific subdirectory
         search_path = (
@@ -100,13 +107,13 @@ class TestDualRangeBatchWorkflow:
 
     def get_golden_files(self, file_format):
         """
-        Get the golden CSV files for comparison.
+        Retrieve golden CSV files for comparison.
 
         Args:
-            file_format: 'abf' or 'mat'
+            file_format (str): 'abf' or 'mat'
 
         Returns:
-            Dictionary mapping base_name to golden CSV path
+            Dict[str, Path]: Mapping of base_name to golden CSV path.
         """
         golden_path = (
             Path(__file__).parent
@@ -126,13 +133,16 @@ class TestDualRangeBatchWorkflow:
 
     def compare_csv_files(self, generated_path, golden_path, rtol=1e-6, atol=1e-9):
         """
-        Compare generated CSV against golden CSV.
+        Compare a generated CSV file against a golden CSV file.
 
         Args:
-            generated_path: Path to generated CSV
-            golden_path: Path to golden CSV
-            rtol: Relative tolerance for numeric comparison
-            atol: Absolute tolerance for numeric comparison
+            generated_path (Path): Path to the generated CSV.
+            golden_path (Path): Path to the golden CSV.
+            rtol (float): Relative tolerance for numeric comparison.
+            atol (float): Absolute tolerance for numeric comparison.
+
+        Raises:
+            AssertionError: If headers, shapes, NaN positions, or numeric values do not match.
         """
 
         # Helper function to load CSV data
@@ -190,20 +200,23 @@ class TestDualRangeBatchWorkflow:
         self, controller, batch_processor, analysis_parameters, file_format, tmp_path
     ):
         """
-        Test the complete dual range batch workflow following the exact GUI workflow.
+        Run the complete dual range batch workflow following the GUI workflow.
 
-        This test follows the workflow from BatchAnalysisDialog:
-        1. Load files (add_files)
-        2. Start analysis (BatchProcessor.process_files)
-        3. Export individual CSVs (BatchProcessor.export_results)
-        4. Compare against golden files
+        Steps:
+            1. Load files (add_files)
+            2. Start analysis (BatchProcessor.process_files)
+            3. Export individual CSVs (BatchProcessor.export_results)
+            4. Compare against golden files
 
         Args:
-            controller: ApplicationController fixture
-            batch_processor: BatchProcessor from controller
-            analysis_parameters: AnalysisParameters with dual range settings
-            file_format: 'abf' or 'mat' (parametrized)
-            tmp_path: pytest temporary directory fixture
+            controller (ApplicationController): Controller fixture.
+            batch_processor (BatchProcessor): Batch processor instance.
+            analysis_parameters (AnalysisParameters): Dual range analysis parameters.
+            file_format (str): 'abf' or 'mat'.
+            tmp_path (Path): Pytest temporary directory fixture.
+
+        Raises:
+            AssertionError: If any validation step fails.
         """
         # Step 1: Get the files to analyze (equivalent to BatchAnalysisDialog.add_files)
         file_paths = self.get_sample_files(file_format)
@@ -273,35 +286,51 @@ class TestDualRangeBatchWorkflow:
 
 
 class TestDualRangeABF(TestDualRangeBatchWorkflow):
-    """Test dual range batch workflow with ABF files."""
+    """
+    Test dual range batch workflow with ABF files.
+
+    Inherits from TestDualRangeBatchWorkflow and sets file format to ABF.
+    """
 
     @pytest.fixture
     def file_format(self):
+        """
+        Specify the file format for this test.
+
+        Returns:
+            str: 'abf'
+        """
         return "abf"
 
     def test_abf_dual_range_workflow(
         self, controller, batch_processor, analysis_parameters, file_format, tmp_path
     ):
-        """Test the complete workflow with ABF files."""
+        """
+        Test the complete dual range batch workflow with ABF files.
+
+        Args:
+            controller (ApplicationController): Controller fixture.
+            batch_processor (BatchProcessor): Batch processor instance.
+            analysis_parameters (AnalysisParameters): Dual range analysis parameters.
+            file_format (str): 'abf'.
+            tmp_path (Path): Pytest temporary directory fixture.
+        """
         self._run_dual_range_batch_workflow(
             controller, batch_processor, analysis_parameters, file_format, tmp_path
         )
 
 
 # class TestDualRangeMAT(TestDualRangeBatchWorkflow):
-#     """Test dual range batch workflow with MAT files."""
-
-#     @pytest.fixture
-#     def file_format(self):
-#         return 'mat'
-
-#     def test_mat_dual_range_workflow(self, controller, batch_processor, analysis_parameters, file_format, tmp_path):
-#         """Test the complete workflow with MAT files."""
-#         self._run_dual_range_batch_workflow(
-#             controller, batch_processor, analysis_parameters, file_format, tmp_path
-#         )
+#     """
+#     Test dual range batch workflow with MAT files.
+#
+#     Inherits from TestDualRangeBatchWorkflow and sets file format to MAT.
+#     """
+#     # ...existing code...
 
 
 if __name__ == "__main__":
-    # Run the tests
-    pytest.main([__file__, "-v"])
+    """
+    Run the tests if this script is executed directly.
+    """
+    # ...existing code...

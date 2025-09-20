@@ -38,19 +38,18 @@ def setup_logging(
     log_dir: Optional[str] = None,
 ) -> logging.Logger:
     """
-    Configure application-wide logging.
+    Configure and initialize application-wide logging.
 
-    This should be called once at application startup. It sets up both
-    file and console handlers with appropriate formatting.
+    This function sets up both file and console logging handlers with consistent formatting and log levels. Should be called once at application startup to ensure all modules use the same logging configuration.
 
     Args:
-        level: Logging level (logging.DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optional log file name (created in log_dir if specified)
-        console: Whether to also log to console
-        log_dir: Directory for log files (defaults to 'logs' in current directory)
+        level (int): Logging level (e.g., logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL).
+        log_file (Optional[str]): Name of the log file to write logs to. If provided, logs are saved in the specified file.
+        console (bool): If True, logs are also output to the console (stdout).
+        log_dir (Optional[str]): Directory where log files are stored. Defaults to 'logs' in the current working directory if not specified.
 
     Returns:
-        Configured root logger
+        logging.Logger: The configured root logger instance.
 
     Example:
         >>> from config.logging import setup_logging
@@ -107,14 +106,12 @@ def setup_logging(
 
 def configure_module_levels(root_logger: logging.Logger) -> None:
     """
-    Configure log levels for specific modules.
+    Set log levels for specific third-party and internal modules to control verbosity.
 
-    This allows fine-grained control over logging verbosity for different
-    components. For example, we might want DEBUG for our code but only
-    WARNING for matplotlib.
+    This function reduces log noise from external libraries (e.g., matplotlib, PyQt) and ensures internal modules follow the root logger's level.
 
     Args:
-        root_logger: The root logger instance
+        root_logger (logging.Logger): The root logger instance whose level is used for internal modules.
     """
     # Reduce noise from matplotlib
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -129,30 +126,34 @@ def configure_module_levels(root_logger: logging.Logger) -> None:
 
 def get_logger(name: str) -> logging.Logger:
     """
-    Get a logger instance for a module.
+    Retrieve a logger instance for a specific module or component.
 
-    This should be called at the top of each module that needs logging:
+    Should be called at the top of each module that requires logging. Ensures consistent logger naming and configuration.
+
+    Args:
+        name (str): The name of the module or logger (typically __name__).
+
+    Returns:
+        logging.Logger: Logger instance for the specified module.
 
     Example:
         >>> from config.logging import get_logger
         >>> logger = get_logger(__name__)
         >>> logger.info("Module initialized")
-
-    Args:
-        name: Module name (typically __name__)
-
-    Returns:
-        Logger instance for the module
     """
     return logging.getLogger(name)
 
 
+
 class LogContext:
     """
-    Context manager for adding temporary context to log messages.
+    Context manager for temporarily adding contextual information to log messages.
 
-    This is useful for adding request IDs, user IDs, or other context
-    that should be included in all log messages within a scope.
+    Useful for including request IDs, user IDs, or other metadata in all log messages within a scope. Context is attached to the logger for the duration of the context block.
+
+    Args:
+        logger (logging.Logger): Logger to which context will be added.
+        **context: Arbitrary key-value pairs to include in log messages.
 
     Example:
         >>> with LogContext(logger, user_id="12345", action="analysis"):
@@ -191,9 +192,15 @@ class LogContext:
 
 def log_function_call(logger: logging.Logger):
     """
-    Decorator to log function entry and exit.
+    Decorator to log function entry, exit, and exceptions for tracing and performance measurement.
 
-    This is useful for tracing execution flow and measuring performance.
+    Logs function name, arguments (truncated), execution duration, and any exceptions raised. Useful for debugging and profiling.
+
+    Args:
+        logger (logging.Logger): Logger instance to use for logging.
+
+    Returns:
+        Callable: Decorator that wraps the target function.
 
     Example:
         >>> @log_function_call(logger)
@@ -231,7 +238,16 @@ def log_function_call(logger: logging.Logger):
 
 def log_performance(logger: logging.Logger, operation: str):
     """
-    Context manager for logging operation performance.
+    Context manager for logging the start, completion, and duration of an operation.
+
+    Logs the beginning and end of the operation, including elapsed time and any exceptions encountered.
+
+    Args:
+        logger (logging.Logger): Logger instance to use for logging.
+        operation (str): Description of the operation being performed.
+
+    Returns:
+        PerformanceLogger: Context manager for timing and logging the operation.
 
     Example:
         >>> with log_performance(logger, "data_analysis"):
@@ -262,12 +278,15 @@ def log_analysis_request(
     logger: logging.Logger, params: dict, dataset_info: dict
 ) -> None:
     """
-    Log an analysis request with full context.
+    Log an analysis request event with full contextual information.
 
     Args:
-        logger: Logger instance
-        params: Analysis parameters
-        dataset_info: Information about the dataset
+        logger (logging.Logger): Logger instance to use for logging.
+        params (dict): Dictionary of analysis parameters.
+        dataset_info (dict): Dictionary containing dataset metadata and details.
+
+    Returns:
+        None
     """
     logger.info(
         "Analysis requested",
@@ -287,14 +306,17 @@ def log_cache_operation(
     size: Optional[int] = None,
 ) -> None:
     """
-    Log cache operations for monitoring cache effectiveness.
+    Log cache operations for monitoring cache usage and effectiveness.
 
     Args:
-        logger: Logger instance
-        operation: Type of operation (get, set, clear)
-        key: Cache key
-        hit: Whether it was a cache hit (for get operations)
-        size: Size of cached item (optional)
+        logger (logging.Logger): Logger instance to use for logging.
+        operation (str): Type of cache operation (e.g., 'get', 'set', 'clear').
+        key (str): Cache key associated with the operation.
+        hit (bool, optional): True if the operation was a cache hit (for 'get' operations). Defaults to False.
+        size (Optional[int]): Size of the cached item, if applicable.
+
+    Returns:
+        None
     """
     logger.debug(
         f"Cache {operation}",
@@ -311,13 +333,16 @@ def log_error_with_context(
     logger: logging.Logger, error: Exception, operation: str, **context
 ) -> None:
     """
-    Log an error with full context for debugging.
+    Log an error event with detailed contextual information for debugging purposes.
 
     Args:
-        logger: Logger instance
-        error: The exception that occurred
-        operation: What operation was being performed
-        **context: Additional context information
+        logger (logging.Logger): Logger instance to use for logging.
+        error (Exception): The exception that occurred.
+        operation (str): Description of the operation during which the error occurred.
+        **context: Additional key-value pairs providing extra context about the error.
+
+    Returns:
+        None
     """
     logger.error(
         f"Error during {operation}: {error}",

@@ -1,15 +1,17 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
 """
-Test peak analysis functionality with different peak modes.
+Test suite for peak analysis functionality with different peak modes.
 
-This test verifies that the analysis engine correctly calculates different
+This module verifies that the analysis engine correctly calculates different
 peak types (Absolute, Positive, Negative, Peak-Peak) and produces output
-matching the golden reference data.
+matching the golden reference data. It also checks mathematical relationships
+and ensures correct behavior for non-peak measures.
 """
 
 import os
@@ -33,23 +35,47 @@ TEST_FILE = "250514_012[1-11].abf"
 
 
 class TestPeakAnalysis:
-    """Test suite for peak analysis with different peak modes."""
+    """
+    Test suite for peak analysis with different peak modes.
+
+    Provides tests for peak calculation, output validation, mathematical relationships,
+    and correct handling of peak_type for non-peak measures.
+    """
 
     @pytest.fixture
     def controller(self):
-        """Create a controller instance for testing."""
+        """
+        Create a controller instance for testing.
+
+        Returns:
+            ApplicationController: Initialized controller with channel definitions.
+        """
         channel_definitions = ChannelDefinitions()
         controller = ApplicationController(channel_definitions=channel_definitions)
         return controller
 
     @pytest.fixture
     def test_file_path(self):
-        """Get the full path to the test ABF file."""
+        """
+        Get the full path to the test ABF file.
+
+        Returns:
+            str: Path to the test ABF file.
+        """
         return str(SAMPLE_DATA_DIR / TEST_FILE)
 
     @pytest.fixture
     def loaded_controller(self, controller, test_file_path):
-        """Return a controller with the test file already loaded."""
+        """
+        Return a controller with the test file already loaded.
+
+        Args:
+            controller (ApplicationController): Controller instance.
+            test_file_path (str): Path to the test ABF file.
+
+        Returns:
+            ApplicationController: Controller with loaded data.
+        """
         result = controller.load_file(test_file_path)
         assert result.success, f"Failed to load file: {result.error_message}"
         return controller
@@ -59,10 +85,10 @@ class TestPeakAnalysis:
         Create analysis parameters for a specific peak mode.
 
         Args:
-            peak_type: One of "Absolute", "Positive", "Negative", "Peak-Peak"
+            peak_type (str): One of "Absolute", "Positive", "Negative", "Peak-Peak".
 
         Returns:
-            AnalysisParameters configured for the specified peak mode
+            AnalysisParameters: Configured for the specified peak mode.
         """
         # X-axis: Peak Voltage with matching peak type
         x_axis = AxisConfig(
@@ -90,15 +116,15 @@ class TestPeakAnalysis:
         self, generated_path: str, golden_path: str, tolerance: float = 1e-6
     ) -> None:
         """
-        Compare generated CSV with golden reference data.
+        Compare a generated CSV file with golden reference data.
 
         Args:
-            generated_path: Path to generated CSV file
-            golden_path: Path to golden reference CSV
-            tolerance: Numerical tolerance for comparison
+            generated_path (str): Path to generated CSV file.
+            golden_path (str): Path to golden reference CSV.
+            tolerance (float): Numerical tolerance for comparison.
 
         Raises:
-            AssertionError: If files don't match within tolerance
+            AssertionError: If files do not match within tolerance.
         """
 
         # Helper function to load CSV data
@@ -167,9 +193,11 @@ class TestPeakAnalysis:
         Test peak analysis for a specific peak mode.
 
         Args:
-            loaded_controller: Controller with test file loaded
-            peak_type: The peak calculation mode to test
-            expected_file: Name of the expected golden data file
+            loaded_controller (ApplicationController): Controller with test file loaded.
+            peak_type (str): The peak calculation mode to test.
+            expected_file (str): Name of the expected golden data file.
+
+        Asserts correctness of analysis and exported results.
         """
         # Create parameters for this peak mode
         params = self.create_params_for_peak_mode(peak_type)
@@ -205,8 +233,8 @@ class TestPeakAnalysis:
         """
         Verify that different peak modes produce different results when appropriate.
 
-        This test ensures that each peak mode calculates different values
-        when the data contains both positive and negative values.
+        Ensures each peak mode calculates different values when the data contains
+        both positive and negative values, and checks expected relationships.
         """
         peak_types = ["Absolute", "Positive", "Negative", "Peak-Peak"]
         results = {}
@@ -271,8 +299,8 @@ class TestPeakAnalysis:
         """
         Test that peak_type is ignored when measure is not "Peak".
 
-        This ensures that setting peak_type has no effect when the
-        axis measure is set to "Average" or "Time".
+        Ensures that setting peak_type has no effect when the axis measure is set
+        to "Average" or "Time", and results are identical regardless of peak_type.
         """
         # Create params with Average measure but peak_type set
         params1 = AnalysisParameters(
@@ -316,11 +344,11 @@ class TestPeakAnalysis:
         """
         Test that peak values follow expected mathematical relationships.
 
-        This verifies that:
-        - Positive peak >= 0 (if any positive values exist)
-        - Negative peak <= 0 (if any negative values exist)
-        - Absolute peak has the largest magnitude
-        - Peak-Peak = Positive - Negative
+        Verifies:
+            - Positive peak >= 0 (if any positive values exist)
+            - Negative peak <= 0 (if any negative values exist)
+            - Absolute peak has the largest magnitude
+            - Peak-Peak = Positive - Negative
         """
         results = {}
 
@@ -358,5 +386,7 @@ class TestPeakAnalysis:
 
 
 if __name__ == "__main__":
-    # Allow running this test file directly
+    """
+    Allow running this test file directly.
+    """
     pytest.main([__file__, "-v"])

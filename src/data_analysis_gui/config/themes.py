@@ -76,8 +76,12 @@ FONT_SIZES = {"normal": "10pt", "large": "11pt", "small": "9pt"}
 
 def apply_modern_theme(widget: QWidget) -> None:
     """
-    Apply modern theme to any widget. Main entry point for theming.
-    Automatically detects widget type and applies appropriate styling.
+    Applies the modern PatchBatch theme to a given Qt widget.
+
+    Automatically detects the widget type and applies appropriate styling, including colors, fonts, and layout. For QMainWindow, also sets the application palette.
+
+    Args:
+        widget (QWidget): The widget to style. Can be any supported Qt widget.
     """
     if isinstance(widget, QMainWindow) or isinstance(widget, QDialog):
         widget.setStyleSheet(_get_base_stylesheet())
@@ -124,7 +128,13 @@ def apply_modern_theme(widget: QWidget) -> None:
 
 def style_button(button: QPushButton, style_type: str = "secondary") -> None:
     """
-    Style a button. Supports primary, secondary, accent (success), and danger types.
+    Styles a QPushButton according to the specified type.
+
+    Supports 'primary', 'secondary', 'accent' (success), 'danger', and 'warning' styles.
+
+    Args:
+        button (QPushButton): The button to style.
+        style_type (str, optional): The style type. Defaults to "secondary".
     """
     styles = {
         "primary": {
@@ -182,8 +192,13 @@ def style_button(button: QPushButton, style_type: str = "secondary") -> None:
 
 def style_input_field(widget: QWidget, invalid: bool = False) -> None:
     """
-    Style input fields (QLineEdit, QSpinBox, QDoubleSpinBox).
-    Handles normal and invalid states.
+    Styles input fields (QLineEdit, QSpinBox, QDoubleSpinBox) with modern appearance.
+
+    Handles both normal and invalid states, changing border and background color if invalid.
+
+    Args:
+        widget (QWidget): The input widget to style.
+        invalid (bool, optional): Whether to apply invalid styling. Defaults to False.
     """
     bg_color = "#ffcccc" if invalid else MODERN_COLORS["background"]
     border_color = MODERN_COLORS["danger"] if invalid else MODERN_COLORS["border"]
@@ -231,7 +246,12 @@ def style_input_field(widget: QWidget, invalid: bool = False) -> None:
 
 
 def style_combo_box(widget: QComboBox) -> None:
-    """Style a combo box with modern appearance."""
+    """
+    Styles a QComboBox with modern appearance, including dropdown and item view.
+
+    Args:
+        widget (QComboBox): The combo box to style.
+    """
     widget.setStyleSheet(
         f"""
         QComboBox {{
@@ -278,8 +298,13 @@ def style_combo_box(widget: QComboBox) -> None:
 
 def style_label(widget: QLabel, style_type: str = "normal") -> None:
     """
-    Style a label. Types: normal, heading, subheading, muted, caption,
-    info, success, warning, error
+    Styles a QLabel according to the specified type.
+
+    Supported types: 'normal', 'heading', 'subheading', 'muted', 'caption', 'info', 'success', 'warning', 'error'.
+
+    Args:
+        widget (QLabel): The label to style.
+        style_type (str, optional): The style type. Defaults to "normal".
     """
     styles = {
         "normal": {
@@ -346,7 +371,12 @@ def style_label(widget: QLabel, style_type: str = "normal") -> None:
 
 
 def style_table_widget(widget: QTableWidget) -> None:
-    """Style a table widget with alternating rows and modern headers."""
+    """
+    Styles a QTableWidget with alternating row colors and modern header appearance.
+
+    Args:
+        widget (QTableWidget): The table widget to style.
+    """
     widget.setAlternatingRowColors(True)
     widget.setStyleSheet(
         f"""
@@ -378,7 +408,12 @@ def style_table_widget(widget: QTableWidget) -> None:
 
 
 def style_list_widget(widget: QListWidget) -> None:
-    """Style a list widget."""
+    """
+    Styles a QListWidget with modern appearance, including hover and selection states.
+
+    Args:
+        widget (QListWidget): The list widget to style.
+    """
     widget.setStyleSheet(
         f"""
         QListWidget {{
@@ -404,7 +439,12 @@ def style_list_widget(widget: QListWidget) -> None:
 
 
 def style_progress_bar(widget: QProgressBar) -> None:
-    """Style a progress bar."""
+    """
+    Styles a QProgressBar with modern appearance.
+
+    Args:
+        widget (QProgressBar): The progress bar to style.
+    """
     widget.setStyleSheet(
         f"""
         QProgressBar {{
@@ -426,7 +466,12 @@ def style_progress_bar(widget: QProgressBar) -> None:
 
 
 def style_group_box(widget: QGroupBox) -> None:
-    """Style a group box."""
+    """
+    Styles a QGroupBox with modern appearance, including title and border.
+
+    Args:
+        widget (QGroupBox): The group box to style.
+    """
     widget.setStyleSheet(
         f"""
         QGroupBox {{
@@ -449,7 +494,12 @@ def style_group_box(widget: QGroupBox) -> None:
 
 
 def style_checkbox(widget: QCheckBox) -> None:
-    """Style a checkbox."""
+    """
+    Styles a QCheckBox with modern appearance, including indicator and hover states.
+
+    Args:
+        widget (QCheckBox): The checkbox to style.
+    """
     widget.setStyleSheet(
         f"""
         QCheckBox {{
@@ -480,7 +530,14 @@ def style_checkbox(widget: QCheckBox) -> None:
 
 
 def apply_compact_layout(widget: QWidget, spacing: int = 8, margin: int = 10) -> None:
-    """Apply compact spacing to a widget's layout."""
+    """
+    Applies compact spacing and margins to a widget's layout, if present.
+
+    Args:
+        widget (QWidget): The widget whose layout will be updated.
+        spacing (int, optional): Spacing between items. Defaults to 8.
+        margin (int, optional): Margin around the layout. Defaults to 10.
+    """
     if widget.layout():
         widget.layout().setSpacing(spacing)
         widget.layout().setContentsMargins(margin, margin, margin, margin)
@@ -494,14 +551,29 @@ def apply_compact_layout(widget: QWidget, spacing: int = 8, margin: int = 10) ->
 def create_styled_button(
     text: str, style_type: str = "secondary", parent: QWidget = None
 ) -> QPushButton:
-    """Create and style a button in one step."""
+    """
+    Creates a QPushButton with the specified text and style, and returns it.
+
+    Args:
+        text (str): The button text.
+        style_type (str, optional): The style type. Defaults to "secondary".
+        parent (QWidget, optional): The parent widget. Defaults to None.
+
+    Returns:
+        QPushButton: The styled button instance.
+    """
     button = QPushButton(text, parent)
     style_button(button, style_type)
     return button
 
 
 def _get_base_stylesheet() -> str:
-    """Get the base stylesheet for dialogs and main windows."""
+    """
+    Returns the base stylesheet string for dialogs and main windows.
+
+    Returns:
+        str: The base stylesheet.
+    """
     return f"""
         QDialog, QMainWindow {{
             background-color: {MODERN_COLORS['background']};
@@ -526,7 +598,12 @@ def _get_base_stylesheet() -> str:
 
 
 def _apply_palette(widget: QWidget) -> None:
-    """Apply color palette to application or widget."""
+    """
+    Applies the PatchBatch color palette to a widget or QApplication.
+
+    Args:
+        widget (QWidget or QApplication): The widget or application to apply the palette to.
+    """
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(MODERN_COLORS["background"]))
     palette.setColor(QPalette.ColorRole.WindowText, QColor(MODERN_COLORS["text"]))
@@ -545,7 +622,12 @@ def _apply_palette(widget: QWidget) -> None:
 
 
 def apply_theme_to_application(app: QApplication) -> None:
-    """Apply theme to entire application."""
+    """
+    Applies the PatchBatch theme to the entire QApplication instance.
+
+    Args:
+        app (QApplication): The application instance to style.
+    """
     app.setStyle("Fusion")
     _apply_palette(app)
     app.setStyleSheet(_get_base_stylesheet())
@@ -576,6 +658,16 @@ get_theme_stylesheet = _get_base_stylesheet
 
 # Color utility functions for compatibility
 def get_file_count_color(count: int, max_count: int = 10) -> str:
+    """
+    Returns a color string based on the file count relative to max_count.
+
+    Args:
+        count (int): The current file count.
+        max_count (int, optional): The maximum file count. Defaults to 10.
+
+    Returns:
+        str: The color string for the count status.
+    """
     return (
         MODERN_COLORS["success"]
         if count >= max_count // 2
@@ -584,6 +676,15 @@ def get_file_count_color(count: int, max_count: int = 10) -> str:
 
 
 def get_status_color(status: str) -> str:
+    """
+    Returns a color string based on the status string.
+
+    Args:
+        status (str): The status type (e.g., 'success', 'warning', 'error', 'info', 'muted').
+
+    Returns:
+        str: The color string for the status.
+    """
     status_map = {
         "success": MODERN_COLORS["success"],
         "warning": MODERN_COLORS["warning"],
@@ -595,6 +696,16 @@ def get_status_color(status: str) -> str:
 
 
 def get_selection_summary_color(selected: int, total: int) -> str:
+    """
+    Returns a color string for selection summary based on selected and total counts.
+
+    Args:
+        selected (int): Number of selected items.
+        total (int): Total number of items.
+
+    Returns:
+        str: The color string for the selection summary.
+    """
     if selected == 0:
         return MODERN_COLORS["warning"]
     elif selected == total:
@@ -609,6 +720,15 @@ TYPOGRAPHY = {"font_family": BASE_FONT}
 
 # Button style getter for compatibility
 def get_button_style(style_type: str = "secondary") -> str:
+    """
+    Returns the stylesheet string for a button of the specified style type.
+
+    Args:
+        style_type (str, optional): The style type. Defaults to "secondary".
+
+    Returns:
+        str: The stylesheet string for the button.
+    """
     button = QPushButton()
     style_button(button, style_type)
     return button.styleSheet()

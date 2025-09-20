@@ -23,10 +23,15 @@ class AnalysisError(Exception):
     will catch all application-specific errors, while still allowing
     system exceptions (like KeyboardInterrupt) to propagate.
 
+    Args:
+        message (str): Human-readable error description.
+        details (Optional[Dict[str, Any]]): Optional dictionary with structured error information.
+        cause (Optional[Exception]): Original exception that triggered this error (if any).
+
     Attributes:
-        message: Human-readable error description
-        details: Optional dictionary with structured error information
-        cause: Original exception that triggered this error (if any)
+        message (str): Error message.
+        details (Dict[str, Any]): Structured error information.
+        cause (Optional[Exception]): Original exception.
     """
 
     def __init__(
@@ -49,7 +54,12 @@ class AnalysisError(Exception):
         self.cause = cause
 
     def __str__(self) -> str:
-        """String representation includes cause if present."""
+        """
+        Return string representation of the error, including cause if present.
+
+        Returns:
+            str: Error message, optionally with cause.
+        """
         if self.cause:
             return f"{self.message} (caused by: {self.cause})"
         return self.message
@@ -59,18 +69,7 @@ class ValidationError(AnalysisError):
     """
     Raised when input validation fails.
 
-    This includes:
-    - Invalid parameter ranges (e.g., end <= start)
-    - Missing required fields
-    - Type mismatches
-    - Value constraint violations
-
-    Example:
-        if params.range1_end <= params.range1_start:
-            raise ValidationError(
-                "Range 1 end must be after start",
-                details={'start': params.range1_start, 'end': params.range1_end}
-            )
+    Used for invalid parameter ranges, missing required fields, type mismatches, or value constraint violations.
     """
 
     pass
@@ -80,18 +79,7 @@ class DataError(AnalysisError):
     """
     Raised when data integrity issues are detected.
 
-    This includes:
-    - NaN or Inf values in data arrays
-    - Dimension mismatches
-    - Empty datasets when data is required
-    - Corrupted data structures
-
-    Example:
-        if np.any(np.isnan(data)):
-            raise DataError(
-                "Data contains NaN values",
-                details={'sweep': sweep_idx, 'channel': channel}
-            )
+    Used for NaN/Inf values, dimension mismatches, empty datasets, or corrupted data structures.
     """
 
     pass
@@ -101,18 +89,7 @@ class FileError(AnalysisError):
     """
     Raised for file I/O related problems.
 
-    This includes:
-    - File not found
-    - Permission denied
-    - Unsupported file format
-    - Corrupted file structure
-
-    Example:
-        if not os.path.exists(filepath):
-            raise FileError(
-                f"File not found: {filepath}",
-                details={'path': filepath, 'operation': 'load'}
-            )
+    Used for file not found, permission denied, unsupported format, or corrupted file structure.
     """
 
     pass
@@ -122,18 +99,7 @@ class ConfigurationError(AnalysisError):
     """
     Raised when system configuration is invalid.
 
-    This includes:
-    - Missing required services
-    - Invalid channel configurations
-    - Incompatible settings
-    - Environment setup issues
-
-    Example:
-        if channel_count < 2 and swap_requested:
-            raise ConfigurationError(
-                "Cannot swap channels: dataset has only one channel",
-                details={'channel_count': channel_count}
-            )
+    Used for missing services, invalid channel configurations, incompatible settings, or environment setup issues.
     """
 
     pass
@@ -143,21 +109,7 @@ class ProcessingError(AnalysisError):
     """
     Raised when data processing operations fail.
 
-    This includes:
-    - Computation failures
-    - Memory errors during processing
-    - Timeout conditions
-    - Algorithmic failures
-
-    Example:
-        try:
-            result = complex_computation(data)
-        except MemoryError as e:
-            raise ProcessingError(
-                "Insufficient memory for analysis",
-                details={'data_size': data.nbytes},
-                cause=e
-            )
+    Used for computation failures, memory errors, timeouts, or algorithmic failures.
     """
 
     pass
@@ -167,21 +119,7 @@ class ExportError(AnalysisError):
     """
     Raised when export operations fail.
 
-    This includes:
-    - Write permission denied
-    - Disk full
-    - Invalid export format
-    - Data serialization failures
-
-    Example:
-        try:
-            np.savetxt(filepath, data)
-        except OSError as e:
-            raise ExportError(
-                f"Failed to export to {filepath}",
-                details={'filepath': filepath, 'data_shape': data.shape},
-                cause=e
-            )
+    Used for write permission denied, disk full, invalid export format, or data serialization failures.
     """
 
     pass
@@ -195,14 +133,14 @@ def validate_not_none(value: Any, name: str) -> Any:
     Validate that a value is not None.
 
     Args:
-        value: Value to check
-        name: Name of the parameter (for error message)
+        value (Any): Value to check.
+        name (str): Name of the parameter (for error message).
 
     Returns:
-        The value if not None
+        Any: The value if not None.
 
     Raises:
-        ValidationError: If value is None
+        ValidationError: If value is None.
     """
     if value is None:
         raise ValidationError(f"{name} cannot be None")
@@ -214,14 +152,14 @@ def validate_positive(value: float, name: str) -> float:
     Validate that a numeric value is positive.
 
     Args:
-        value: Value to check
-        name: Name of the parameter
+        value (float): Value to check.
+        name (str): Name of the parameter.
 
     Returns:
-        The value if positive
+        float: The value if positive.
 
     Raises:
-        ValidationError: If value is not positive
+        ValidationError: If value is not positive.
     """
     if value <= 0:
         raise ValidationError(f"{name} must be positive", details={name: value})
@@ -235,15 +173,15 @@ def validate_range(
     Validate that a range is valid (end > start).
 
     Args:
-        start: Range start value
-        end: Range end value
-        name: Name of the range
+        start (float): Range start value.
+        end (float): Range end value.
+        name (str): Name of the range.
 
     Returns:
-        Tuple of (start, end) if valid
+        tuple[float, float]: Tuple of (start, end) if valid.
 
     Raises:
-        ValidationError: If range is invalid
+        ValidationError: If range is invalid.
     """
     if end <= start:
         raise ValidationError(
@@ -258,13 +196,13 @@ def validate_file_exists(filepath: str) -> str:
     Validate that a file exists and is readable.
 
     Args:
-        filepath: Path to check
+        filepath (str): Path to check.
 
     Returns:
-        The filepath if valid
+        str: The filepath if valid.
 
     Raises:
-        FileError: If file doesn't exist or isn't readable
+        FileError: If file doesn't exist or isn't readable.
     """
     import os
 
@@ -285,15 +223,15 @@ def validate_array_dimensions(array, expected_dims: int, name: str = "array"):
     Validate array dimensions.
 
     Args:
-        array: Numpy array to check
-        expected_dims: Expected number of dimensions
-        name: Name of the array
+        array: Numpy array to check.
+        expected_dims (int): Expected number of dimensions.
+        name (str): Name of the array.
 
     Returns:
-        The array if valid
+        np.ndarray: The array if valid.
 
     Raises:
-        DataError: If dimensions don't match
+        DataError: If dimensions don't match.
     """
     import numpy as np
 
@@ -320,14 +258,14 @@ def validate_no_nan(array, name: str = "array"):
     Validate that array contains no NaN values.
 
     Args:
-        array: Numpy array to check
-        name: Name of the array
+        array: Numpy array to check.
+        name (str): Name of the array.
 
     Returns:
-        The array if valid
+        np.ndarray: The array if valid.
 
     Raises:
-        DataError: If NaN values are found
+        DataError: If NaN values are found.
     """
     import numpy as np
 

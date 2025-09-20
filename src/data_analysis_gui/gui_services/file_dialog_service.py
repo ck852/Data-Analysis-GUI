@@ -1,14 +1,19 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
+GUI Service for file dialog operations with directory memory.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
 """
-GUI Service for file dialog operations with directory memory.
+This service encapsulates all file dialog interactions for the GUI.
 
-This service encapsulates all file dialog interactions and remembers the last 
-used directory for each dialog type, keeping them separate.
+Features:
+- Remembers the last used directory for each dialog type independently.
+- Provides methods for importing, exporting, batch selection, and directory selection.
+- Ensures a consistent user experience across sessions.
 """
 
 import os
@@ -22,24 +27,26 @@ class FileDialogService:
     Centralized service for all file dialog operations with directory memory.
 
     Each dialog type remembers its last used directory independently:
-    - 'import_data' - for opening data files
-    - 'export_analysis' - for exporting analysis results
-    - 'export_batch' - for batch exports
-    - 'import_batch' - for batch file selection
-    - 'select_directory' - for directory selection
+        - 'import_data': Opening data files
+        - 'export_analysis': Exporting analysis results
+        - 'export_batch': Batch exports
+        - 'import_batch': Batch file selection
+        - 'select_directory': Directory selection
     """
 
     def __init__(self):
-        """Initialize with empty directory memory."""
+        """
+        Initialize the service with empty directory memory.
+        """
         # Dictionary to track last used directories by dialog type
         self._last_directories: Dict[str, str] = {}
 
     def set_last_directories(self, directories: Dict[str, str]) -> None:
         """
-        Set the last used directories (typically loaded from session settings).
+        Set the last used directories, typically loaded from session settings.
 
         Args:
-            directories: Dictionary mapping dialog types to directory paths
+            directories (Dict[str, str]): Mapping of dialog types to directory paths.
         """
         # Only set directories that actually exist
         self._last_directories = {}
@@ -52,7 +59,7 @@ class FileDialogService:
         Get the current last used directories for saving to session settings.
 
         Returns:
-            Dictionary mapping dialog types to directory paths
+            Dict[str, str]: Mapping of dialog types to directory paths.
         """
         return self._last_directories.copy()
 
@@ -63,11 +70,11 @@ class FileDialogService:
         Get the default directory for a dialog type.
 
         Args:
-            dialog_type: Type of dialog (e.g., 'import_data', 'export_analysis')
-            fallback: Fallback directory if no stored directory exists
+            dialog_type (str): Type of dialog (e.g., 'import_data', 'export_analysis').
+            fallback (Optional[str]): Fallback directory if no stored directory exists.
 
         Returns:
-            Directory path to use as default, or None
+            Optional[str]: Directory path to use as default, or None.
         """
         # First try the stored directory for this dialog type
         if dialog_type in self._last_directories:
@@ -87,8 +94,8 @@ class FileDialogService:
         Remember the directory from a selected file path.
 
         Args:
-            dialog_type: Type of dialog
-            file_path: Full path to the selected file
+            dialog_type (str): Type of dialog.
+            file_path (str): Full path to the selected file.
         """
         if file_path:
             directory = str(Path(file_path).parent)
@@ -107,14 +114,14 @@ class FileDialogService:
         Show a save file dialog and return the selected path.
 
         Args:
-            parent: Parent widget for the dialog
-            suggested_name: Suggested filename (without path)
-            default_directory: Directory to open dialog in (overrides remembered directory)
-            file_types: File type filter string
-            dialog_type: Type of dialog for directory memory (default: 'export_analysis')
+            parent (QWidget): Parent widget for the dialog.
+            suggested_name (str): Suggested filename (without path).
+            default_directory (Optional[str]): Directory to open dialog in (overrides remembered directory).
+            file_types (str): File type filter string.
+            dialog_type (str): Type of dialog for directory memory.
 
         Returns:
-            Selected file path or None if cancelled
+            Optional[str]: Selected file path or None if cancelled.
         """
         # Determine the default directory
         if default_directory and os.path.isdir(default_directory):
@@ -152,14 +159,14 @@ class FileDialogService:
         Show an open file dialog and return the selected path.
 
         Args:
-            parent: Parent widget for the dialog
-            title: Dialog window title
-            default_directory: Directory to open dialog in (overrides remembered directory)
-            file_types: File type filter string
-            dialog_type: Type of dialog for directory memory (default: 'import_data')
+            parent (QWidget): Parent widget for the dialog.
+            title (str): Dialog window title.
+            default_directory (Optional[str]): Directory to open dialog in (overrides remembered directory).
+            file_types (str): File type filter string.
+            dialog_type (str): Type of dialog for directory memory.
 
         Returns:
-            Selected file path or None if cancelled
+            Optional[str]: Selected file path or None if cancelled.
         """
         # Determine the default directory
         start_dir = self._get_default_directory(dialog_type, default_directory)
@@ -187,14 +194,14 @@ class FileDialogService:
         Show a multi-file selection dialog and return selected paths.
 
         Args:
-            parent: Parent widget for the dialog
-            title: Dialog window title
-            default_directory: Directory to open dialog in (overrides remembered directory)
-            file_types: File type filter string
-            dialog_type: Type of dialog for directory memory (default: 'import_batch')
+            parent (QWidget): Parent widget for the dialog.
+            title (str): Dialog window title.
+            default_directory (Optional[str]): Directory to open dialog in (overrides remembered directory).
+            file_types (str): File type filter string.
+            dialog_type (str): Type of dialog for directory memory.
 
         Returns:
-            List of selected file paths (empty if cancelled)
+            List[str]: List of selected file paths (empty if cancelled).
         """
         # Determine the default directory
         start_dir = self._get_default_directory(dialog_type, default_directory)
@@ -221,13 +228,13 @@ class FileDialogService:
         Show a directory selection dialog and return the selected path.
 
         Args:
-            parent: Parent widget for the dialog
-            title: Dialog window title
-            default_directory: Directory to open dialog in (overrides remembered directory)
-            dialog_type: Type of dialog for directory memory (default: 'select_directory')
+            parent (QWidget): Parent widget for the dialog.
+            title (str): Dialog window title.
+            default_directory (Optional[str]): Directory to open dialog in (overrides remembered directory).
+            dialog_type (str): Type of dialog for directory memory.
 
         Returns:
-            Selected directory path or None if cancelled
+            Optional[str]: Selected directory path or None if cancelled.
         """
         # Determine the default directory
         start_dir = self._get_default_directory(dialog_type, default_directory)

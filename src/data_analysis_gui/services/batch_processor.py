@@ -1,15 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Simplified batch processing with sequential execution.
 
 This module provides straightforward batch analysis functionality
 using simple sequential processing for clarity and maintainability.
-
 """
 
 import time
@@ -37,16 +35,16 @@ class BatchProcessor:
     """
     Processes multiple files with the same analysis parameters.
 
-    Simple, direct implementation with sequential processing.
-    Scientists can easily understand and modify the batch processing logic.
+    Implements simple, sequential batch processing for electrophysiology data.
+    Designed for clarity and accessibility.
     """
 
     def __init__(self, channel_definitions: ChannelDefinitions):
         """
-        Initialize with channel definitions.
+        Initialize the BatchProcessor.
 
         Args:
-            channel_definitions: Channel configuration
+            channel_definitions (ChannelDefinitions): Channel configuration for analysis.
         """
         self.channel_definitions = channel_definitions
         self.data_manager = DataManager()  # Direct instantiation
@@ -61,14 +59,17 @@ class BatchProcessor:
         self, file_paths: List[str], params: AnalysisParameters
     ) -> BatchAnalysisResult:
         """
-        Process multiple files sequentially with the same parameters.
+        Process multiple files sequentially using the provided analysis parameters.
 
         Args:
-            file_paths: List of files to process
-            params: Analysis parameters
+            file_paths (List[str]): List of file paths to process.
+            params (AnalysisParameters): Analysis parameters to apply.
 
         Returns:
-            BatchAnalysisResult with all results
+            BatchAnalysisResult: Object containing results for all processed files.
+
+        Raises:
+            ValueError: If no files are provided.
         """
         if not file_paths:
             raise ValueError("No files provided")
@@ -117,14 +118,14 @@ class BatchProcessor:
         self, file_path: str, params: AnalysisParameters
     ) -> FileAnalysisResult:
         """
-        Process a single file.
+        Process a single file and perform analysis.
 
         Args:
-            file_path: Path to file
-            params: Analysis parameters
+            file_path (str): Path to the file to process.
+            params (AnalysisParameters): Analysis parameters to apply.
 
         Returns:
-            FileAnalysisResult with status
+            FileAnalysisResult: Result object containing analysis outcome and data.
         """
         base_name = self._clean_filename(file_path)
         start_time = time.time()
@@ -172,14 +173,14 @@ class BatchProcessor:
         self, batch_result: BatchAnalysisResult, output_dir: str
     ) -> BatchExportResult:
         """
-        Export all successful results to CSV files.
+        Export all successful analysis results to individual CSV files.
 
         Args:
-            batch_result: Batch analysis results
-            output_dir: Output directory
+            batch_result (BatchAnalysisResult): Batch analysis results to export.
+            output_dir (str): Directory to save exported files.
 
         Returns:
-            BatchExportResult with export status
+            BatchExportResult: Object containing export status and summary.
         """
         export_results = []
         total_records = 0
@@ -210,13 +211,13 @@ class BatchProcessor:
     @staticmethod
     def _clean_filename(file_path: str) -> str:
         """
-        Clean filename for display/export.
+        Clean a filename for display or export by removing extension and bracketed content.
 
         Args:
-            file_path: Full file path
+            file_path (str): Full file path.
 
         Returns:
-            Cleaned filename without extension and brackets
+            str: Cleaned filename without extension or brackets.
         """
         stem = Path(file_path).stem
         # Remove bracketed content

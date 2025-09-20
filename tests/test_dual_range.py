@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -7,14 +8,14 @@ License: MIT (see LICENSE file for details)
 """
 Test script for dual range analysis functionality.
 
-This test validates the dual range analysis feature by:
-1. Loading both ABF and MAT files containing 234 sweeps
-2. Setting dual analysis ranges (Range 1: 50.45-249.8ms, Range 2: 250.45-449.5ms)
-3. Configuring Time for X-axis and Average Current for Y-axis
-4. Exporting the analysis results
-5. Comparing outputs with golden reference files
+This module validates the dual range analysis feature by:
+    1. Loading both ABF and MAT files containing 234 sweeps.
+    2. Setting dual analysis ranges (Range 1: 50.45-249.8 ms, Range 2: 250.45-449.5 ms).
+    3. Configuring Time for X-axis and Average Current for Y-axis.
+    4. Exporting the analysis results.
+    5. Comparing outputs with golden reference files.
 
-The test ensures that dual range analysis works correctly for both file formats
+It ensures that dual range analysis works correctly for both file formats
 and produces identical results for equivalent data.
 """
 
@@ -31,28 +32,53 @@ from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
 
 
 class TestDualRangeAnalysis:
-    """Test class for validating dual range analysis functionality."""
+    """
+    Test class for validating dual range analysis functionality.
+
+    Provides tests for ABF and MAT file formats, parameter validation,
+    and equivalence between formats using dual range analysis.
+    """
 
     @pytest.fixture
     def controller(self):
-        """Create an ApplicationController instance for testing."""
+        """
+        Create an ApplicationController instance for testing.
+
+        Returns:
+            ApplicationController: Initialized controller for analysis.
+        """
         return ApplicationController()
 
     @pytest.fixture
     def test_data_path(self):
-        """Get the path to test data files."""
+        """
+        Get the path to test data files.
+
+        Returns:
+            Path: Directory containing sample test data files.
+        """
         current_dir = Path(__file__).parent
         return current_dir / "fixtures" / "sample_data" / "dual_range"
 
     @pytest.fixture
     def golden_data_path(self):
-        """Get the path to golden reference files."""
+        """
+        Get the path to golden reference files.
+
+        Returns:
+            Path: Directory containing golden reference files.
+        """
         current_dir = Path(__file__).parent
         return current_dir / "fixtures" / "golden_data" / "golden_dual_range"
 
     @pytest.fixture
     def dual_range_parameters(self):
-        """Get the standard dual range analysis parameters for these tests."""
+        """
+        Get the standard dual range analysis parameters for these tests.
+
+        Returns:
+            dict: Dictionary of dual range analysis parameters.
+        """
         return {
             # Range 1 settings (50.45 - 249.8 ms)
             "range1_start": 50.45,
@@ -77,14 +103,14 @@ class TestDualRangeAnalysis:
         self, controller: ApplicationController, gui_state: Dict[str, Any]
     ) -> AnalysisParameters:
         """
-        Create AnalysisParameters from GUI state dictionary.
+        Create AnalysisParameters from a GUI state dictionary.
 
         Args:
-            controller: The ApplicationController instance
-            gui_state: Dictionary containing GUI parameter values
+            controller (ApplicationController): The controller instance.
+            gui_state (dict): Dictionary containing GUI parameter values.
 
         Returns:
-            AnalysisParameters object configured with the GUI values
+            AnalysisParameters: Configured analysis parameters.
         """
         # Extract x-axis configuration
         x_axis = AxisConfig(
@@ -126,12 +152,12 @@ class TestDualRangeAnalysis:
         Compare two CSV files for equality within numerical tolerance.
 
         Args:
-            output_path: Path to generated CSV file
-            reference_path: Path to golden reference CSV file
-            tolerance: Numerical tolerance for floating point comparison
+            output_path (str): Path to generated CSV file.
+            reference_path (str): Path to golden reference CSV file.
+            tolerance (float): Numerical tolerance for floating point comparison.
 
         Raises:
-            AssertionError: If files don't match
+            AssertionError: If files do not match in shape, headers, or data values.
         """
         # Load both CSV files
         output_data = np.genfromtxt(output_path, delimiter=",", skip_header=1)
@@ -172,13 +198,13 @@ class TestDualRangeAnalysis:
         Analyze a single file and export results.
 
         Args:
-            controller: ApplicationController instance
-            file_path: Path to input file
-            parameters_dict: Dictionary of analysis parameters
-            output_dir: Directory to save output file
+            controller (ApplicationController): Controller instance.
+            file_path (Path): Path to input file.
+            parameters_dict (dict): Dictionary of analysis parameters.
+            output_dir (str): Directory to save output file.
 
         Returns:
-            Tuple of (success, output_path)
+            Tuple[bool, str]: (success, output_path) indicating analysis success and output file path.
         """
         # Load the file
         load_result = controller.load_file(str(file_path))
@@ -241,13 +267,15 @@ class TestDualRangeAnalysis:
         self, controller, test_data_path, golden_data_path, dual_range_parameters
     ):
         """
-        Test dual range analysis on ABF file.
+        Test dual range analysis on an ABF file.
 
-        This test:
-        1. Loads the ABF file with 234 sweeps
-        2. Applies dual range analysis parameters
-        3. Exports the results
-        4. Compares with golden reference for ABF
+        Steps:
+            1. Load the ABF file with 234 sweeps.
+            2. Apply dual range analysis parameters.
+            3. Export the results.
+            4. Compare with golden reference for ABF.
+
+        Asserts correctness of exported structure and values.
         """
         # Get ABF test file
         abf_file = test_data_path / "abf" / "250202_007[1-234].abf"
@@ -404,10 +432,12 @@ class TestDualRangeAnalysis:
         """
         Test validation of dual range parameters.
 
-        This test verifies that:
-        1. Range values are properly validated
-        2. Range 2 follows Range 1 temporally
-        3. The analysis correctly separates the two time windows
+        Verifies that:
+            1. Range values are properly validated.
+            2. Range 2 follows Range 1 temporally.
+            3. The analysis correctly separates the two time windows.
+
+        Asserts that the two ranges produce different results.
         """
         # Load test file
         test_file = test_data_path / "abf" / "250202_007[1-234].abf"
@@ -452,5 +482,7 @@ class TestDualRangeAnalysis:
 
 
 if __name__ == "__main__":
-    # Run tests directly if executed as script
+    """
+    Run tests directly if executed as a script.
+    """
     pytest.main([__file__, "-v", "-s"])

@@ -1,13 +1,17 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
 """
-Control Panel Widget - Simplified Version with Always-Active Controls
-Handles all control settings and communicates via signals.
-Controls are always active regardless of file loading state.
+Control Panel Widget
+
+A self-contained widget for managing all analysis and plot settings in the PatchBatch Electrophysiology Data Analysis Tool.
+Controls are always active, regardless of file loading state, and communicate user actions via Qt signals.
+Provides themed UI elements for analysis ranges, dual range selection, stimulus period, axis configuration, and peak mode.
+Validation is performed on input fields, with visual feedback for invalid states.
 """
 
 from PySide6.QtWidgets import (
@@ -44,11 +48,23 @@ from data_analysis_gui.config.themes import (
 
 class ControlPanel(QWidget):
     """
-    Self-contained control panel widget that manages all analysis settings.
-    Emits signals to communicate user actions to the main window.
+    ControlPanel Widget
 
-    Simplified version: Controls are always active, removing complexity around
-    file loading states.
+    Provides a themed panel for configuring analysis and plot settings.
+    - Manages analysis ranges, dual range selection, and stimulus period.
+    - Allows configuration of plot axes and peak calculation mode.
+    - Emits signals for analysis requests, export actions, and range changes.
+    - Performs validation and visual feedback for input fields.
+    - Supports saving and restoring settings via dictionaries.
+
+    Signals:
+        analysis_requested: Emitted when the user requests to generate an analysis plot.
+        export_requested: Emitted when the user requests to export analysis data.
+        dual_range_toggled: Emitted when the dual range checkbox is toggled.
+        range_values_changed: Emitted when any range spinbox value changes.
+
+    Args:
+        parent: Optional parent widget.
     """
 
     # Define signals for communication with main window
@@ -93,7 +109,10 @@ class ControlPanel(QWidget):
         self._connect_signals()
 
     def _setup_ui(self):
-        """Set up the control panel UI with full theme integration"""
+        """
+        Set up the control panel UI with full theme integration.
+        Creates all controls, layouts, and applies styling.
+        """
         # Create scroll area for the controls
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -136,7 +155,7 @@ class ControlPanel(QWidget):
         Set the current units for display and export.
 
         Args:
-            units: Current units ('pA', 'nA', or 'μA')
+            units (str): The units to use ('pA', 'nA', or 'μA').
         """
         self._current_units = units
 
@@ -145,12 +164,17 @@ class ControlPanel(QWidget):
         Get the current units setting.
 
         Returns:
-            Current units string
+            str: The current units string.
         """
         return self._current_units
 
     def _create_analysis_settings_group(self):
-        """Create the analysis settings group with full theme styling"""
+        """
+        Create the analysis settings group with themed controls.
+
+        Returns:
+            QGroupBox: The analysis settings group box.
+        """
         analysis_group = QGroupBox("Analysis Settings")
         style_group_box(analysis_group)
 
@@ -185,7 +209,12 @@ class ControlPanel(QWidget):
         return analysis_group
 
     def _add_range1_settings(self, layout):
-        """Add Range 1 settings to layout with theme styling"""
+        """
+        Add Range 1 controls to the provided layout.
+
+        Args:
+            layout (QGridLayout): The layout to add controls to.
+        """
         # Range 1 Start
         start_label = QLabel("Range 1 Start (ms):")
         style_label(start_label, "normal")
@@ -215,7 +244,12 @@ class ControlPanel(QWidget):
         layout.addWidget(self.end_spin, 1, 1)
 
     def _add_range2_settings(self, layout):
-        """Add Range 2 settings to layout with theme styling"""
+        """
+        Add Range 2 controls to the provided layout.
+
+        Args:
+            layout (QGridLayout): The layout to add controls to.
+        """
         # Range 2 Start
         start2_label = QLabel("Range 2 Start (ms):")
         style_label(start2_label, "normal")
@@ -247,7 +281,12 @@ class ControlPanel(QWidget):
         layout.addWidget(self.end_spin2, 4, 1)
 
     def _create_plot_settings_group(self):
-        """Create the plot settings group with full theme styling"""
+        """
+        Create the plot settings group with themed controls.
+
+        Returns:
+            QGroupBox: The plot settings group box.
+        """
         plot_group = QGroupBox("Plot Settings")
         style_group_box(plot_group)
 
@@ -326,7 +365,9 @@ class ControlPanel(QWidget):
         return plot_group
 
     def _update_peak_mode_visibility(self):
-        """Enable/disable peak mode combo based on whether Peak is selected"""
+        """
+        Enable or disable the peak mode combo box based on axis selection.
+        """
         is_peak_selected = (
             self.x_measure_combo.currentText() == "Peak"
             or self.y_measure_combo.currentText() == "Peak"
@@ -339,7 +380,9 @@ class ControlPanel(QWidget):
             style_combo_simple(self.peak_mode_combo)
 
     def _connect_signals(self):
-        """Connect internal widget signals with validation."""
+        """
+        Connect internal widget signals and perform initial validation.
+        """
         # Validate on any value change
         self.start_spin.valueChanged.connect(self._validate_and_update)
         self.end_spin.valueChanged.connect(self._validate_and_update)
@@ -353,9 +396,8 @@ class ControlPanel(QWidget):
 
     def _validate_and_update(self):
         """
-        Validates all ranges, updates UI feedback, and emits a signal
-        that the range values have changed for the plot to sync.
-        Controls are always active - validation only affects visual feedback.
+        Validate all range inputs, update UI feedback, and emit range change signals.
+        Enables or disables action buttons based on validation.
         """
         # --- Validate Range 1 ---
         start1_val = self.start_spin.value()
@@ -397,7 +439,12 @@ class ControlPanel(QWidget):
         self.range_values_changed.emit()
 
     def _mark_field_invalid(self, spinbox_key: str):
-        """Mark a field as invalid using theme functions."""
+        """
+        Mark a spinbox field as invalid, applying themed visual feedback.
+
+        Args:
+            spinbox_key (str): Key for the spinbox ('start1', 'end1', etc.).
+        """
         spinbox_map = {
             "start1": self.start_spin,
             "end1": self.end_spin,
@@ -418,7 +465,12 @@ class ControlPanel(QWidget):
             spinbox.setStyleSheet(invalid_style)
 
     def _clear_invalid_state(self, spinbox_key: str):
-        """Clear the invalid state from a field using theme functions."""
+        """
+        Clear the invalid state from a spinbox field, restoring original styling.
+
+        Args:
+            spinbox_key (str): Key for the spinbox ('start1', 'end1', etc.).
+        """
         if spinbox_key in self._invalid_fields:
             self._invalid_fields.remove(spinbox_key)
             spinbox_map = {
@@ -433,7 +485,9 @@ class ControlPanel(QWidget):
                 style_spinbox_with_arrows(spinbox)
 
     def _on_dual_range_changed(self):
-        """Handle dual range checkbox state change."""
+        """
+        Handle changes to the dual range checkbox, enabling/disabling controls.
+        """
         enabled = self.dual_range_cb.isChecked()
         self.start_spin2.setEnabled(enabled)
         self.end_spin2.setEnabled(enabled)
@@ -447,19 +501,19 @@ class ControlPanel(QWidget):
 
     def set_swap_state(self, is_swapped: bool):
         """
-        Set the channel swap state directly.
+        Set the channel swap state.
 
         Args:
-            is_swapped: True if channels are swapped, False otherwise
+            is_swapped (bool): True if channels are swapped, False otherwise.
         """
         self._is_swapped = is_swapped
 
     def get_parameters(self) -> AnalysisParameters:
         """
-        Get analysis parameters as a proper typed object.
+        Get current analysis parameters as an AnalysisParameters object.
 
         Returns:
-            AnalysisParameters object with current control values
+            AnalysisParameters: Object containing all current control values.
         """
         from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
 
@@ -505,7 +559,12 @@ class ControlPanel(QWidget):
     # --- Public methods for data access and updates ---
 
     def get_range_values(self) -> dict:
-        """Get current range values"""
+        """
+        Get current range values as a dictionary.
+
+        Returns:
+            dict: Dictionary of current range values.
+        """
         return {
             "range1_start": self.start_spin.value(),
             "range1_end": self.end_spin.value(),
@@ -519,7 +578,12 @@ class ControlPanel(QWidget):
         }
 
     def get_range_spinboxes(self) -> dict:
-        """Get references to range spinboxes for plot manager"""
+        """
+        Get references to range spinboxes for external use.
+
+        Returns:
+            dict: Dictionary mapping keys to spinbox widgets.
+        """
         spinboxes = {"start1": self.start_spin, "end1": self.end_spin}
         if self.dual_range_cb.isChecked():
             spinboxes["start2"] = self.start_spin2
@@ -527,7 +591,13 @@ class ControlPanel(QWidget):
         return spinboxes
 
     def update_range_value(self, spinbox_key: str, value: float):
-        """Update a specific range spinbox value (e.g., from cursor drag)."""
+        """
+        Update a specific range spinbox value.
+
+        Args:
+            spinbox_key (str): Key for the spinbox ('start1', 'end1', etc.).
+            value (float): Value to set.
+        """
         spinbox_map = {
             "start1": self.start_spin,
             "end1": self.end_spin,
@@ -539,7 +609,12 @@ class ControlPanel(QWidget):
             spinbox_map[spinbox_key].setValue(value)
 
     def set_analysis_range(self, max_time: float):
-        """Sets the maximum value for the analysis range spinboxes and clamps current values."""
+        """
+        Set the maximum value for analysis range spinboxes and clamp current values.
+
+        Args:
+            max_time (float): Maximum allowed time value.
+        """
         self.start_spin.setRange(0, max_time)
         self.end_spin.setRange(0, max_time)
         self.start_spin2.setRange(0, max_time)
@@ -565,11 +640,10 @@ class ControlPanel(QWidget):
 
     def set_parameters_from_dict(self, params: dict):
         """
-        Set analysis parameters from a dictionary (for loading settings).
-        Temporarily disables validation signals to set all values at once.
+        Set analysis parameters from a dictionary, blocking signals during update.
 
         Args:
-            params: Dictionary with analysis parameter values
+            params (dict): Dictionary of analysis parameter values.
         """
         # Store current signal state and disconnect
         signals_were_blocked = [
@@ -631,10 +705,10 @@ class ControlPanel(QWidget):
 
     def set_plot_settings_from_dict(self, params: dict):
         """
-        Set plot settings from a dictionary (for loading settings).
+        Set plot settings from a dictionary, blocking signals during update.
 
         Args:
-            params: Dictionary with plot setting values
+            params (dict): Dictionary of plot setting values.
         """
         # Block signals during mass update
         signals_blocked = [
@@ -687,11 +761,10 @@ class ControlPanel(QWidget):
 
     def get_all_settings_dict(self) -> dict:
         """
-        Get all control panel settings as a dictionary.
-        Useful for saving complete state.
+        Get all control panel settings as a dictionary for saving/restoring state.
 
         Returns:
-            Dictionary with all current settings
+            dict: Dictionary containing all current settings.
         """
         return {
             "analysis": {

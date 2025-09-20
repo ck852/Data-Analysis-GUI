@@ -7,6 +7,8 @@ License: MIT (see LICENSE file for details)
 """
 Analysis parameters data model.
 
+This module defines immutable data classes for configuring analysis operations
+and plot axes in PatchBatch electrophysiology data analysis.
 """
 
 from dataclasses import dataclass, field, asdict
@@ -16,10 +18,17 @@ from typing import Optional, Dict, Any, Tuple
 @dataclass(frozen=True)
 class AxisConfig:
     """
-    Configuration for a plot axis.
+    Immutable configuration for a plot axis (X or Y).
 
-    Immutable configuration specifying how data should be extracted
-    and displayed for a particular axis (X or Y).
+    Specifies how data should be extracted and displayed for a particular axis.
+
+    Args:
+        measure: Type of measurement ("Time", "Average", or "Peak").
+        channel: Channel type ("Voltage" or "Current"), or None for Time.
+        peak_type: Peak type for "Peak" measure ("Absolute", "Positive", "Negative", "Peak-Peak").
+
+    Returns:
+        AxisConfig instance.
     """
 
     measure: str  # "Time", "Average", or "Peak"
@@ -34,11 +43,22 @@ class AnalysisParameters:
     """
     Immutable parameters for analysis operations.
 
-    PHASE 4 REFACTOR: Pure data class with validation.
-    No dict-like access, no from_dict(), just clean data.
+    Encapsulates all parameters needed for an analysis operation, with validation
+    at construction time to ensure data integrity.
 
-    This class encapsulates all parameters needed for an analysis operation,
-    with validation at construction time to ensure data integrity.
+    Args:
+        range1_start: Start time in ms for Range 1.
+        range1_end: End time in ms for Range 1.
+        use_dual_range: Whether to use dual range analysis.
+        range2_start: Start time in ms for Range 2 (if dual range).
+        range2_end: End time in ms for Range 2 (if dual range).
+        stimulus_period: Period between stimuli in ms.
+        x_axis: AxisConfig for X-axis.
+        y_axis: AxisConfig for Y-axis.
+        channel_config: Dictionary mapping channel configuration.
+
+    Returns:
+        AnalysisParameters instance.
 
     Example:
         >>> params = AnalysisParameters(
@@ -76,11 +96,11 @@ class AnalysisParameters:
         Validate parameters on creation.
 
         Ensures that:
-        - Range end times are after start times
-        - Dual range parameters are provided when dual range is enabled
+            - Range end times are after start times.
+            - Dual range parameters are provided when dual range is enabled.
 
         Raises:
-            ValueError: If validation fails
+            ValueError: If validation fails.
         """
         # Validate Range 1
         if self.range1_end <= self.range1_start:
@@ -106,12 +126,11 @@ class AnalysisParameters:
         """
         Generate an immutable, hashable cache key for this parameter set.
 
-        This key is used for caching analysis results. It includes all
-        parameters that affect the analysis output, rounded to avoid
-        floating point precision issues.
+        Used for caching analysis results. Includes all parameters that affect
+        the analysis output, rounded to avoid floating point precision issues.
 
         Returns:
-            Tuple that can be used as a dictionary key
+            Tuple suitable for use as a dictionary key.
         """
 
         def round_value(x):
@@ -143,14 +162,14 @@ class AnalysisParameters:
         """
         Create a new AnalysisParameters instance with updated values.
 
-        Since this class is immutable (frozen), this method provides
-        a way to create modified copies.
+        Since this class is immutable (frozen), this method provides a way to
+        create modified copies.
 
         Args:
-            **kwargs: Keyword arguments for fields to update
+            **kwargs: Keyword arguments for fields to update.
 
         Returns:
-            New AnalysisParameters instance with updated values
+            New AnalysisParameters instance with updated values.
 
         Example:
             >>> new_params = params.with_updates(range1_start=200.0)
@@ -174,11 +193,10 @@ class AnalysisParameters:
         """
         Export parameters as a dictionary for serialization.
 
-        This method is explicitly for export purposes (e.g., saving
-        to JSON), not for general dict-like access.
+        Intended for export purposes (e.g., saving to JSON), not for general dict-like access.
 
         Returns:
-            Dictionary representation of parameters
+            Dictionary representation of parameters.
         """
         return {
             "range1_start": self.range1_start,
@@ -199,7 +217,7 @@ class AnalysisParameters:
         Useful for logging or display purposes.
 
         Returns:
-            String description of parameters
+            String description of parameters.
         """
         desc = [f"Range 1: {self.range1_start:.1f}-{self.range1_end:.1f} ms"]
 

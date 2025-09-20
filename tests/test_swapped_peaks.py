@@ -1,5 +1,6 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
@@ -7,12 +8,12 @@ License: MIT (see LICENSE file for details)
 """
 Test module for Swap Channels functionality with Peak Analysis across all peak modes.
 
-This test validates the channel swapping feature with peak analysis by:
-1. Loading MAT/ABF files with swapped channel configuration
-2. Activating the swap channels feature
-3. Running batch analysis with Peak Voltage (X) and Peak Current (Y)
-4. Testing all four peak modes: Absolute, Positive, Negative, Peak-Peak
-5. Comparing outputs against golden reference data for each peak mode
+This module validates the channel swapping feature with peak analysis by:
+    1. Loading MAT/ABF files with swapped channel configuration.
+    2. Activating the swap channels feature.
+    3. Running batch analysis with Peak Voltage (X) and Peak Current (Y).
+    4. Testing all four peak modes: Absolute, Positive, Negative, Peak-Peak.
+    5. Comparing outputs against golden reference data for each peak mode.
 """
 
 import pytest
@@ -43,7 +44,13 @@ PEAK_MODES = ["Absolute", "Positive", "Negative", "Peak-Peak"]
 
 @pytest.fixture
 def temp_output_dir():
-    """Create a temporary directory for test outputs."""
+    """
+    Create a temporary directory for test outputs.
+
+    Yields:
+        Path to the temporary output directory.
+    Cleans up the directory after the test completes.
+    """
     temp_dir = tempfile.mkdtemp(prefix="test_swap_peaks_")
     yield Path(temp_dir)
     # Cleanup after test
@@ -52,13 +59,26 @@ def temp_output_dir():
 
 @pytest.fixture
 def channel_definitions():
-    """Create channel definitions with swapping capability."""
+    """
+    Create channel definitions with swapping capability.
+
+    Returns:
+        ChannelDefinitions instance with default voltage/current channels.
+    """
     return ChannelDefinitions(voltage_channel=0, current_channel=1)
 
 
 @pytest.fixture
 def batch_processor(channel_definitions):
-    """Create batch processor with swapped channels."""
+    """
+    Create a BatchProcessor with swapped channels.
+
+    Args:
+        channel_definitions: ChannelDefinitions instance to swap.
+
+    Returns:
+        BatchProcessor instance with swapped channel configuration.
+    """
     # First swap the channels
     channel_definitions.swap_channels()
     return BatchProcessor(channel_definitions)
@@ -69,10 +89,10 @@ def create_analysis_parameters(peak_mode: str) -> AnalysisParameters:
     Create analysis parameters for a specific peak mode.
 
     Args:
-        peak_mode: One of "Absolute", "Positive", "Negative", "Peak-Peak"
+        peak_mode (str): One of "Absolute", "Positive", "Negative", "Peak-Peak".
 
     Returns:
-        AnalysisParameters configured for the specified peak mode
+        AnalysisParameters: Configured for the specified peak mode.
     """
     return AnalysisParameters(
         range1_start=50.60,
@@ -88,7 +108,16 @@ def create_analysis_parameters(peak_mode: str) -> AnalysisParameters:
 
 
 def get_data_files(directory: Path, extension: str) -> List[Path]:
-    """Get all data files in a directory with given extension, sorted numerically."""
+    """
+    Retrieve all data files in a directory with the given extension, sorted numerically.
+
+    Args:
+        directory (Path): Directory to search.
+        extension (str): File extension to filter by.
+
+    Returns:
+        List[Path]: Sorted list of data file paths.
+    """
     data_files = list(directory.glob(f"*.{extension}"))
     # Sort by the numeric part in the filename
     data_files.sort(key=lambda x: int(x.stem.split("_")[-1].split("[")[0]))
@@ -96,7 +125,15 @@ def get_data_files(directory: Path, extension: str) -> List[Path]:
 
 
 def load_csv_data(csv_path: Path) -> Dict[str, Any]:
-    """Load CSV data into a structured format for comparison."""
+    """
+    Load CSV data into a structured format for comparison.
+
+    Args:
+        csv_path (Path): Path to the CSV file.
+
+    Returns:
+        Dict[str, Any]: Dictionary with 'headers' and 'values' keys.
+    """
     data = {"headers": [], "values": []}
 
     with open(csv_path, "r") as f:
@@ -128,12 +165,12 @@ def compare_csv_files(
     Compare two CSV files with tolerance for floating point differences.
 
     Args:
-        generated_path: Path to generated CSV file
-        golden_path: Path to golden reference CSV file
-        tolerance: Numerical tolerance for float comparisons
+        generated_path (Path): Path to generated CSV file.
+        golden_path (Path): Path to golden reference CSV file.
+        tolerance (float): Numerical tolerance for float comparisons.
 
     Returns:
-        Tuple of (success, error_message)
+        Tuple[bool, str]: (success, error_message)
     """
     try:
         generated_data = load_csv_data(generated_path)
@@ -188,35 +225,53 @@ def compare_csv_files(
 
 def get_peak_mode_folder_name(peak_mode: str) -> str:
     """
-    Convert peak mode to folder name used in golden data structure.
+    Convert peak mode string to folder name used in golden data structure.
 
     Args:
-        peak_mode: Peak mode string (e.g., "Peak-Peak", "Absolute")
+        peak_mode (str): Peak mode string (e.g., "Peak-Peak", "Absolute").
 
     Returns:
-        Folder name (e.g., "peak-peak", "absolute")
+        str: Folder name (e.g., "peak-peak", "absolute").
     """
     return peak_mode.lower().replace(" ", "")
 
 
 class TestSwappedPeaksBase(ABC):
-    """Base class for testing Swap Channels with Peak Analysis across all modes."""
+    """
+    Base class for testing Swap Channels with Peak Analysis across all modes.
+    Provides common test logic for MAT and ABF formats.
+    """
 
     @property
     @abstractmethod
     def file_format(self) -> str:
-        """Return the file format being tested ('mat' or 'abf')."""
+        """
+        Return the file format being tested ('mat' or 'abf').
+
+        Returns:
+            str: File format.
+        """
         pass
 
     @property
     @abstractmethod
     def file_extension(self) -> str:
-        """Return the file extension for this format."""
+        """
+        Return the file extension for this format.
+
+        Returns:
+            str: File extension.
+        """
         pass
 
     @property
     def sample_data_dir(self) -> Path:
-        """Return the sample data directory for this format."""
+        """
+        Return the sample data directory for this format.
+
+        Returns:
+            Path: Directory containing sample data files.
+        """
         return FIXTURES_DIR / "sample_data" / "swapped" / self.file_format
 
     def get_golden_data_dir(self, peak_mode: str) -> Path:
@@ -224,10 +279,10 @@ class TestSwappedPeaksBase(ABC):
         Return the golden data directory for a specific peak mode.
 
         Args:
-            peak_mode: The peak mode being tested
+            peak_mode (str): The peak mode being tested.
 
         Returns:
-            Path to golden data directory
+            Path: Path to golden data directory.
         """
         folder_name = get_peak_mode_folder_name(peak_mode)
         return (
@@ -243,9 +298,9 @@ class TestSwappedPeaksBase(ABC):
         Helper method to test batch analysis for a single peak mode.
 
         Args:
-            batch_processor: BatchProcessor with swapped channels
-            temp_output_dir: Temporary directory for outputs
-            peak_mode: Peak mode to test
+            batch_processor (BatchProcessor): BatchProcessor with swapped channels.
+            temp_output_dir (Path): Temporary directory for outputs.
+            peak_mode (str): Peak mode to test.
         """
         # Skip if sample data directory doesn't exist
         if not self.sample_data_dir.exists():
@@ -326,18 +381,34 @@ class TestSwappedPeaksBase(ABC):
 
     @pytest.mark.parametrize("peak_mode", PEAK_MODES)
     def test_peak_mode(self, batch_processor, temp_output_dir, peak_mode):
-        """Test batch analysis for a specific peak mode."""
+        """
+        Test batch analysis for a specific peak mode.
+
+        Args:
+            batch_processor (BatchProcessor): BatchProcessor instance.
+            temp_output_dir (Path): Temporary output directory.
+            peak_mode (str): Peak mode to test.
+        """
         print(f"\nTesting {peak_mode} peak mode for {self.file_format} files...")
         self._test_single_peak_mode(batch_processor, temp_output_dir, peak_mode)
 
     def test_all_peak_modes_sequential(self, batch_processor, temp_output_dir):
-        """Test batch analysis for all peak modes sequentially."""
+        """
+        Test batch analysis for all peak modes sequentially.
+
+        Args:
+            batch_processor (BatchProcessor): BatchProcessor instance.
+            temp_output_dir (Path): Temporary output directory.
+        """
         for peak_mode in PEAK_MODES:
             print(f"\nTesting {peak_mode} peak mode for {self.file_format} files...")
             self._test_single_peak_mode(batch_processor, temp_output_dir, peak_mode)
 
     def test_peak_mode_parameters(self):
-        """Test that analysis parameters are correctly created for each peak mode."""
+        """
+        Test that analysis parameters are correctly created for each peak mode.
+        Verifies parameter values and axis configuration.
+        """
         for peak_mode in PEAK_MODES:
             params = create_analysis_parameters(peak_mode)
 
@@ -363,7 +434,13 @@ class TestSwappedPeaksBase(ABC):
 
     @pytest.mark.parametrize("peak_mode", PEAK_MODES)
     def test_controller_workflow_with_peak_mode(self, temp_output_dir, peak_mode):
-        """Test complete workflow using ApplicationController for a specific peak mode."""
+        """
+        Test complete workflow using ApplicationController for a specific peak mode.
+
+        Args:
+            temp_output_dir (Path): Temporary output directory.
+            peak_mode (str): Peak mode to test.
+        """
 
         # Skip if sample data doesn't exist
         if not self.sample_data_dir.exists():
@@ -418,35 +495,43 @@ class TestSwappedPeaksBase(ABC):
         ), f"Not all files exported successfully for {peak_mode} mode"
 
 
-# class TestSwappedPeaksMAT(TestSwappedPeaksBase):
-#     """Test Swap Channels with Peak Analysis for MAT files."""
-
-#     @property
-#     def file_format(self) -> str:
-#         return "mat"
-
-#     @property
-#     def file_extension(self) -> str:
-#         return "mat"
-
-
 class TestSwappedPeaksABF(TestSwappedPeaksBase):
-    """Test Swap Channels with Peak Analysis for ABF files."""
+    """
+    Test Swap Channels with Peak Analysis for ABF files.
+    Inherits common logic from TestSwappedPeaksBase.
+    """
 
     @property
     def file_format(self) -> str:
+        """
+        Return the file format being tested.
+
+        Returns:
+            str: "abf"
+        """
         return "abf"
 
     @property
     def file_extension(self) -> str:
+        """
+        Return the file extension for ABF files.
+
+        Returns:
+            str: "abf"
+        """
         return "abf"
 
 
 class TestPeakModeValidation:
-    """Test validation of peak mode configurations."""
+    """
+    Test validation of peak mode configurations and channel swap state.
+    """
 
     def test_peak_mode_normalization(self):
-        """Test that various peak mode strings are properly normalized."""
+        """
+        Test that various peak mode strings are properly normalized and accepted
+        by AnalysisParameters.
+        """
         test_cases = [
             ("Absolute", "Absolute"),
             ("absolute", "Absolute"),
@@ -485,7 +570,10 @@ class TestPeakModeValidation:
             assert params.y_axis.peak_type == input_mode
 
     def test_channel_swap_state(self, channel_definitions):
-        """Test that channel swap state is correctly maintained."""
+        """
+        Test that channel swap state is correctly maintained in ChannelDefinitions
+        and reflected in analysis parameters.
+        """
         # Initial state
         assert channel_definitions.is_swapped() is False
         assert channel_definitions.get_voltage_channel() == 0
@@ -504,7 +592,9 @@ class TestPeakModeValidation:
 
 
 if __name__ == "__main__":
-    # Run tests with pytest
+    """
+    Run tests with pytest when executed as a script.
+    """
     import sys
 
     pytest.main([__file__, "-v", "-s"] + sys.argv[1:])

@@ -1,12 +1,12 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-Streamlined navigation toolbar for matplotlib plots.
-Provides essential zoom/pan functionality with a modern appearance.
+This module provides streamlined navigation toolbars for matplotlib plots
+within a Qt-based GUI. It includes modern, minimal toolbars with essential
+zoom/pan functionality and custom styling.
 """
 
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -20,8 +20,16 @@ from data_analysis_gui.config.plot_style import TOOLBAR_CONFIG, get_toolbar_styl
 
 class StreamlinedNavigationToolbar(NavigationToolbar):
     """
-    A cleaner, more modern navigation toolbar for matplotlib plots.
-    Keeps only essential functions and matches GUI styling.
+    StreamlinedNavigationToolbar provides a modern, minimal navigation toolbar
+    for matplotlib plots in Qt GUIs. Only essential navigation tools are included,
+    with custom icons and styling to match the application's appearance.
+
+    Signals:
+        mode_changed (str): Emitted when the zoom/pan mode changes ('zoom', 'pan', or 'none').
+
+    Args:
+        canvas: The matplotlib canvas to control.
+        parent: Optional parent widget.
     """
 
     # Signal for when zoom/pan state changes
@@ -29,11 +37,11 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
 
     def __init__(self, canvas, parent=None):
         """
-        Initialize the streamlined toolbar.
+        Initialize the streamlined navigation toolbar.
 
         Args:
-            canvas: The matplotlib canvas
-            parent: Parent widget
+            canvas: The matplotlib canvas to attach the toolbar to.
+            parent: Optional parent widget.
         """
         # Store the canvas reference before calling parent init
         self._canvas = canvas
@@ -52,8 +60,8 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
 
     def _init_toolbar(self):
         """
-        Override to create only the tools we want.
-        This method is called by the parent __init__.
+        Set up the toolbar with only essential navigation tools.
+        Removes default items and adds custom actions and mode indicator.
         """
         # Clear any default items
         self.clear()
@@ -78,7 +86,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         self.addWidget(self.mode_label)
 
     def _add_streamlined_tools(self):
-        """Add only essential navigation tools with custom icons."""
+        """
+        Add essential navigation actions (reset, back, forward, pan, zoom, save)
+        with custom icons and styling.
+        """
         from PySide6.QtGui import QFont
 
         # Create font for toolbar actions
@@ -140,13 +151,13 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
 
     def _create_icon(self, icon_type: str) -> QIcon:
         """
-        Create simple, modern icons programmatically.
+        Programmatically create simple, modern icons for toolbar actions.
 
         Args:
-            icon_type: Type of icon to create
+            icon_type (str): The type of icon to create ('home', 'back', 'forward', 'pan', 'zoom', 'save').
 
         Returns:
-            QIcon object
+            QIcon: The generated icon.
         """
         # Use icon size from centralized configuration
         icon_size = TOOLBAR_CONFIG["icon_size"]
@@ -254,7 +265,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         return QIcon(pixmap)
 
     def _apply_styling(self):
-        """Apply custom styling to match the GUI using centralized configuration."""
+        """
+        Apply custom styling and configuration to the toolbar, including icon size,
+        button style, and disabling toolbar movement.
+        """
         # Get stylesheet from centralized configuration
         self.setStyleSheet(get_toolbar_style())
 
@@ -268,7 +282,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
     def pan(self, *args):
-        """Override pan to update mode indicator."""
+        """
+        Override pan action to update the mode indicator and emit mode_changed signal.
+        Ensures only one of pan/zoom is active at a time.
+        """
         super().pan(*args)
 
         # Check if mode_label exists before using it
@@ -292,7 +309,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         self.mode_changed.emit(self.current_mode)
 
     def zoom(self, *args):
-        """Override zoom to update mode indicator."""
+        """
+        Override zoom action to update the mode indicator and emit mode_changed signal.
+        Ensures only one of pan/zoom is active at a time.
+        """
         super().zoom(*args)
 
         # Check if mode_label exists before using it
@@ -316,7 +336,10 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         self.mode_changed.emit(self.current_mode)
 
     def home(self, *args):
-        """Override home to clear mode."""
+        """
+        Override home action to reset the view and clear pan/zoom modes.
+        Updates the mode indicator and emits mode_changed signal.
+        """
         super().home(*args)
 
         # Uncheck both actions
@@ -336,13 +359,27 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
 
 class MinimalNavigationToolbar(QWidget):
     """
-    An even more minimal toolbar with just zoom/pan toggle.
-    For use in dialogs and secondary windows.
+    MinimalNavigationToolbar provides a highly simplified toolbar for dialogs or
+    secondary windows, with only zoom, pan, and reset controls.
+
+    Signals:
+        mode_changed (str): Emitted when the zoom/pan mode changes.
+
+    Args:
+        canvas: The matplotlib canvas to control.
+        parent: Optional parent widget.
     """
 
     mode_changed = Signal(str)
 
     def __init__(self, canvas, parent=None):
+        """
+        Initialize the minimal navigation toolbar with zoom, pan, and reset buttons.
+
+        Args:
+            canvas: The matplotlib canvas to attach the toolbar to.
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.canvas = canvas
         self.toolbar = NavigationToolbar(canvas, self)
@@ -376,7 +413,16 @@ class MinimalNavigationToolbar(QWidget):
         self.current_mode = "none"
 
     def _create_tool_button(self, text: str, mode: str):
-        """Create a styled tool button with proper font size."""
+        """
+        Create a styled QPushButton for toolbar actions.
+
+        Args:
+            text (str): Button label.
+            mode (str): Action mode ('zoom', 'pan', or 'reset').
+
+        Returns:
+            QPushButton: The configured button.
+        """
         from PySide6.QtWidgets import QPushButton
 
         btn = QPushButton(text)
@@ -405,7 +451,10 @@ class MinimalNavigationToolbar(QWidget):
         return btn
 
     def _toggle_zoom(self):
-        """Toggle zoom mode."""
+        """
+        Toggle zoom mode on the toolbar and update button states.
+        Emits mode_changed signal.
+        """
         if self.zoom_btn.isChecked():
             self.toolbar.zoom()
             self.pan_btn.setChecked(False)
@@ -416,7 +465,10 @@ class MinimalNavigationToolbar(QWidget):
         self.mode_changed.emit(self.current_mode)
 
     def _toggle_pan(self):
-        """Toggle pan mode."""
+        """
+        Toggle pan mode on the toolbar and update button states.
+        Emits mode_changed signal.
+        """
         if self.pan_btn.isChecked():
             self.toolbar.pan()
             self.zoom_btn.setChecked(False)
@@ -427,7 +479,10 @@ class MinimalNavigationToolbar(QWidget):
         self.mode_changed.emit(self.current_mode)
 
     def _reset_view(self):
-        """Reset to home view."""
+        """
+        Reset the plot view to its original state and clear pan/zoom modes.
+        Emits mode_changed signal.
+        """
         self.toolbar.home()
         self.zoom_btn.setChecked(False)
         self.pan_btn.setChecked(False)

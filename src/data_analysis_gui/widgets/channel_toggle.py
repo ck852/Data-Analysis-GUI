@@ -1,12 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Channel Toggle Switch Widget
-A simple toggle switch for swapping channel assignments.
+
+Provides a simple toggle switch for swapping channel assignments in the GUI.
+Includes a custom slider and channel labels with modern styling.
 """
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider
@@ -18,11 +19,21 @@ from data_analysis_gui.config.themes import MODERN_COLORS, BASE_FONT
 
 class ToggleSlider(QSlider):
     """
-    Custom QSlider subclass that toggles between two positions on click.
-    Properly overrides mousePressEvent to handle toggle behavior.
+    ToggleSlider is a custom QSlider subclass that toggles between two positions (0 and 1) on click.
+
+    Overrides mousePressEvent to switch states with a single click, rather than jumping to the clicked position.
+
+    Args:
+        orientation (Qt.Orientation): Slider orientation (default: horizontal).
     """
 
     def __init__(self, orientation=Qt.Orientation.Horizontal):
+        """
+        Initialize the toggle slider.
+
+        Args:
+            orientation (Qt.Orientation): Orientation of the slider.
+        """
         super().__init__(orientation)
         self.setRange(0, 1)
         self.setValue(0)
@@ -33,7 +44,10 @@ class ToggleSlider(QSlider):
 
     def mousePressEvent(self, event: QMouseEvent):
         """
-        Override mouse press to toggle between states instead of jumping to position.
+        Handle mouse press events to toggle between states.
+
+        Args:
+            event (QMouseEvent): Mouse event.
         """
         if self.isEnabled() and event.button() == Qt.MouseButton.LeftButton:
             # Toggle between 0 and 1
@@ -48,20 +62,36 @@ class ToggleSlider(QSlider):
 
 class ChannelToggleSwitch(QWidget):
     """
-    A simple toggle switch widget for channel assignment.
-    Shows channel definitions stacked vertically next to the slider.
+    ChannelToggleSwitch provides a compact toggle switch widget for channel assignment.
+
+    Displays channel definitions stacked vertically next to a toggle slider.
+    Emits a signal when the toggle state changes.
+
+    Signals:
+        toggled (bool): Emitted when the toggle state changes (True = swapped, False = normal).
+
+    Args:
+        parent: Optional parent widget.
     """
 
     # Signal emitted when toggle state changes
     toggled = Signal(bool)  # True = swapped, False = normal
 
     def __init__(self, parent=None):
+        """
+        Initialize the channel toggle switch widget.
+
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.is_swapped = False
         self._init_ui()
 
     def _init_ui(self):
-        """Initialize the UI components."""
+        """
+        Set up the UI components and layout for the toggle switch.
+        """
         # Main horizontal layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 2, 4, 2)  # Reduced from (8, 4, 8, 4)
@@ -110,7 +140,9 @@ class ChannelToggleSwitch(QWidget):
         self.slider.valueChanged.connect(self._on_slider_changed)
 
     def _style_slider(self):
-        """Apply custom styling to make the slider look like a toggle switch."""
+        """
+        Apply custom styling to the slider to make it look like a toggle switch.
+        """
         # Define hover and pressed colors as slightly darker shades of primary
         primary_hover = "#0066CC"  # Darker blue for hover
         primary_pressed = "#0052A3"  # Even darker for pressed
@@ -148,13 +180,20 @@ class ChannelToggleSwitch(QWidget):
         self.slider.setStyleSheet(slider_style)
 
     def _on_slider_changed(self, value):
-        """Handle slider value changes."""
+        """
+        Handle slider value changes and update channel labels.
+
+        Args:
+            value (int): The new slider value (0 or 1).
+        """
         self.is_swapped = value == 1
         self._update_labels()
         self.toggled.emit(self.is_swapped)
 
     def _update_labels(self):
-        """Update channel labels based on current state."""
+        """
+        Update channel labels based on the current toggle state.
+        """
         if self.is_swapped:
             self.ch0_label.setText("Ch. 0: Current")
             self.ch1_label.setText("Ch. 1: Voltage")
@@ -167,13 +206,18 @@ class ChannelToggleSwitch(QWidget):
         Set the toggle state programmatically.
 
         Args:
-            swapped: True if channels should be swapped, False otherwise
+            swapped (bool): True to swap channels, False for normal assignment.
         """
         self.slider.setValue(1 if swapped else 0)
         # Note: This will trigger _on_slider_changed via signal
 
     def set_enabled(self, enabled):
-        """Enable or disable the toggle switch."""
+        """
+        Enable or disable the toggle switch and update label appearance.
+
+        Args:
+            enabled (bool): True to enable, False to disable.
+        """
         self.slider.setEnabled(enabled)
         # Update label appearance when disabled
         if enabled:
