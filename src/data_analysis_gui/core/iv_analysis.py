@@ -4,8 +4,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# src/data_analysis_gui/core/iv_analysis.py
-
 """
 Service for I-V (Current-Voltage) specific analysis and data transformations.
 """

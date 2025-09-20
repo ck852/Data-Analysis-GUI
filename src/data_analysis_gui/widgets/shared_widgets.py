@@ -11,9 +11,6 @@ This module provides reusable components for displaying batch analysis results
 with consistent behavior across different windows. It includes a dynamic plot
 widget that updates smoothly without recreating figures, and a file list widget
 that maintains selection state across windows.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Dict, List, Set, Optional, Tuple, Callable

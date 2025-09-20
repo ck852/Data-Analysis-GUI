@@ -9,9 +9,6 @@ Simplified analysis management with direct method calls.
 
 This module provides a straightforward interface for performing analysis operations
 without complex dependency injection patterns.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Dict, Any, List, Optional

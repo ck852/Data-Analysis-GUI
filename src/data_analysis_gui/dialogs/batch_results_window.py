@@ -4,8 +4,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# batch_results_window.py
-
 from pathlib import Path
 import re
 from typing import Set

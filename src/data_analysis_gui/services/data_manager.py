@@ -9,9 +9,6 @@ Unified data management for loading, validating, and exporting data.
 
 This module combines all data-related operations into a single, easy-to-understand
 class that scientist-programmers can extend and modify.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import os

@@ -6,7 +6,7 @@ License: MIT (see LICENSE file for details)
 
 """
 Extracts and validates data from electrophysiology datasets.
-PHASE 5: Fail-fast validation with proper error messages.
+
 """
 
 from typing import Dict, Tuple, Optional

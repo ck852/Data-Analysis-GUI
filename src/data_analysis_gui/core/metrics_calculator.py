@@ -5,8 +5,7 @@ License: MIT (see LICENSE file for details)
 """
 
 """
-Pure metrics computation without any caching or I/O concerns.
-PHASE 5: Fail-fast computation with proper error handling.
+Core metrics calculation functionality.
 """
 
 from dataclasses import dataclass

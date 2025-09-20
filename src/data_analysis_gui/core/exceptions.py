@@ -10,12 +10,6 @@ Standardized exception hierarchy for the electrophysiology analysis application.
 This module defines a comprehensive error hierarchy that enables consistent
 error handling across the application. All exceptions inherit from AnalysisError,
 allowing for both specific and general exception handling strategies.
-
-Phase 5 Refactor: Created to replace inconsistent error handling patterns
-(None returns, tuples, silent failures) with explicit, catchable exceptions.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Optional, Any, Dict

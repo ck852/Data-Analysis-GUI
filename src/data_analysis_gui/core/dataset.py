@@ -10,8 +10,6 @@ Dataset abstraction for electrophysiology data.
 This module provides format-agnostic data structures for managing
 electrophysiology recordings with multiple sweeps and channels.
 
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import os

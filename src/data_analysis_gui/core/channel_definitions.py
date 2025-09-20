@@ -10,9 +10,6 @@ Channel definitions for electrophysiology data analysis.
 This module provides a centralized way to manage channel assignments for voltage
 and current data in electrophysiology recordings. It eliminates hardcoded channel
 assumptions and allows for flexible channel configuration.
-
-Author: [Your Name]
-License: MIT
 """
 
 from typing import Tuple, Optional, Dict

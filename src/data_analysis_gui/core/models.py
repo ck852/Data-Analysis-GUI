@@ -12,10 +12,6 @@ with built-in validation to ensure data integrity at the point of creation.
 All models use frozen dataclasses with type hints for clarity, IDE support,
 and thread safety.
 
-Phase 2 Refactor: Extracted from scattered locations throughout the codebase
-to create a single source of truth for data structures. No backward 
-compatibility with dictionary-based interfaces - all code must use proper
-typed models.
 """
 
 from dataclasses import dataclass, field

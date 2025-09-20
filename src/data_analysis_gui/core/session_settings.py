@@ -6,7 +6,7 @@ License: MIT (see LICENSE file for details)
 
 """
 Session settings persistence for analysis parameters.
-Simplified version with direct state application - no pending states.
+
 """
 
 import json

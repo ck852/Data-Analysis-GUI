@@ -6,7 +6,6 @@ License: MIT (see LICENSE file for details)
 
 from PySide6.QtCore import Qt
 
-# Default analysis parameters
 DEFAULT_SETTINGS = {
     "range1_start": 0,
     "range1_end": 400,

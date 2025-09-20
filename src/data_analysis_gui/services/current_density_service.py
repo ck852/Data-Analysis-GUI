@@ -1,11 +1,13 @@
 """
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
+"""
 Service for current density calculations and data preparation.
 
 This module provides utility functions for current density analysis,
 including summary export preparation and data transformations.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Dict, List, Set, Any, Optional, Tuple

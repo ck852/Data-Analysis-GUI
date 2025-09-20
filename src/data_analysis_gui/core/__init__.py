@@ -4,7 +4,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# src/data_analysis_gui/core/__init__.py
 """
 Core business logic module for the data analysis GUI.
 """

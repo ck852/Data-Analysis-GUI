@@ -10,8 +10,6 @@ Simplified batch processing with sequential execution.
 This module provides straightforward batch analysis functionality
 using simple sequential processing for clarity and maintainability.
 
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import time

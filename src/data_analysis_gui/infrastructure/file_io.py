@@ -6,14 +6,6 @@ License: MIT (see LICENSE file for details)
 
 """
 Infrastructure layer for file I/O operations.
-
-This module contains concrete implementations of file system operations,
-separated from business logic to maintain clean architecture.
-
-Phase 5 Refactor: Created to separate infrastructure concerns from business logic.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import os

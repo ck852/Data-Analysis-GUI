@@ -3,14 +3,9 @@ PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
-
-# data_analysis_gui/dialogs/current_density_dialog.py
 """
 Dialog for entering slow capacitance values for current density calculations.
-Updated for refactored themes.py
 
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import re

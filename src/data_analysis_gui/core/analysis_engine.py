@@ -7,14 +7,6 @@ License: MIT (see LICENSE file for details)
 """
 Core analysis engine - pure orchestration of analysis workflow.
 
-PHASE 5 REFACTOR: Simplified to pure orchestration with dependency injection.
-- All dependencies are injected, not created internally
-- No caching - each analysis is completely stateless
-- Engine is now easily testable with mock components
-- Follows Single Responsibility and Dependency Inversion principles
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Dict, List, Optional, Any

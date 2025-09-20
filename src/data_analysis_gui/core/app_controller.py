@@ -5,7 +5,7 @@ License: MIT (see LICENSE file for details)
 """
 
 """
-Application Controller - Fixed service initialization and compatibility
+Application controller with proper service management and dependency injection.
 """
 
 from pathlib import Path

@@ -4,10 +4,9 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# config/themes.py
+
 """
-Modern theme system for the Data Analysis GUI.
-Simplified for maintainability while preserving modern appearance.
+
 """
 
 from typing import Optional

@@ -1,12 +1,14 @@
-# data_analysis_gui/dialogs/current_density_results_window.py
+"""
+PatchBatch Electrophysiology Data Analysis Tool
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
+"""
 """
 Window for displaying and interacting with current density analysis results.
 
 This module provides a UI window for viewing and editing current density
 calculations. All business logic is delegated to CurrentDensityService.
 
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 import re

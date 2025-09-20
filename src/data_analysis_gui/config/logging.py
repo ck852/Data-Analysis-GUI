@@ -10,12 +10,8 @@ Centralized logging configuration for the electrophysiology analysis application
 This module provides consistent logging setup across all components, enabling
 comprehensive observability and debugging capabilities. The configuration uses
 structured logging with consistent formatting and appropriate log levels.
-
-Phase 5 Refactor: Created to add observability and enable diagnosis of
-production issues through strategic instrumentation.
-
-Author: Data Analysis GUI Contributors
-License: MIT
+It includes utilities for context management, performance logging, and structured
+event logging.
 """
 
 import logging

@@ -9,9 +9,6 @@ Simplified plotting service for creating visualizations.
 
 This module provides straightforward plotting functionality without
 complex backend abstractions.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from typing import Dict, Any, Optional, Tuple, List

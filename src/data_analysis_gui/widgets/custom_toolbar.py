@@ -4,7 +4,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# widgets/custom_toolbar.py
 """
 Streamlined navigation toolbar for matplotlib plots.
 Provides essential zoom/pan functionality with a modern appearance.

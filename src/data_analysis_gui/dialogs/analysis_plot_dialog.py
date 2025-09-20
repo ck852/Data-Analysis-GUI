@@ -3,13 +3,9 @@ PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
-
-# src/data_analysis_gui/dialogs/analysis_plot_dialog.py
 """
 GUI dialog for displaying analysis plots.
-Phase 3: Updated to use stateless AnalysisPlotter methods.
-FIXED: Window positioning bug and full theme integration.
-Updated for refactored themes.py
+
 """
 
 import os

@@ -4,7 +4,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-# src/data_analysis_gui/core/analysis_plot.py
 """
 Core analysis plot functionality
 """
@@ -113,20 +112,6 @@ class AnalysisPlotter:
                 alpha=primary_style["alpha"],
                 label="Range 1",
             )[0]
-
-            # # Add subtle sweep labels with better positioning
-            # for i, sweep_idx in enumerate(sweep_indices):
-            #     if i < len(x_data) and i < len(y_data):
-            #         ax.annotate(
-            #             f"{sweep_idx}",
-            #             (x_data[i], y_data[i]),
-            #             textcoords="offset points",
-            #             xytext=(0, 8),
-            #             ha="center",
-            #             fontsize=8,
-            #             color="#606060",
-            #             alpha=0.8,
-            #         )
 
         # Plot Range 2 if available with contrasting style
         if plot_data.use_dual_range and plot_data.y_data2 is not None:

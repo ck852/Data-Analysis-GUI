@@ -7,7 +7,6 @@ License: MIT (see LICENSE file for details)
 """
 Channel Toggle Switch Widget
 A simple toggle switch for swapping channel assignments.
-Place this file in: widgets/channel_toggle.py
 """
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSlider

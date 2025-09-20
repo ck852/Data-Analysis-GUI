@@ -7,11 +7,6 @@ License: MIT (see LICENSE file for details)
 """
 Analysis parameters data model.
 
-PHASE 4 REFACTOR: Removed all dict-like methods and from_dict() for clean architecture.
-This is now a pure immutable dataclass with validation.
-
-Author: Data Analysis GUI Contributors
-License: MIT
 """
 
 from dataclasses import dataclass, field, asdict
