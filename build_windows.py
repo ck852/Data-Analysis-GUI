@@ -33,9 +33,9 @@ def build_executable():
     print("\nBuilding PatchBatch executable...")
     
     # Use spec file if it exists, otherwise use command line
-    if Path("PatchBatch.spec").exists():
-        print("Using PatchBatch.spec file...")
-        result = subprocess.run(["pyinstaller", "PatchBatch.spec", "--clean"], 
+    if Path("PatchBatch-windows.spec").exists():
+        print("Using PatchBatch-windows.spec file...")
+        result = subprocess.run(["pyinstaller", "PatchBatch-windows.spec", "--clean"], 
                               capture_output=True, text=True)
     else:
         print("Building with command line options...")

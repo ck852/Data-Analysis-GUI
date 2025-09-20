@@ -1,4 +1,6 @@
 streamlining/
+|-- data_analysis_gui/
+|   `-- services/
 |-- images/
 |   |-- ba_results.PNG
 |   |-- batch_analysis.PNG
@@ -6,12 +8,17 @@ streamlining/
 |   |-- cd_results.PNG
 |   |-- data_comparison.png
 |   |-- discrepancy.png
+|   |-- dual_analysis_main.PNG
+|   |-- dual_analysis_plot.PNG
+|   |-- dual_range_comparison.png
+|   |-- dual_range_time.png
 |   |-- main_winwcp.PNG
 |   |-- mainwindow.PNG
 |   |-- prism_cd_summary.PNG
 |   |-- prism_import.PNG
 |   |-- repeat_period.PNG
 |   |-- summary_export.PNG
+|   |-- swapped_current_comparison.png
 |   `-- winwcp_export.PNG
 |-- src/
 |   `-- data_analysis_gui/
@@ -248,15 +255,19 @@ streamlining/
 |   |               `-- 240809_003[1-12].mat
 |   |-- test_batch_analysis.py
 |   |-- test_current_density.py
+|   |-- test_dual_batch.py
 |   |-- test_dual_range.py
 |   |-- test_peak.py
 |   |-- test_swapped.py
 |   `-- test_swapped_peaks.py
+|-- build_windows.py
 |-- CHANGELOG.md
 |-- filetree.txt
 |-- filetree_full.py
 |-- LICENSE.md
+|-- PatchBatch-windows.spec
 |-- pyproject.toml
 |-- pytest.ini
 |-- README.md
-`-- requirements.txt
+|-- requirements.txt
+`-- version_info.txt
