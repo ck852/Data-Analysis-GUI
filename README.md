@@ -183,7 +183,7 @@ A direct comparison of a Current Density vs. Voltage relationship plot produced 
 <img src="images/data_comparison.png" alt="data_comparison" width="750"/>
 
 
-The disparity in time values as a result of the stimulus repeat period approximation of sweep times is characterized as follows:
+A set of three time-course recordings was analyzed in PatchBatch and in WinWCP. The disparity in time values as a result of the stimulus repeat period approximation of sweep times is characterized as follows:
 
 
 <img src="images/dual_range_time.png" alt="time_comparison" width="450"/>
@@ -192,7 +192,7 @@ The disparity in time values as a result of the stimulus repeat period approxima
 The disparity appears to increase with the length of the recordings. While not a concern for many use cases, this could present a concern for very long recordings (> 10 minutes). Mitigation strategies are under consideration.
 
 
-The following data validates the Dual Analysis mode by comparing the average current outputs from two analysis ranges to the same measurement output by WinWCP:
+The time course data contains two analysis ranges per sweep, thus the Dual Analysis mode can be validated by comparing the average current outputs from the two ranges to the same measurement output by WinWCP:
 
 
 <img src="images/dual_range_comparison.png" alt="dual_range_comparison" width="750"/>
