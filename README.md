@@ -1,6 +1,6 @@
 # PatchBatch - Electrophysiology Data Analysis Tool
 
-### Option 1: Download Executable
+## Option 1: Download Executable
 1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
     
     Windows:
@@ -17,7 +17,7 @@
     
     4. First run: Right-click > Open (to bypass Gatekeeper)
 
-### Option 2: Install from PyPI (Recommended if you have any installation issues with the executables)
+## Option 2: Install from PyPI (Recommended if you have any installation issues with the executables)
 
 ### Prerequisites: Installing Python
 
@@ -56,7 +56,7 @@ If you install from PyPI, you will always start the program by opening a termina
 
 
 
-### Option 3: Install from Source (Developers)
+## Option 3: Install from Source (Developers)
 ```bash
 git clone https://github.com/ck852/patchbatch.git
 cd patchbatch

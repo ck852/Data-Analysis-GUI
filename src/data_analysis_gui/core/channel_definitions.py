@@ -2,7 +2,9 @@
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+"""
 
+"""
 Channel definitions for electrophysiology data analysis.
 
 This module provides a centralized way to manage channel assignments for voltage
@@ -10,7 +12,7 @@ and current data in electrophysiology recordings. It eliminates hardcoded channe
 assumptions and allows for flexible channel configuration.
 """
 
-from typing import Optional, Dict
+from typing import Tuple, Optional, Dict
 
 
 class ChannelDefinitions:
