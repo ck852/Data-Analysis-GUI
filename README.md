@@ -11,7 +11,7 @@
 
     Mac:
 
-    2. Download 'PatchBatch-macOS.dmg'
+    2. Download `PatchBatch-macOS.dmg`
     
     3. Double-click to mount
     
