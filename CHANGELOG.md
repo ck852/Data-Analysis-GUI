@@ -4,6 +4,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [0.9.0-beta.2] - 2025-09-21
 ### Added
+-More comprehensive documentation
+-Peak mode and swapped channel validation
+
+### Changed
+-Export headers updated for consistency
+
+### Known Issues
+-Plot styling has display issues
+-Current unit adjustment has not been tested
+
+## [0.9.0-beta.1] - 2025-09-19
+### Added
 - First beta release intended for internal testing by lab members.
 - Core functionality for patch-clamp electrophysiology data analysis:
   - Single-file analysis workflow.
