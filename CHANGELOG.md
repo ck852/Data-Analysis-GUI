@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.  
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [0.9.0-beta.3] - 2025-09-21
+### Added
+-Mac Support
+
 ## [0.9.0-beta.2] - 2025-09-21
 ### Added
 -More comprehensive documentation
