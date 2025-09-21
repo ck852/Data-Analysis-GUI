@@ -1,6 +1,36 @@
+# PatchBatch - Electrophysiology Data Analysis Tool
+
+## Installation
+
+### Option 1: Install from PyPI (Recommended)
+```bash
+pip install patchbatch
+patchbatch
+```
+
+### Option 2: Download Windows Executable
+1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
+2. Download the latest `PatchBatch-Windows-vX.X.X.zip` 
+3. Extract and run `PatchBatch.exe`
+
+### Option 3: Install from Source (Developers)
+```bash
+git clone https://github.com/ck852/patchbatch.git
+cd patchbatch
+pip install -r requirements.txt
+python src/data_analysis_gui/main.py
+```
+
+## Contributing
+Found a bug or want to contribute? Please open an issue at:
+https://github.com/ck852/patchbatch/issues
+
+
+## Introduction
+
 Welcome to PatchBatch! The purpose of this program is to streamline electrophysiology data analysis workflows by enabling batch-analysis of data files that share the same analysis parameters. I developed this after growing impatient with the long, tedious workflows that require defining the same parameters repeatedly for every file, followed by further rote transformations that could be defined algorithmically. This is typically a repetitive process that, while not technically complicated, requires extended periods of focus to do reproducibly without errors. I developed this program because I wanted to conserve this cognitive effort for more worthy downstream processes including data interpretation and further experiments. 
 
-================================= HOW TO USE =================================
+## How to Use
 
 If you are starting with WCP files, start by converting them to .abf using the native export option in WinWCP. 
 
@@ -71,7 +101,7 @@ During initial testing, it was found that there is not a universal standard of w
 **Note that this software is currently in beta, not all analysis modes and parameter combinations have been tested yet. You are encouraged to validate outputs against WinWCP outputs if using, for example, the swapped channels feature or peak analysis. Testing and final validation of these features is in progress.**
 
 
-================================= VALIDATION =================================
+## Validation
 
 The following images demonstrate a comparison of analysis outputs by this software with ouputs by WinWCP. Both analyses used the same dataset of 12 patch-clamp recordings. However, WinWCP analyses used the original .wcp file, while this software used .abf conversions of the same files. File format conversions were performed in WinWCP. Each analysis used an analysis range of 150.1 ms - 649.2 ms, with the X-axis plotting Average Voltage and the Y-axis plotting Average Current. For current density analysis, the following Cslow values were used:
 
