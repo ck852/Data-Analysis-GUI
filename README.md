@@ -69,7 +69,7 @@ Found a bug or want to contribute? Please open an issue at:
 https://github.com/ck852/patchbatch/issues
 
 
-**Note that this software is currently in beta. There may be bugs and irregularities that were not seen in development. You are encouraged to validate your initial results against a trusted data analysis program such as WinWCP to ensure that all data processing modules are functioning as expected.**
+**Note that this software is currently in beta. There may be bugs and irregularities that were not seen in development. You are encouraged to validate your initial results against a trusted data analysis program such as WinWCP to ensure that all data processing modules are functioning as expected. See the Validation section at the end of this README for more information.**
 
 
 ## Introduction
