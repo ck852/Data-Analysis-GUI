@@ -1,17 +1,49 @@
 # PatchBatch - Electrophysiology Data Analysis Tool
 
-## Installation
+### Prerequisites: Installing Python
+
+If you don't have Python installed:
+
+1. **Download Python**: Visit [python.org](https://www.python.org/downloads/) and download Python 3.9 or newer
+2. **Install Python**: Run the installer and **check "Add Python to PATH"** during installation (Windows) or use the default settings (Mac/Linux)
+3. **Verify Installation**: Open a terminal/command prompt and type `python --version` to confirm installation
+
+### Opening a Terminal/Command Prompt
+
+**Windows:**
+- Press `Win + R`, type `cmd`, press Enter
+- OR: Right-click in any folder while holding Shift, select "Open PowerShell window here"
+
+**Mac:**
+- Press `Cmd + Space`, type "Terminal", press Enter
+- OR: Finder → Applications → Utilities → Terminal
+
+**Linux:**
+- Press `Ctrl + Alt + T`
+- OR: Right-click desktop, select "Open Terminal"
 
 ### Option 1: Install from PyPI (Recommended)
-```bash
+
+In your terminal, run these commands:
+
 pip install patchbatch
 patchbatch
-```
+
+If pip isn't recognized, instead try 
+python -m pip install patchbatch
+
+If you install from PyPI, you will always start the program by opening a terminal in the same directory where you installed it and simply enter 'patchbatch'. 
 
 ### Option 2: Download Windows Executable
 1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
-2. Download the latest `PatchBatch-Windows-vX.X.X.zip` 
-3. Extract and run `PatchBatch.exe`
+    Windows:
+    2. Download `PatchBatch-Windows.zip` 
+    3. Extract and run `PatchBatch.exe`
+
+    Mac:
+    2. Download 'PatchBatch-macOS.dmg'
+    3. Double-click to mount
+    4. First run: Right-click > Open (to bypass Gatekeeper)
 
 ### Option 3: Install from Source (Developers)
 ```bash
