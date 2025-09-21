@@ -69,6 +69,9 @@ Found a bug or want to contribute? Please open an issue at:
 https://github.com/ck852/patchbatch/issues
 
 
+**Note that this software is currently in beta. There may be bugs and irregularities that were not seen in development. You are encouraged to validate your initial results against a trusted data analysis program such as WinWCP to ensure that all data processing modules are functioning as expected.**
+
+
 ## Introduction
 
 Welcome to PatchBatch! The purpose of this program is to streamline electrophysiology data analysis workflows by enabling batch-analysis of data files that share the same analysis parameters. I developed this after growing impatient with the long, tedious workflows that require defining the same parameters repeatedly for every file, followed by further rote transformations that could be defined algorithmically. This is typically a repetitive process that, while not technically complicated, requires extended periods of focus to do reproducibly without errors. I developed this program because I wanted to conserve this cognitive effort for more worthy downstream processes including data interpretation and further experiments. 
@@ -140,8 +143,6 @@ This enables the user to quickly plot both analysis ranges against the sweep tim
 It is important to note that the time-course analysis workflow uses an **approximation** of the true sweep times. During a recording, the sweeps do not occur at perfectly spaced intervals that match the exact stimulus repeat period each time. This results in a small deviation in the sweep times that becomes more apparent in longer recordings, on the order of 2 seconds of drift per 100 seconds of recording. This likely varies by experimental setup and is affected by physical hardware constraints. This should not present a major complication for most uses, but is worth considering when analyzing longer recordings. See the "Validation" section for more information.
 
 During initial testing, it was found that there is not a universal standard of which channel in data files contains current data and which contains voltage data. Even within the same lab, all using WinWCP, some setups produce files with the channel identifications swapped. Whether this applies to your data files can be quickly assessed by loading a single file in the main window and clicking through the sweeps. As long as you know what your voltage protocol looks like, it should be easy to identify which channel contains your true voltage data. In the event that your "Current" sweeps look like your voltage protocol, and vice versa, you can toggle the blue button at the top right of the main window to swap your channels. This should restore the expected presentation of current and voltage channels. 
-
-**Note that this software is currently in beta, not all analysis modes and parameter combinations have been tested yet. You are encouraged to validate outputs against WinWCP outputs if using, for example, the swapped channels feature or peak analysis. Testing and final validation of these features is in progress.**
 
 
 ## Validation
