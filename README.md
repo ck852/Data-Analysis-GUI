@@ -147,7 +147,11 @@ During initial testing, it was found that there is not a universal standard of w
 
 ## Validation
 
-The following images demonstrate a comparison of analysis outputs by this software with ouputs by WinWCP. Both analyses used the same dataset of 12 patch-clamp recordings. However, WinWCP analyses used the original .wcp file, while this software used .abf conversions of the same files. File format conversions were performed in WinWCP. Each analysis used an analysis range of 150.1 ms - 649.2 ms, with the X-axis plotting Average Voltage and the Y-axis plotting Average Current. For current density analysis, the following Cslow values were used:
+To validate the data processing modules of this program, analyses were performed on sets of real electrophysiology data files. The outputs by this program were compared with outputs by WinWCP, both analyses using identical parameters. 
+
+# IV Analysis
+
+Both analyses used the same dataset of 12 patch-clamp recordings. However, WinWCP analyses used the original .wcp file, while this software used .abf conversions of the same files. File format conversions were performed in WinWCP. Each analysis used an analysis range of 150.1 ms - 649.2 ms, with the X-axis plotting Average Voltage and the Y-axis plotting Average Current. For current density analysis, the following Cslow values were used:
 
     250514_001: 34.4
 
@@ -184,7 +188,9 @@ A direct comparison of a Current Density vs. Voltage relationship plot produced 
 <img src="images/data_comparison.png" alt="data_comparison" width="750"/>
 
 
-A set of three time-course recordings was analyzed in PatchBatch and in WinWCP. The disparity in time values as a result of the stimulus repeat period approximation of sweep times is characterized as follows:
+# Time-Course
+
+A set of three time-course recordings was analyzed in PatchBatch and in WinWCP. These files contained a variable number of sweeps, exceeding 200 sweeps per file. The disparity in time values as a result of the stimulus repeat period approximation of sweep times is characterized as follows:
 
 
 <img src="images/dual_range_time.png" alt="time_comparison" width="450"/>
@@ -198,6 +204,8 @@ The time course data contains two analysis ranges per sweep, thus the Dual Analy
 
 <img src="images/dual_range_comparison.png" alt="dual_range_comparison" width="750"/>
 
+
+# Swapped Channels
 
 Not all input files have the same channel definitions. To navigate this variable, the program contains a channel swap toggle that enables the user to control which data channel contains voltage information and which contains current. It is assumed that the user can visually recognize whether or not their channel identifications are accurate. The outputs of PatchBatch-analyzed files with such a swapped copnfiguration were compared against WinWCP outputs for the same analysis of the same files. The equipment that produced these data files is used in experiments that measure currents on the order of microamps, as opposed to picoamps, and thus the validation uses a different current magnitude than the other validation methods. The deviation between PatchBatch and WinWCP is larger in absolute magnitude than in the other analysis modes. It also appears to follow a more coherent pattern, increasing along a somewhat definable curve as the measured current increases. However, with a maximum deviation of 0.000454 microamps, this deviation should not present any concerns.
 
