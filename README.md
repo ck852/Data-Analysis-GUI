@@ -1,5 +1,24 @@
 # PatchBatch - Electrophysiology Data Analysis Tool
 
+### Option 1: Download Executable
+1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
+    
+    Windows:
+
+    2. Download `PatchBatch-Windows.zip` 
+    
+    3. Extract and run `PatchBatch.exe`
+
+    Mac:
+
+    2. Download 'PatchBatch-macOS.dmg'
+    
+    3. Double-click to mount
+    
+    4. First run: Right-click > Open (to bypass Gatekeeper)
+
+### Option 2: Install from PyPI (Recommended if you have any installation issues with the executables)
+
 ### Prerequisites: Installing Python
 
 If you don't have Python installed:
@@ -22,8 +41,6 @@ If you don't have Python installed:
 - Press `Ctrl + Alt + T`
 - OR: Right-click desktop, select "Open Terminal"
 
-### Option 1: Install from PyPI (Recommended)
-
 In your terminal, run these commands:
 
 pip install patchbatch
@@ -34,16 +51,7 @@ python -m pip install patchbatch
 
 If you install from PyPI, you will always start the program by opening a terminal in the same directory where you installed it and simply enter 'patchbatch'. 
 
-### Option 2: Download Windows Executable
-1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
-    Windows:
-    2. Download `PatchBatch-Windows.zip` 
-    3. Extract and run `PatchBatch.exe`
 
-    Mac:
-    2. Download 'PatchBatch-macOS.dmg'
-    3. Double-click to mount
-    4. First run: Right-click > Open (to bypass Gatekeeper)
 
 ### Option 3: Install from Source (Developers)
 ```bash
