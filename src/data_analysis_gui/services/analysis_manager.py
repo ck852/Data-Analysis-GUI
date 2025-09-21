@@ -23,9 +23,8 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 import numpy as np
-from pathlib import Path
 
 from data_analysis_gui.core.dataset import ElectrophysiologyDataset
 from data_analysis_gui.core.analysis_engine import create_analysis_engine

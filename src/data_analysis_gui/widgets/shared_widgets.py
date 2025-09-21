@@ -12,7 +12,6 @@ file list widget that maintains selection state across windows.
 
 from typing import Dict, List, Set, Optional, Tuple, Callable
 import numpy as np
-from pathlib import Path
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -23,16 +22,13 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHeaderView,
     QLabel,
-    QPushButton,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
-import matplotlib.pyplot as plt
 
 from data_analysis_gui.core.models import FileAnalysisResult
 from data_analysis_gui.config.logging import get_logger

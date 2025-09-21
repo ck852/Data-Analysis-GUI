@@ -10,7 +10,7 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-from typing import Dict, List, Set, Any, Optional, Tuple
+from typing import Dict, List, Set, Any, Optional
 from dataclasses import replace
 from copy import deepcopy
 import numpy as np
@@ -193,7 +193,7 @@ class CurrentDensityService:
         voltages = sorted(voltage_data.keys())
 
         # Build headers
-        headers = [f"Voltage (mV)"]
+        headers = ["Voltage (mV)"]
         data_columns = [voltages]
 
         # Sort recordings

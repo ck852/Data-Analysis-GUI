@@ -16,7 +16,7 @@ import csv
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from dataclasses import replace
 
 import numpy as np
@@ -26,7 +26,6 @@ from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
 from data_analysis_gui.services.batch_processor import BatchProcessor
 from data_analysis_gui.services.data_manager import DataManager
-from data_analysis_gui.services.analysis_manager import AnalysisManager
 from data_analysis_gui.services.current_density_service import CurrentDensityService
 
 
@@ -607,7 +606,7 @@ class CurrentDensityTestBase:
                 )
 
         # Validate summary CSV
-        print(f"  Comparing Current_Density_Summary.csv...", end=" ")
+        print("  Comparing Current_Density_Summary.csv...", end=" ")
         golden_summary = self.golden_data_dir / "Current_Density_Summary.csv"
 
         # FIX 6: Better error handling for summary

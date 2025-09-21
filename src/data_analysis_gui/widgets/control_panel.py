@@ -39,7 +39,6 @@ from data_analysis_gui.config.themes import (
     style_spinbox_with_arrows,
     style_combo_simple,
     MODERN_COLORS,
-    SPACING,
     WIDGET_SIZES,
 )
 

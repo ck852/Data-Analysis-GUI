@@ -183,7 +183,7 @@ class TestDualRangeBatchWorkflow:
 
             assert np.array_equal(
                 gen_nan_mask, gold_nan_mask
-            ), f"NaN positions don't match"
+            ), "NaN positions don't match"
 
             # Compare non-NaN values
             if not np.all(gen_nan_mask):
@@ -193,7 +193,7 @@ class TestDualRangeBatchWorkflow:
                     gold_data[valid_mask],
                     rtol=rtol,
                     atol=atol,
-                    err_msg=f"Data mismatch",
+                    err_msg="Data mismatch",
                 )
 
     def _run_dual_range_batch_workflow(

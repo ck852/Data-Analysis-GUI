@@ -6,7 +6,7 @@ License: MIT (see LICENSE file for details)
 
 Main application window for the PatchBatch Electrophysiology Data Analysis Tool.
 
-This module implements the primary user interface for analyzing patch-clamp 
+This module implements the primary user interface for analyzing patch-clamp
 electrophysiology data. It serves as the central coordinator between:
 - User interactions (file loading, parameter adjustment, analysis requests)
 - Data processing backend (controller, analysis engine)
@@ -26,22 +26,18 @@ Key design principles:
 - Signal/slot pattern for loose coupling between components
 """
 
-import os
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtWidgets import (
-    QApplication,
     QMainWindow,
     QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QMessageBox,
     QSplitter,
     QToolBar,
     QStatusBar,
     QLabel,
-    QPushButton,
     QComboBox,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
@@ -50,12 +46,9 @@ from PySide6.QtGui import QKeySequence, QAction
 # Import refactored theme functions
 from data_analysis_gui.config.themes import (
     apply_modern_theme,
-    style_button,
     create_styled_button,
     style_combo_box,
-    style_label,
-    apply_compact_layout,
-    WIDGET_SIZES,
+    style_label
 )
 
 from data_analysis_gui.core.session_settings import (
@@ -69,7 +62,6 @@ from data_analysis_gui.core.session_settings import (
 # Core imports
 from data_analysis_gui.core.app_controller import ApplicationController
 from data_analysis_gui.core.models import FileInfo
-from data_analysis_gui.core.params import AnalysisParameters
 from data_analysis_gui.config.logging import get_logger
 from data_analysis_gui.core.plot_formatter import PlotFormatter
 

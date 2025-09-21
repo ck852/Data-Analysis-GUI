@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PatchBatch"
-version = "0.9.0-beta.2"
+name = "patchbatch"
+version = "0.9.0b2"
 description = "Patch-clamp electrophysiology data analysis tool"
 authors = [
   { name="Charles Kissell", email="kissell.r@northeastern.edu" }
@@ -12,6 +12,20 @@ authors = [
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research", 
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: OS Independent",
+]
+
+keywords = ["electrophysiology", "patch-clamp", "data-analysis"]
 
 dependencies = [
   "PySide6>=6.2.0",
@@ -23,7 +37,11 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-  "pytest"
+  "pytest>=7.0.0"
+]
+dev = [
+  "pytest>=7.0.0",
+  "pyinstaller>=5.0.0"
 ]
 
 [project.scripts]
@@ -32,3 +50,11 @@ data-analysis-gui = "data_analysis_gui.main:run"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["data_analysis_gui*"]
+
+[project.urls]
+Homepage = "https://github.com/ck852/data_analysis_gui"
+Repository = "https://github.com/ck852/data_analysis_gui.git"
+Issues = "https://github.com/ck852/data_analysis_gui/issues"
+
+[tool.setuptools.package-data]
+data_analysis_gui = ["*.md"]

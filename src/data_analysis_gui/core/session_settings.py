@@ -9,11 +9,9 @@ for the electrophysiology data analysis tool.
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from PySide6.QtCore import QStandardPaths
-from PySide6.QtWidgets import QSplitter
 
 
 SETTINGS_VERSION = "1.0"

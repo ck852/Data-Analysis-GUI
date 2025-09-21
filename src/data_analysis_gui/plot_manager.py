@@ -15,12 +15,11 @@ Features:
 """
 
 import logging
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional, List, Tuple, Dict
 
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 

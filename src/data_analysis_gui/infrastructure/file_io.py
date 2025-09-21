@@ -110,7 +110,7 @@ class CsvFileWriter:
 
         except (IOError, OSError) as e:
             raise FileError(
-                f"Failed to write CSV file", details={"filepath": filepath}, cause=e
+                "Failed to write CSV file", details={"filepath": filepath}, cause=e
             )
 
     def ensure_directory(self, directory: str) -> None:
@@ -129,7 +129,7 @@ class CsvFileWriter:
                 os.makedirs(directory, exist_ok=True)
             except OSError as e:
                 raise FileError(
-                    f"Could not create directory",
+                    "Could not create directory",
                     details={"directory": directory},
                     cause=e,
                 )
@@ -199,7 +199,7 @@ class FileSystemOperations:
         try:
             return os.path.getsize(path)
         except OSError as e:
-            raise FileError(f"Could not get file size", details={"path": path}, cause=e)
+            raise FileError("Could not get file size", details={"path": path}, cause=e)
 
     def get_info(self, path: str) -> Dict[str, Any]:
         """
@@ -224,7 +224,7 @@ class FileSystemOperations:
                 "extension": Path(path).suffix.lower(),
             }
         except OSError as e:
-            raise FileError(f"Could not get file info", details={"path": path}, cause=e)
+            raise FileError("Could not get file info", details={"path": path}, cause=e)
 
 
 class PathUtilities:

@@ -277,7 +277,7 @@ class CurrentDensityResultsWindow(QMainWindow):
                 )
                 self.active_batch_result.successful_results[i] = updated_result
 
-        logger.debug(f"Applied initial current density calculations.")
+        logger.debug("Applied initial current density calculations.")
 
     def _on_cslow_changed(self, file_name: str, new_cslow: float):
         """

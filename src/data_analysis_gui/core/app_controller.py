@@ -57,7 +57,6 @@ logger = get_logger(__name__)
 
 
 @dataclass
-
 class AnalysisOperationResult:
     """
     Result wrapper for analysis operations.
@@ -76,7 +75,6 @@ class AnalysisOperationResult:
 
 
 @dataclass
-
 class PlotDataResult:
     """
     Result wrapper for plot data operations.
@@ -95,7 +93,6 @@ class PlotDataResult:
 
 
 @dataclass
-
 class PeakAnalysisOperationResult:
     """
     Result wrapper for peak analysis operations.
@@ -114,7 +111,6 @@ class PeakAnalysisOperationResult:
 
 
 @dataclass
-
 class FileLoadResult:
     """
     Result wrapper for file loading operations.
@@ -135,7 +131,6 @@ class FileLoadResult:
 # =========================
 # Controller
 # =========================
-
 
 
 class ApplicationController:

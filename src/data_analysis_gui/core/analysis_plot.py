@@ -35,9 +35,7 @@ from data_analysis_gui.config.plot_style import (
     apply_plot_style,
     format_analysis_plot,
     get_line_styles,
-    COLORS,
 )
-
 
 
 @dataclass
@@ -83,7 +81,6 @@ class AnalysisPlotData:
             y_label_r1=data.get("y_label_r1"),
             y_label_r2=data.get("y_label_r2"),
         )
-
 
 
 class AnalysisPlotter:

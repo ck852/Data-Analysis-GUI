@@ -142,7 +142,6 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-
 class LogContext:
     """
     Context manager for temporarily adding contextual information to log messages.
@@ -172,7 +171,6 @@ class LogContext:
 
     def __enter__(self):
         """Enter context - add context to logger."""
-        import contextvars
 
         # Store context in thread-local storage
         for key, value in self.context.items():

@@ -24,7 +24,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-import os
 from pathlib import Path
 from typing import Dict, Tuple, Optional, Iterable, Any, Union
 import numpy as np

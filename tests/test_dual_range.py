@@ -326,7 +326,7 @@ class TestDualRangeAnalysis:
             # Compare with golden reference
             self.compare_csv_files(output_path, str(abf_reference))
 
-            print(f"✓ ABF dual range analysis test passed")
+            print("✓ ABF dual range analysis test passed")
 
     # def test_dual_range_mat_file(self, controller, test_data_path, golden_data_path, dual_range_parameters):
     #     """
@@ -478,7 +478,7 @@ class TestDualRangeAnalysis:
             abs(range1_mean - range2_mean) > 1e-3
         ), f"Range means too similar: R1={range1_mean:.6f}, R2={range2_mean:.6f}"
 
-        print(f"✓ Dual range validation test passed")
+        print("✓ Dual range validation test passed")
 
 
 if __name__ == "__main__":

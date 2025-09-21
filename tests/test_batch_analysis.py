@@ -22,7 +22,7 @@ import csv
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from dataclasses import replace
 
 import numpy as np
@@ -570,7 +570,7 @@ class BatchIVAnalysisTestBase:
 
         # Validate IV summary CSV
         print("  IV Summary:")
-        print(f"    Comparing IV_Summary.csv...", end=" ")
+        print("    Comparing IV_Summary.csv...", end=" ")
 
         # Determine golden summary name (different for ABF vs MAT)
         if self.FILE_TYPE == "mat":

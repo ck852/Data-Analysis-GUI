@@ -10,7 +10,7 @@ zoom/pan functionality and custom styling.
 """
 
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
-from PySide6.QtWidgets import QToolBar, QWidget, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor, QFont
 
@@ -90,7 +90,6 @@ class StreamlinedNavigationToolbar(NavigationToolbar):
         Add essential navigation actions (reset, back, forward, pan, zoom, save)
         with custom icons and styling.
         """
-        from PySide6.QtGui import QFont
 
         # Create font for toolbar actions
         toolbar_font = QFont()

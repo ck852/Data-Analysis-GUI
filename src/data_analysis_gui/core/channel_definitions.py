@@ -10,7 +10,7 @@ and current data in electrophysiology recordings. It eliminates hardcoded channe
 assumptions and allows for flexible channel configuration.
 """
 
-from typing import Tuple, Optional, Dict
+from typing import Optional, Dict
 
 
 class ChannelDefinitions:

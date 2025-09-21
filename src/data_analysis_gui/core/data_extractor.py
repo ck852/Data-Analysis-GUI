@@ -20,7 +20,7 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple
 import numpy as np
 
 from data_analysis_gui.core.dataset import ElectrophysiologyDataset
@@ -35,11 +35,10 @@ from data_analysis_gui.config.logging import get_logger
 logger = get_logger(__name__)
 
 
-
 class DataExtractor:
     """
     Extracts and validates time series data from electrophysiology datasets.
-    
+
     This class provides methods to extract sweep and channel data, ensuring proper channel mapping,
     data integrity, and compatibility with downstream analysis and plotting tools.
     """

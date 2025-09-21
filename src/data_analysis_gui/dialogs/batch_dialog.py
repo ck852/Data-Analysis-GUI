@@ -25,21 +25,18 @@ Features:
 """
 
 from pathlib import Path
-from typing import List, Optional
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
-    QPushButton,
     QListWidget,
     QProgressBar,
     QLabel,
-    QDialogButtonBox,
     QMessageBox,
     QAbstractItemView,
     QGroupBox,
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QThread, Signal
 
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.models import FileAnalysisResult, BatchAnalysisResult

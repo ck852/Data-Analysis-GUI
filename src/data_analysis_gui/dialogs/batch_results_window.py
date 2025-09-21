@@ -5,10 +5,10 @@ License: MIT (see LICENSE file for details)
 
 Interactive batch analysis results viewer and export interface.
 
-This module provides a comprehensive window for viewing, selecting, and exporting 
-batch electrophysiology analysis results. Users can interactively select file 
-subsets, view color-coded plots with real-time updates, and export data in 
-multiple formats including individual CSVs, IV summaries, and current density 
+This module provides a comprehensive window for viewing, selecting, and exporting
+batch electrophysiology analysis results. Users can interactively select file
+subsets, view color-coded plots with real-time updates, and export data in
+multiple formats including individual CSVs, IV summaries, and current density
 analyses.
 
 Classes:
@@ -16,7 +16,7 @@ Classes:
 
 Features:
     - Interactive file selection with real-time plot updates
-    - Color-coded trace visualization for easy file identification  
+    - Color-coded trace visualization for easy file identification
     - Multiple export formats (CSV, plots, IV summaries)
     - Current density analysis integration
     - Selective data export based on file selection
@@ -384,7 +384,7 @@ class BatchResultsWindow(QMainWindow):
             )
 
         # Generate filename
-        suggested_filename = f"IV_Summary.csv"
+        suggested_filename = "IV_Summary.csv"
 
         file_path = self.file_dialog_service.get_export_path(
             self, suggested_filename, file_types="CSV files (*.csv)"
@@ -431,7 +431,6 @@ class BatchResultsWindow(QMainWindow):
 
         if output_dir:
             try:
-                from data_analysis_gui.core.models import BatchAnalysisResult
                 from dataclasses import replace
 
                 filtered_batch = replace(

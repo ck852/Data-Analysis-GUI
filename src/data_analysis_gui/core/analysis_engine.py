@@ -21,7 +21,6 @@ License: MIT (see LICENSE file for details)
 """
 
 from typing import Dict, List, Optional, Any
-import numpy as np
 
 from data_analysis_gui.core.dataset import ElectrophysiologyDataset
 from data_analysis_gui.core.params import AnalysisParameters
@@ -40,7 +39,6 @@ from data_analysis_gui.config.logging import (
 )
 
 logger = get_logger(__name__)
-
 
 
 class AnalysisEngine:

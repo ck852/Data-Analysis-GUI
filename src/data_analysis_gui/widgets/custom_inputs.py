@@ -13,7 +13,7 @@ other user-friendly behaviors.
 
 Classes:
     - SelectAllLineEdit: QLineEdit with automatic text selection on focus
-    - SelectAllSpinBox: QDoubleSpinBox with text selection and wheel event blocking  
+    - SelectAllSpinBox: QDoubleSpinBox with text selection and wheel event blocking
     - SelectAllIntSpinBox: QSpinBox with text selection and wheel event blocking
     - NoScrollComboBox: QComboBox that ignores mouse wheel events
 

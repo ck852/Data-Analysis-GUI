@@ -6,7 +6,11 @@ License: MIT (see LICENSE file for details)
 """
 
 # filetree.py
-import os, sys, argparse, fnmatch, ctypes
+import os
+import sys
+import argparse
+import fnmatch
+import ctypes
 
 # Defaults: exclude caches, VCS metadata, temp clutter; DO NOT exclude csv/mat/txt
 DEFAULT_EXCLUDES = [

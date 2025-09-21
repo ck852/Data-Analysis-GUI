@@ -10,7 +10,6 @@ Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 """
 
-from typing import Optional
 from PySide6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -29,7 +28,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QSplitter,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor
 
 # ============================================================================

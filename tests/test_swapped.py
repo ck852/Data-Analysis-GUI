@@ -25,10 +25,7 @@ from abc import ABC, abstractmethod
 # Import core components
 from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 from data_analysis_gui.core.params import AnalysisParameters, AxisConfig
-from data_analysis_gui.core.dataset import DatasetLoader
 from data_analysis_gui.services.batch_processor import BatchProcessor
-from data_analysis_gui.services.data_manager import DataManager
-from data_analysis_gui.services.analysis_manager import AnalysisManager
 from data_analysis_gui.core.app_controller import ApplicationController
 
 
@@ -395,21 +392,25 @@ class TestSwapChannelsBase(ABC):
         )
 
         # Check that we have successful results
-        assert len(batch_result.successful_results) == expected_count, \
-            f"Expected {expected_count} successful results, got {len(batch_result.successful_results)}"
+        assert (
+            len(batch_result.successful_results) == expected_count
+        ), f"Expected {expected_count} successful results, got {len(batch_result.successful_results)}"
         assert (
             len(batch_result.failed_results) == 0
         ), f"Some files failed: {[r.base_name for r in batch_result.failed_results]}"
 
-        print(f"✓ Batch analysis complete: {batch_result.success_rate:.1f}% success rate")
+        print(
+            f"✓ Batch analysis complete: {batch_result.success_rate:.1f}% success rate"
+        )
 
         # Export results to CSV files
         export_result = batch_processor.export_results(
             batch_result=batch_result, output_dir=str(temp_output_dir)
         )
 
-        assert export_result.success_count == expected_count, \
-            f"Expected {expected_count} files exported successfully, got {export_result.success_count}"
+        assert (
+            export_result.success_count == expected_count
+        ), f"Expected {expected_count} files exported successfully, got {export_result.success_count}"
 
         print(f"✓ Exported {export_result.success_count} CSV files")
 
@@ -428,9 +429,7 @@ class TestSwapChannelsBase(ABC):
 
             if golden_csv.exists():
                 try:
-                    compare_csv_files(
-                        generated_csv, golden_csv, rtol=1e-4, atol=1e-2
-                    )
+                    compare_csv_files(generated_csv, golden_csv, rtol=1e-4, atol=1e-2)
                     print("✓")
                 except AssertionError as e:
                     print("✗")
@@ -597,4 +596,5 @@ if __name__ == "__main__":
     Run tests with pytest when executed as a script.
     """
     import sys
+
     sys.exit(pytest.main([__file__, "-v", "-s"]))

@@ -22,8 +22,6 @@ import numpy as np
 
 from data_analysis_gui.core.exceptions import (
     DataError,
-    ProcessingError,
-    validate_no_nan,
 )
 from data_analysis_gui.config.logging import get_logger
 

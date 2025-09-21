@@ -13,10 +13,8 @@ startup. Designed for extensibility and ease of integration with external script
 """
 
 import sys
-import os
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from data_analysis_gui.main_window import MainWindow
 
 # Import from refactored themes module
