@@ -43,13 +43,16 @@ If you don't have Python installed:
 
 In your terminal, run these commands:
 
+```bash
 pip install patchbatch
 patchbatch
+```
 
-If pip isn't recognized, instead try 
-python -m pip install patchbatch
+If pip isn't recognized, instead try
 
-If you install from PyPI, you will always start the program by opening a terminal in the same directory where you installed it and simply enter 'patchbatch'. 
+`python -m pip install patchbatch`
+
+If you install from PyPI, you will always start the program by opening a terminal in the same directory where you installed it and simply enter `patchbatch`. 
 
 
 
