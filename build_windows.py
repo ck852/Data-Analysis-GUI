@@ -2,6 +2,9 @@
 """
 Windows build script for PatchBatch
 Creates standalone Windows executable using PyInstaller
+
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
 """
 
 import sys

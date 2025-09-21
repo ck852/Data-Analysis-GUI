@@ -3,6 +3,25 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+
+Enhanced GUI input widgets for improved user experience.
+
+This module provides custom Qt widget subclasses that enhance the default behavior
+of standard input controls. These widgets improve usability by providing automatic
+text selection, preventing accidental value changes from mouse wheel events, and
+other user-friendly behaviors.
+
+Classes:
+    - SelectAllLineEdit: QLineEdit with automatic text selection on focus
+    - SelectAllSpinBox: QDoubleSpinBox with text selection and wheel event blocking  
+    - SelectAllIntSpinBox: QSpinBox with text selection and wheel event blocking
+    - NoScrollComboBox: QComboBox that ignores mouse wheel events
+
+Features:
+    - Automatic text selection for faster data entry
+    - Mouse wheel event blocking to prevent accidental changes
+    - Consistent behavior across different input widget types
+    - Drop-in replacements for standard Qt input widgets
 """
 
 from PySide6.QtWidgets import QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox

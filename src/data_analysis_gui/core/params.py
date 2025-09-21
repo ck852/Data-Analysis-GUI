@@ -1,14 +1,13 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
-"""
+PatchBatch Electrophysiology Data Analysis Tool.
 
-"""
 Analysis parameters data model.
 
 This module defines immutable data classes for configuring analysis operations
 and plot axes in PatchBatch electrophysiology data analysis.
+
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
 """
 
 from dataclasses import dataclass, field, asdict
@@ -26,9 +25,6 @@ class AxisConfig:
         measure: Type of measurement ("Time", "Average", or "Peak").
         channel: Channel type ("Voltage" or "Current"), or None for Time.
         peak_type: Peak type for "Peak" measure ("Absolute", "Positive", "Negative", "Peak-Peak").
-
-    Returns:
-        AxisConfig instance.
     """
 
     measure: str  # "Time", "Average", or "Peak"
@@ -56,9 +52,6 @@ class AnalysisParameters:
         x_axis: AxisConfig for X-axis.
         y_axis: AxisConfig for Y-axis.
         channel_config: Dictionary mapping channel configuration.
-
-    Returns:
-        AnalysisParameters instance.
 
     Example:
         >>> params = AnalysisParameters(

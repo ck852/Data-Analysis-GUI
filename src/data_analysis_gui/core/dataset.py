@@ -1,15 +1,27 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+Electrophysiology Dataset Abstraction for PatchBatch Data Analysis Tool
+
+This module defines a unified, format-agnostic data structure for managing electrophysiology recordings,
+supporting multiple sweeps and channels. It provides a consistent interface for accessing, manipulating,
+and annotating time-series data from various acquisition formats (e.g., Axon ABF, MATLAB .mat).
+
+Features:
+    - Stores sweeps as (time, data) pairs, with all time values in milliseconds.
+    - Supports arbitrary numbers of sweeps and channels per dataset.
+    - Metadata management for channel labels, units, sampling rate, and source file information.
+    - Methods for sweep/channel access, duration calculation, and sampling rate estimation.
+    - Format detection and loading utilities for supported file types.
+    - Channel mapping and metadata updating for flexible labeling and unit assignment.
+
+Typical Usage:
+    >>> dataset = ElectrophysiologyDataset()
+    >>> dataset.add_sweep("1", time_ms, data_matrix)
+    >>> time, data = dataset.get_sweep("1")
+    >>> time, voltage = dataset.get_channel_vector("1", 0)
+    >>> print(dataset.metadata)
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Dataset abstraction for electrophysiology data.
-
-This module provides format-agnostic data structures for managing
-electrophysiology recordings with multiple sweeps and channels.
-
 """
 
 import os
@@ -187,6 +199,7 @@ class ElectrophysiologyDataset:
 
         Returns:
             Optional[float]: Duration in milliseconds, or None if sweep doesn't exist.
+            Returns 0.0 if the sweep exists but contains fewer than two samples.
         """
         sweep_data = self.get_sweep(sweep_index)
         if sweep_data is None:
@@ -216,7 +229,7 @@ class ElectrophysiologyDataset:
 
         return max_duration
 
-    def get_sampling_rate(self, sweep_index: str = None) -> Optional[float]:
+    def get_sampling_rate(self, sweep_index: Optional[str] = None) -> Optional[float]:
         """
         Estimate the sampling rate for a sweep or the dataset.
 
@@ -345,7 +358,7 @@ class DatasetLoader:
     # Supported file extensions and their formats
     FORMAT_EXTENSIONS = {
         ".mat": "matlab",
-        ".abf": "axon",  # Axon Binary Format (future)
+        ".abf": "axon",  # Axon Binary Format
         ".h5": "hdf5",  # HDF5 format (future)
         ".csv": "csv",  # CSV export (future)
         ".txt": "text",  # Text export (future)
@@ -383,6 +396,7 @@ class DatasetLoader:
         Raises:
             ValueError: If file format is not supported.
             FileNotFoundError: If file does not exist.
+            NotImplementedError: For recognized but unimplemented formats (e.g., '.csv', '.h5').
         """
         file_path = Path(file_path)
 

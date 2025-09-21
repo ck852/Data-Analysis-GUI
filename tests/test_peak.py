@@ -62,7 +62,10 @@ class TestPeakAnalysis:
         Returns:
             str: Path to the test ABF file.
         """
-        return str(SAMPLE_DATA_DIR / TEST_FILE)
+        path = SAMPLE_DATA_DIR / TEST_FILE
+        if not path.exists():
+            raise AssertionError(f"Test ABF file not found: {path}")
+        return str(path)
 
     @pytest.fixture
     def loaded_controller(self, controller, test_file_path):
@@ -225,8 +228,8 @@ class TestPeakAnalysis:
 
             # Compare with golden data
             golden_path = GOLDEN_DATA_DIR / expected_file
-            assert golden_path.exists(), f"Golden data file not found: {golden_path}"
-
+            if not golden_path.exists():
+                raise AssertionError(f"Golden data file not found: {golden_path}")
             self.compare_csv_files(output_path, str(golden_path))
 
     def test_all_peak_modes_different_results(self, loaded_controller):

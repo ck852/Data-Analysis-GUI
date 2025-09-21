@@ -1,31 +1,42 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
-
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+
+Interactive batch analysis results viewer and export interface.
+
+This module provides a comprehensive window for viewing, selecting, and exporting 
+batch electrophysiology analysis results. Users can interactively select file 
+subsets, view color-coded plots with real-time updates, and export data in 
+multiple formats including individual CSVs, IV summaries, and current density 
+analyses.
+
+Classes:
+    - BatchResultsWindow: Main results viewer with file selection and export controls
+
+Features:
+    - Interactive file selection with real-time plot updates
+    - Color-coded trace visualization for easy file identification  
+    - Multiple export formats (CSV, plots, IV summaries)
+    - Current density analysis integration
+    - Selective data export based on file selection
+    - Sortable results with intelligent numeric ordering
 """
 
 from pathlib import Path
 import re
-from typing import Set
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QPushButton,
     QMessageBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QCheckBox,
     QLabel,
     QSplitter,
-    QHeaderView,
     QApplication,
     QGroupBox,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
+from PySide6.QtCore import Qt
 
 from data_analysis_gui.gui_services import FileDialogService
 from data_analysis_gui.core.plot_formatter import PlotFormatter
@@ -48,7 +59,6 @@ from data_analysis_gui.config.themes import (
     style_group_box,
     get_selection_summary_color,
     style_label,
-    style_splitter,
 )
 
 logger = get_logger(__name__)

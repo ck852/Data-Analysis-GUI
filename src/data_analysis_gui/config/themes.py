@@ -1,12 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
+
+This module provides centralized Qt theming utilities for the PatchBatch application.
+It defines a modern, consistent look for all supported Qt widgets, including colors,
+fonts, spacing, and interactive states. Functions are provided to apply styles to
+individual widgets or the entire application, ensuring a cohesive user interface.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-
-"""
-
 """
 
 from typing import Optional

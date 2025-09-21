@@ -1,15 +1,9 @@
-"""
-PatchBatch Electrophysiology Data Analysis Tool
+"""PatchBatch Electrophysiology Data Analysis Tool.
 
 Dialog for entering slow capacitance values for current density calculations.
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Dialog for entering slow capacitance values for current density calculations.
-
 """
 
 import re

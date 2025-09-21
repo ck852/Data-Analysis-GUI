@@ -3,14 +3,10 @@ from __future__ import annotations
 """
 PatchBatch Electrophysiology Data Analysis Tool
 
-Plot management module for MAT File Sweep Analyzer.
-
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-This module provides improved plot management for the MAT File Sweep Analyzer.
+This module provides improved plot management for PatchBatch.
 
 Features:
 - Uses Qt signals for decoupling from the main window.

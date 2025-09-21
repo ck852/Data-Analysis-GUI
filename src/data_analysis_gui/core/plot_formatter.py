@@ -3,9 +3,7 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Formatting utilities for analysis data, providing stateless transformation
 for plotting and exporting electrophysiology metrics.
 """

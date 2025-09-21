@@ -1,11 +1,25 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+PatchBatch Electrophysiology Data Analysis Tool - Application Controller
+
+This module provides the main controller class for the PatchBatch Electrophysiology Data Analysis Tool.
+It orchestrates core services such as data management, analysis, batch processing, and export, using dependency injection
+to allow flexible service configuration and testing.
+
+Features:
+- Centralized management of data loading, analysis, batch operations, and export.
+- Dependency injection for all major services (DataManager, AnalysisManager, BatchProcessor, ChannelDefinitions).
+- Robust error handling and result wrappers for all operations, ensuring fail-closed behavior.
+- Compatibility aliases for legacy code integration.
+- GUI callback hooks for status updates, error reporting, and file load notifications.
+- Channel configuration management and dynamic swapping of voltage/current channels.
+- High-level API for batch analysis, export, and peak detection.
+
+Architecture:
+The ApplicationController acts as the main interface between the GUI and backend services, maintaining application state,
+managing service lifecycles, and providing a consistent API for all analysis workflows.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Application controller with proper service management and dependency injection.
 """
 
 from pathlib import Path

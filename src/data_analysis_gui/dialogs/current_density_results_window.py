@@ -4,10 +4,24 @@ PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
 
-Window for displaying and interacting with current density analysis results.
+This module defines the CurrentDensityResultsWindow, a graphical user interface
+window for displaying, editing, and exporting current density analysis results
+from electrophysiology batch data.
 
-This module provides a user interface window for viewing, editing, and exporting
-current density calculations. All business logic is delegated to CurrentDensityService.
+Key Features:
+- Interactive visualization of current density calculations for multiple files.
+- Editable Cslow values per file, with automatic recalculation of current density.
+- Batch selection and plotting of results, including dual-range support.
+- Export capabilities for individual file CSVs, summary CSVs, and plot images.
+- Integration with business logic via CurrentDensityService.
+- Centralized styling and configuration for a consistent user experience.
+
+Classes:
+- CurrentDensityResultsWindow: QMainWindow subclass providing the main interface
+  for current density analysis results, including file list, plot, and export controls.
+
+All business logic for current density calculations is delegated to
+CurrentDensityService. This module focuses on user interaction and presentation.
 """
 
 import re

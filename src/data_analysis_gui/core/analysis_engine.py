@@ -1,12 +1,23 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+PatchBatch Electrophysiology Data Analysis Tool - Analysis Engine Module
+
+This module provides the core orchestration engine for electrophysiology data analysis workflows.
+It coordinates injected components for data extraction, metrics calculation, and plot/export formatting,
+enabling flexible, testable, and thread-safe analysis operations.
+
+Features:
+- Stateless orchestration of analysis, metrics computation, and result formatting.
+- Dependency injection for all major components (DataExtractor, MetricsCalculator, PlotFormatter).
+- Robust error handling and logging for all analysis steps.
+- No internal caching; each analysis is independent and suitable for concurrent execution.
+- Factory function for convenient engine instantiation with default components.
+
+Usage:
+Instantiate AnalysisEngine with required dependencies, or use create_analysis_engine for default configuration.
+Call analysis methods to process datasets and retrieve metrics, plot data, or export tables.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Core analysis engine - pure orchestration of analysis workflow.
-
 """
 
 from typing import Dict, List, Optional, Any

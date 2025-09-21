@@ -2,10 +2,18 @@
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
-Core metrics calculation functionality.
+This module provides core functionality for calculating quantitative metrics from electrophysiology time series data.
+It defines the SweepMetrics dataclass for storing computed metrics for individual sweeps, including mean, peak, and peak-to-peak values for voltage and current over specified time ranges.
+
+The MetricsCalculator class offers static methods for extracting and computing these metrics from numpy arrays of time, voltage, and current data.
+Typical usage involves calling MetricsCalculator.compute_sweep_metrics() with the relevant data and time ranges to obtain a SweepMetrics object.
+
+Classes:
+    - SweepMetrics: Stores computed metrics for a single sweep, supporting up to two analysis ranges.
+    - MetricsCalculator: Stateless class with static methods for calculating metrics from time series data.
+
+Intended for use in automated analysis pipelines and GUI applications for patch clamp electrophysiology data.
 """
 
 from dataclasses import dataclass
@@ -157,8 +165,7 @@ class MetricsCalculator:
             SweepMetrics: Computed metrics for the sweep.
 
         Raises:
-            DataError: If no data in specified ranges.
-            ProcessingError: If computation fails.
+            DataError: If the requested ranges contain no samples.
         """
         # Validate inputs
         if len(time_ms) == 0:

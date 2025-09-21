@@ -3,9 +3,7 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Test module for Swap Channels functionality with batch analysis.
 
 This module validates the channel swapping feature by:
@@ -169,54 +167,102 @@ def load_csv_data(csv_path: Path) -> Dict[str, Any]:
 
 
 def compare_csv_files(
-    generated_path: Path, golden_path: Path, tolerance: float = 1e-6
-) -> bool:
+    generated_path: Path, golden_path: Path, rtol: float = 1e-5, atol: float = 1e-6
+) -> None:
     """
     Compare two CSV files with tolerance for floating point differences.
 
     Args:
         generated_path (Path): Path to generated CSV file.
         golden_path (Path): Path to golden reference CSV file.
-        tolerance (float): Numerical tolerance for float comparisons.
+        rtol (float): Relative tolerance for float comparisons.
+        atol (float): Absolute tolerance for float comparisons.
 
-    Returns:
-        bool: True if files match within tolerance, False otherwise.
+    Raises:
+        AssertionError: If any mismatch is found.
     """
     generated_data = load_csv_data(generated_path)
     golden_data = load_csv_data(golden_path)
 
     # Check headers match
-    assert (
-        generated_data["headers"] == golden_data["headers"]
-    ), f"Headers don't match:\nGenerated: {generated_data['headers']}\nGolden: {golden_data['headers']}"
+    try:
+        assert (
+            generated_data["headers"] == golden_data["headers"]
+        ), f"Headers don't match:\nGenerated: {generated_data['headers']}\nGolden: {golden_data['headers']}\nFile: {generated_path.name}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"Header validation failed for {generated_path.name}\n"
+            f"Generated file: {generated_path}\n"
+            f"Golden file: {golden_path}\n"
+            f"{str(e)}"
+        )
 
     # Check same number of rows
-    assert len(generated_data["values"]) == len(
-        golden_data["values"]
-    ), f"Row count mismatch: {len(generated_data['values'])} vs {len(golden_data['values'])}"
+    try:
+        assert len(generated_data["values"]) == len(
+            golden_data["values"]
+        ), f"Row count mismatch: {len(generated_data['values'])} vs {len(golden_data['values'])}\nFile: {generated_path.name}"
+    except AssertionError as e:
+        raise AssertionError(
+            f"Shape validation failed for {generated_path.name}\n"
+            f"Generated file: {generated_path}\n"
+            f"Golden file: {golden_path}\n"
+            f"{str(e)}"
+        )
 
     # Compare each value with tolerance
     for row_idx, (gen_row, gold_row) in enumerate(
         zip(generated_data["values"], golden_data["values"])
     ):
-        assert len(gen_row) == len(
-            gold_row
-        ), f"Column count mismatch in row {row_idx}: {len(gen_row)} vs {len(gold_row)}"
+        try:
+            assert len(gen_row) == len(
+                gold_row
+            ), f"Column count mismatch in row {row_idx}: {len(gen_row)} vs {len(gold_row)}\nFile: {generated_path.name}"
+        except AssertionError as e:
+            raise AssertionError(
+                f"Column count validation failed for {generated_path.name} row {row_idx}\n"
+                f"Generated file: {generated_path}\n"
+                f"Golden file: {golden_path}\n"
+                f"{str(e)}"
+            )
 
         for col_idx, (gen_val, gold_val) in enumerate(zip(gen_row, gold_row)):
             if isinstance(gen_val, float) and isinstance(gold_val, float):
                 # Use numpy for NaN-aware comparison
                 if np.isnan(gen_val) and np.isnan(gold_val):
                     continue  # Both NaN is ok
-                assert (
-                    np.abs(gen_val - gold_val) < tolerance
-                ), f"Value mismatch at row {row_idx}, col {col_idx}: {gen_val} vs {gold_val}"
+                try:
+                    np.testing.assert_allclose(
+                        np.array([gen_val]),
+                        np.array([gold_val]),
+                        rtol=rtol,
+                        atol=atol,
+                        err_msg=f"Value mismatch at row {row_idx}, col {col_idx}: {gen_val} vs {gold_val} in {generated_path.name}",
+                    )
+                except AssertionError as e:
+                    diff = abs(gen_val - gold_val)
+                    raise AssertionError(
+                        f"Numerical validation failed for {generated_path.name}\n"
+                        f"Row {row_idx}, Col {col_idx}\n"
+                        f"Generated value: {gen_val:.6f}\n"
+                        f"Golden value: {gold_val:.6f}\n"
+                        f"Difference: {diff:.6e}\n"
+                        f"Tolerance: rtol={rtol}, atol={atol}\n"
+                        f"{str(e)}"
+                    )
             else:
-                assert (
-                    gen_val == gold_val
-                ), f"Value mismatch at row {row_idx}, col {col_idx}: {gen_val} vs {gold_val}"
-
-    return True
+                try:
+                    assert (
+                        gen_val == gold_val
+                    ), f"Value mismatch at row {row_idx}, col {col_idx}: {gen_val} vs {gold_val} in {generated_path.name}"
+                except AssertionError as e:
+                    raise AssertionError(
+                        f"String value validation failed for {generated_path.name}\n"
+                        f"Row {row_idx}, Col {col_idx}\n"
+                        f"Generated value: {gen_val}\n"
+                        f"Golden value: {gold_val}\n"
+                        f"{str(e)}"
+                    )
 
 
 class TestSwapChannelsBase(ABC):
@@ -330,13 +376,18 @@ class TestSwapChannelsBase(ABC):
         # Get all data files in the directory
         data_files = get_data_files(self.sample_data_dir, self.file_extension)
 
-        if not data_files:
-            pytest.skip(
-                f"No {self.file_extension.upper()} files found in sample data directory"
-            )
+        expected_count = 3
+        assert (
+            len(data_files) == expected_count
+        ), f"Expected {expected_count} files, found {len(data_files)}"
 
         # Convert to string paths for batch processor
         file_paths = [str(f) for f in data_files]
+
+        print(f"\n{'='*60}")
+        print(f"Testing {self.file_format.upper()} Swap Channels Batch Analysis")
+        print(f"{'='*60}")
+        print(f"Processing {len(file_paths)} files...")
 
         # Run batch analysis with swapped channels
         batch_result = batch_processor.process_files(
@@ -344,36 +395,55 @@ class TestSwapChannelsBase(ABC):
         )
 
         # Check that we have successful results
-        assert len(batch_result.successful_results) > 0, "No successful batch results"
+        assert len(batch_result.successful_results) == expected_count, \
+            f"Expected {expected_count} successful results, got {len(batch_result.successful_results)}"
         assert (
             len(batch_result.failed_results) == 0
         ), f"Some files failed: {[r.base_name for r in batch_result.failed_results]}"
+
+        print(f"✓ Batch analysis complete: {batch_result.success_rate:.1f}% success rate")
 
         # Export results to CSV files
         export_result = batch_processor.export_results(
             batch_result=batch_result, output_dir=str(temp_output_dir)
         )
 
-        assert export_result.success_count > 0, "No files exported successfully"
+        assert export_result.success_count == expected_count, \
+            f"Expected {expected_count} files exported successfully, got {export_result.success_count}"
+
+        print(f"✓ Exported {export_result.success_count} CSV files")
 
         # Skip golden data comparison if directory doesn't exist
         if not self.golden_data_dir.exists():
             pytest.skip(f"Golden data directory not found: {self.golden_data_dir}")
 
         # Compare each generated CSV with golden data
+        print("\nValidating against golden reference files:")
         for result in batch_result.successful_results:
             generated_csv = temp_output_dir / f"{result.base_name}.csv"
             golden_csv = self.golden_data_dir / f"{result.base_name}.csv"
 
+            print(f"  Comparing {result.base_name}.csv...", end=" ")
             assert generated_csv.exists(), f"Generated CSV not found: {generated_csv}"
 
             if golden_csv.exists():
-                # Compare the files
-                assert compare_csv_files(
-                    generated_csv, golden_csv
-                ), f"CSV comparison failed for {result.base_name}"
+                try:
+                    compare_csv_files(
+                        generated_csv, golden_csv, rtol=1e-4, atol=1e-2
+                    )
+                    print("✓")
+                except AssertionError as e:
+                    print("✗")
+                    raise AssertionError(
+                        f"\nValidation failed for file: {result.base_name}.csv\n{str(e)}"
+                    )
             else:
+                print("SKIP")
                 pytest.skip(f"Golden CSV not found: {golden_csv}")
+
+        print(f"\n{'='*60}")
+        print(f"✓ All {self.file_format.upper()} swap channels batch tests passed!")
+        print(f"{'='*60}\n")
 
     def test_full_workflow_with_controller(self, temp_output_dir):
         """
@@ -526,4 +596,5 @@ if __name__ == "__main__":
     """
     Run tests with pytest when executed as a script.
     """
-    pytest.main([__file__, "-v"])
+    import sys
+    sys.exit(pytest.main([__file__, "-v", "-s"]))

@@ -1,11 +1,23 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+PatchBatch Electrophysiology Data Analysis Tool - Analysis Plot Module
+
+This module provides core functionality for generating, configuring, and saving analysis plots
+using matplotlib for electrophysiology data. It defines data structures and stateless plotting utilities
+to support both GUI and CLI workflows.
+
+Features:
+- AnalysisPlotData dataclass for structured plot data representation.
+- Stateless AnalysisPlotter class for thread-safe figure creation, configuration, and export.
+- Modern plot styling and dual-range support for comparative analysis.
+- CLI-friendly functions for quick plot generation and saving.
+- Designed for integration with both GUI and batch processing pipelines.
+
+Usage:
+Import and use AnalysisPlotter or create_analysis_plot to generate publication-ready figures
+from analysis results, with support for custom styling and export.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Core analysis plot functionality
 """
 
 import numpy as np

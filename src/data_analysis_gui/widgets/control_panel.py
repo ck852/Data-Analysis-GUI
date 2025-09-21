@@ -3,9 +3,7 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Control Panel Widget
 
 A self-contained widget for managing all analysis and plot settings in the PatchBatch Electrophysiology Data Analysis Tool.

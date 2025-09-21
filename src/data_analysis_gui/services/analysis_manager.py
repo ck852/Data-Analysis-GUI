@@ -1,13 +1,26 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+AnalysisManager: High-Level Interface for Electrophysiology Data Analysis
+
+This module provides the AnalysisManager class, a streamlined and scientist-friendly
+interface for performing, visualizing, and exporting electrophysiology data analyses.
+It abstracts away complex dependency injection and configuration, allowing users to
+invoke core analysis operations directly with minimal setup.
+
+Key Features:
+- Direct method calls for common analysis workflows (plotting, peak analysis, export).
+- Integration with core analysis engine and data management utilities.
+- Robust error handling and logging for reproducible research.
+- Designed for extensibility and clarity, making it easy to add new analysis routines.
+
+Typical Usage:
+    manager = AnalysisManager(channel_definitions)
+    result = manager.analyze(dataset, params)
+    plot_data = manager.get_sweep_plot_data(dataset, sweep_index, channel_type)
+    export_status = manager.export_analysis(dataset, params, filepath)
+    peak_result = manager.get_peak_analysis(dataset, params, peak_types)
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-
-Simplified analysis management with direct method calls.
-
-This module provides a straightforward interface for performing analysis operations
-without complex dependency injection patterns.
 """
 
 from typing import Dict, Any, List, Optional

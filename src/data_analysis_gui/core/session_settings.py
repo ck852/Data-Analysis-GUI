@@ -2,9 +2,7 @@
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Session settings persistence for analysis parameters.
 Provides functions to save, load, extract, and apply session settings
 for the electrophysiology data analysis tool.

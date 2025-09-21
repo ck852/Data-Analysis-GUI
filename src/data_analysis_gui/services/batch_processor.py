@@ -1,13 +1,14 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
 
+This module provides the batch processing functionality for PatchBatch,
+an electrophysiology data analysis tool. It enables sequential analysis
+of multiple data files using consistent parameters, manages progress
+reporting, and supports exporting results to CSV files. Designed for
+clarity, maintainability, and accessibility in electrophysiology workflows.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-
-Simplified batch processing with sequential execution.
-
-This module provides straightforward batch analysis functionality
-using simple sequential processing for clarity and maintainability.
 """
 
 import time

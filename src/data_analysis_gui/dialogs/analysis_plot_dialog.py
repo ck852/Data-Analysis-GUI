@@ -3,9 +3,7 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Dialog for displaying analysis plots in the GUI.
 
 Provides:

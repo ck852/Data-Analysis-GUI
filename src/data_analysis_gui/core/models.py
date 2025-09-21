@@ -2,9 +2,7 @@
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 Centralized data models for the electrophysiology analysis application.
 
 This module contains all shared data structures used across the application,

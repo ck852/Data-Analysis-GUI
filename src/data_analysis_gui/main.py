@@ -1,8 +1,15 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
 
+A graphical application for analyzing electrophysiology data files, featuring
+modern UI theming, robust window management, and streamlined user workflows.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+
+This module serves as the main entry point for launching the GUI, handling
+application initialization, theme application, window sizing, and event loop
+startup. Designed for extensibility and ease of integration with external scripts.
 """
 
 import sys
@@ -18,9 +25,9 @@ from data_analysis_gui.config.themes import apply_theme_to_application
 
 def main():
     """
-    Launches the Electrophysiology File Sweep Analyzer GUI application.
+    Launches the PatchBatch Electrophysiology Data Analysis Tool.
 
-    - Sets up high DPI scaling (commented for compatibility).
+    Key features:
     - Applies a modern theme to the application.
     - Configures application metadata (name, version, organization).
     - Sets a default font size if needed.
@@ -28,12 +35,6 @@ def main():
     - Ensures the window is centered and not maximized on start.
     - Processes initial events and enters the Qt event loop.
     """
-
-    # Enable high DPI scaling BEFORE creating QApplication
-    # if hasattr(Qt, 'AA_EnableHighDpiScaling'):
-    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
-    # if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
-    #     QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
 

@@ -5,9 +5,7 @@ GUI Service for file dialog operations with directory memory.
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-"""
 This service encapsulates all file dialog interactions for the GUI.
 
 Features:

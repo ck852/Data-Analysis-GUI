@@ -31,7 +31,8 @@ class DataManager:
     Manages all data operations: loading, validation, and export.
 
     Provides direct, scientist-friendly methods for working with electrophysiology data.
-    Extend this class to add support for new file formats or export types.
+    Extend this class to add support for new export types; add new file
+    formats in core/dataset.py's DatasetLoader.
     """
 
     def __init__(self):
@@ -53,8 +54,8 @@ class DataManager:
         Load and validate an electrophysiology dataset from a file.
 
         To add support for a new file format:
-            1. Update DatasetLoader.detect_format() in core/dataset.py.
-            2. Add a corresponding DatasetLoader.load_[format]() method.
+            1. Update DatasetLoader.FORMAT_EXTENSIONS/detect_format() in core/dataset.py.
+            2. Add a corresponding loader in DatasetLoader (e.g., load_mat, load_abf).
 
         Args:
             filepath (str): Path to the data file.
@@ -105,15 +106,14 @@ class DataManager:
 
         Args:
             data (Dict[str, Any]): Dictionary containing 'headers' and 'data' keys.
+                Optional key 'format_spec' controls numeric formatting for CSV
+                (passed to numpy.savetxt fmt, default "%.6f").
             filepath (str): Output file path.
 
         Returns:
-            ExportResult: Object containing export status and details.
-
-        Raises:
-            ValidationError: If the data structure is invalid.
-            DataError: If there is no data to export.
-            FileError: If the file cannot be created.
+            ExportResult: Result detailing whether the export succeeded.
+                Validation and file-system issues are captured in the
+                ``error_message`` field when ``success`` is ``False``.
         """
         try:
             # Validate data
@@ -170,11 +170,16 @@ class DataManager:
 
         Args:
             data_list (List[Dict[str, Any]]): List of data dictionaries to export.
+                Each item may include optional key 'suffix' to customize the
+                filename suffix for that export (e.g., "_cell1").
             output_dir (str): Directory to save exported files.
             base_name (str, optional): Base filename for exports.
 
         Returns:
             List[ExportResult]: List of results for each export operation.
+
+        Raises:
+            OSError: If the output directory cannot be created.
         """
         results = []
 

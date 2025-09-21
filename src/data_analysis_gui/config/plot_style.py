@@ -1,13 +1,14 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
-Author: Charles Kissell, Northeastern University
-License: MIT (see LICENSE file for details)
-"""
 
-"""
 Modern matplotlib style configuration for scientific plots in PatchBatch.
 
-Provides a clean, professional appearance that complements the GUI, with centralized color and font settings. All style functions and constants are designed for consistency and maintainability.
+This module provides centralized color, font, and style settings for matplotlib plots,
+ensuring a clean, professional appearance that complements the PatchBatch GUI.
+All style functions and constants are designed for consistency and maintainability.
+
+Author: Charles Kissell, Northeastern University
+License: MIT (see LICENSE file for details)
 """
 
 import matplotlib.pyplot as plt

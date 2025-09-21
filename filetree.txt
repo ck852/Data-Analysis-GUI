@@ -24,7 +24,6 @@ streamlining/
 |   `-- data_analysis_gui/
 |       |-- config/
 |       |   |-- __init__.py
-|       |   |-- environment.py
 |       |   |-- logging.py
 |       |   |-- plot_style.py
 |       |   |-- settings.py
@@ -258,8 +257,7 @@ streamlining/
 |   |-- test_dual_batch.py
 |   |-- test_dual_range.py
 |   |-- test_peak.py
-|   |-- test_swapped.py
-|   `-- test_swapped_peaks.py
+|   `-- test_swapped.py
 |-- build_windows.py
 |-- CHANGELOG.md
 |-- filetree.txt

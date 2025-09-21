@@ -2,11 +2,17 @@
 PatchBatch Electrophysiology Data Analysis Tool
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
+
+This module provides services for I-V (Current-Voltage) analysis and data transformation for patch clamp electrophysiology experiments.
+It includes utilities for preparing I-V curve data from batch results, supporting both single and dual-range analysis, and for exporting summary tables with unit-aware formatting.
+
+Classes:
+    - IVAnalysisService: Transforms batch results into I-V curve data structures suitable for analysis and plotting.
+    - IVSummaryExporter: Prepares summary tables for export, including headers and formatted data for CSV or spreadsheet output.
+
+Intended for use in automated analysis pipelines and GUI applications for electrophysiology data.
 """
 
-"""
-Service for I-V (Current-Voltage) specific analysis and data transformations.
-"""
 from typing import Dict, Any, Tuple, Optional
 from data_analysis_gui.core.params import AnalysisParameters
 

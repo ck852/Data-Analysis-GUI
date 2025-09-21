@@ -1,12 +1,12 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
 
+This module defines the PlotService class, which provides high-level, scientist-friendly plotting utilities for visualizing electrophysiology data analysis results. 
+It includes methods for generating single analysis plots, batch comparison plots, and individual sweep plots, all returning Matplotlib Figure objects for further customization or saving.
+The service is designed to streamline the visualization workflow for both single-file and batch analyses, supporting dual-range data and flexible axis labeling based on analysis parameters.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-
-This module provides simplified plotting services for electrophysiology data analysis.
-It offers direct, scientist-friendly functions for visualizing analysis results,
-including single analysis plots, batch plots, and sweep plots.
 """
 
 from typing import Dict, Any, Optional, Tuple, List

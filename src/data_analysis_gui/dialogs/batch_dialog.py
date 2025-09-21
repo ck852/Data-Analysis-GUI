@@ -3,9 +3,26 @@ PatchBatch Electrophysiology Data Analysis Tool
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
 
-# dialogs/batch_dialog.py
+Batch analysis dialog with threaded processing and progress tracking.
+
+This module provides a comprehensive dialog interface for performing batch analysis
+on multiple electrophysiology data files. It includes file selection management,
+threaded analysis processing with real-time progress updates, and integrated
+results viewing capabilities.
+
+Classes:
+    - BatchAnalysisWorker: QThread subclass for background batch processing
+    - BatchAnalysisDialog: Main dialog with file management and progress tracking
+
+Features:
+    - Interactive file list management (add, remove, clear operations)
+    - Background threaded analysis with progress bar and status updates
+    - Real-time processing feedback and error handling
+    - Integrated results viewing and export capabilities
+    - Modern themed UI with responsive button states
+    - Cancellable analysis operations with proper cleanup
+"""
 
 from pathlib import Path
 from typing import List, Optional

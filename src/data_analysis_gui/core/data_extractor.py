@@ -1,12 +1,23 @@
 """
-PatchBatch Electrophysiology Data Analysis Tool
+Electrophysiology Data Extraction Utilities for PatchBatch
+
+This module provides functions and classes for extracting, validating, and formatting time-series data
+from electrophysiology datasets. It ensures correct channel mapping, data integrity, and compatibility
+with downstream analysis and visualization tools.
+
+Features:
+    - Extraction of sweep and channel data (voltage/current) from unified dataset objects.
+    - Validation of input arguments and data arrays, with informative error handling.
+    - Logging of data quality issues (e.g., NaN values) for traceability.
+    - Formatting of extracted data for plotting and analysis workflows.
+
+Typical Usage:
+    >>> extractor = DataExtractor(channel_definitions)
+    >>> sweep_data = extractor.extract_sweep_data(dataset, "1")
+    >>> time_ms, data_matrix, channel_id = extractor.extract_channel_for_plot(dataset, "1", "Voltage")
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-"""
-
-"""
-Extracts and validates data from electrophysiology datasets.
-
 """
 
 from typing import Dict, Tuple, Optional

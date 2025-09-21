@@ -1,13 +1,13 @@
 """
 PatchBatch Electrophysiology Data Analysis Tool
 
+Service module for current density calculations and export preparation
+within PatchBatch. Provides utility functions for recalculating current
+density, preparing summary exports, validating Cslow values, and
+transforming analysis results for electrophysiology data.
+
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
-
-Service for current density calculations and data preparation.
-
-This module provides utility functions for current density analysis,
-including summary export preparation and data transformations.
 """
 
 from typing import Dict, List, Set, Any, Optional, Tuple

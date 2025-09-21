@@ -107,3 +107,6 @@ settings.local.*
 # Windows specific
 *.dll.manifest
 *.pkg
+
+# linter etc
+.ruff_cache/
