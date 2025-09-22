@@ -112,8 +112,8 @@ This program makes it possible to analyze several electrophysiology files with t
 <img src="images/ba_results.PNG" alt="batchresultswindow" width="750"/>
 
 
-If you are doing I-V analyses, the program allows you to create summary IV curves from batch analyses. When Current and Voltage are chosen as the Plot Settings, the Batch Analysis window will have an option to "Export IV Summary". This will output a single CSV that contains the voltage set from your first analyzed file, rounded to the nearest integer, in the first column. All subsequent columns will contain the analyzed current data from all sweeps from all input files. You also have the option to generate a current density IV curve. 
-**IMPORTANT FOR SUMMARY IV: the user is responsible for their own data inputs; input files that use different voltage sets will yield erroneous results. Also note that voltages are rounded to the nearest integer. If the voltage sweeps are leaky, unstable, or otherwise inconsistent, the Summary CSV will likely be missing data points.** Click the "Current Density IV" button in the Batch Analysis window. You will be prompted to enter Cslow values for all files. Then, a new window will appear that plots the current densities against voltages. 
+If you are doing I-V analyses, the program allows you to create summary IV curves from batch analyses. When Current and Voltage are chosen as the Plot Settings, the Batch Analysis window will have an option to "Export IV Summary". This will output a single CSV that contains the voltage set from your first analyzed file, rounded to the nearest integer, in the first column. All subsequent columns will contain the analyzed current data from all sweeps from all input files. 
+**IMPORTANT FOR SUMMARY IV: the user is responsible for their own data inputs; input files that use different voltage sets will yield erroneous results. Also note that voltages are rounded to the nearest integer. If the voltage sweeps are leaky, unstable, or otherwise inconsistent, the Summary CSV will likely be missing data points.** You also have the option to generate a current density IV curve. Click the "Current Density IV" button in the Batch Analysis window. You will be prompted to enter Cslow values for all files. Then, a new window will appear that plots the current densities against voltages. 
 
 
 <img src="images/cd_cslow.PNG" alt="Cslows" width="500"/>
@@ -184,7 +184,7 @@ The input abf files are available in the file repository. In the case of the Win
 <img src="images/discrepancy.png" alt="discrepancy" width="1000"/>
 
 
-A direct comparison of a Current Density vs. Voltage relationship plot produced by either process shows that the WinWCP results are faithfully reproduced:
+A direct comparison of a Current Density vs. Voltage relationship plot produced by either process shows that the WinWCP results are accurately reproduced:
 
 
 <img src="images/data_comparison.png" alt="data_comparison" width="750"/>
