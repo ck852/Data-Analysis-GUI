@@ -111,9 +111,12 @@ This program makes it possible to analyze several electrophysiology files with t
 
 <img src="images/ba_results.PNG" alt="batchresultswindow" width="750"/>
 
+### IV Analysis
 
 If you are doing I-V analyses, the program allows you to create summary IV curves from batch analyses. When Current and Voltage are chosen as the Plot Settings, the Batch Analysis window will have an option to "Export IV Summary". This will output a single CSV that contains the voltage set from your first analyzed file, rounded to the nearest integer, in the first column. All subsequent columns will contain the analyzed current data from all sweeps from all input files. 
-**IMPORTANT FOR SUMMARY IV: the user is responsible for their own data inputs; input files that use different voltage sets will yield erroneous results. Also note that voltages are rounded to the nearest integer. If the voltage sweeps are leaky, unstable, or otherwise inconsistent, the Summary CSV will likely be missing data points.** You also have the option to generate a current density IV curve. Click the "Current Density IV" button in the Batch Analysis window. You will be prompted to enter Cslow values for all files. Then, a new window will appear that plots the current densities against voltages. 
+**IMPORTANT FOR SUMMARY IV: the user is responsible for their own data inputs; input files that use different voltage sets will yield erroneous results. Also note that voltages are rounded to the nearest integer. If the voltage sweeps are leaky, unstable, or otherwise inconsistent, the Summary CSV will likely be missing data points.**
+
+You also have the option to generate a current density IV curve. Click the "Current Density IV" button in the Batch Analysis window. You will be prompted to enter Cslow values for all files. Then, a new window will appear that plots the current densities against voltages. 
 
 
 <img src="images/cd_cslow.PNG" alt="Cslows" width="500"/>
@@ -121,14 +124,15 @@ If you are doing I-V analyses, the program allows you to create summary IV curve
 
 <img src="images/cd_results.PNG" alt="cdresultswindow" width="800"/>
 
-
-Similarly to the batch analysis, you have the option to export individual CSV files for every analyzed file, as well as a single Summary IV that follows the same format described above. The only difference is that these outputs contain current densities, rather than raw currents. All output CSVs are designed to be easily imported into Graphpad Prism. 
+Similarly to the initial batch analysis, you have the option to export individual CSV files for every analyzed file, as well as a single Summary IV that follows the same format described above. The only difference is that these outputs contain current densities, rather than raw currents. All output CSVs are designed to be easily imported into Graphpad Prism. 
 
 
 <img src="images/prism_import.PNG" alt="prismimport" width="300"/>
 
 
 <img src="images/prism_cd_summary.PNG" alt="prism_cd_import" width="1100"/>
+
+### Time-course Analysis
 
 The workflow for other analyses, such as Time vs Current, proceeds in a very similar manner. The primary distinction is the requirement for the Stimulus Repeat Period. For such time-course analyses, it is sometimes desirable to extract data from more than one analysis range per sweep. To this end, the "Use Dual Analysis" box enables the user to define a second analysis range.
 
@@ -144,6 +148,8 @@ This enables the user to quickly plot both analysis ranges against the sweep tim
 
 It is important to note that the time-course analysis workflow uses an **approximation** of the true sweep times. During a recording, the sweeps do not occur at perfectly spaced intervals that match the exact stimulus repeat period each time. This results in a small deviation in the sweep times that becomes more apparent in longer recordings, on the order of 2 seconds of drift per 100 seconds of recording. This likely varies by experimental setup and is affected by physical hardware constraints. This should not present a major complication for most uses, but is worth considering when analyzing longer recordings. See the "Validation" section for more information.
 
+### Channel Swapping
+
 During initial testing, it was found that there is not a universal standard of which channel in data files contains current data and which contains voltage data. Even within the same lab, all using WinWCP, some setups produce files with the channel identifications swapped. Whether this applies to your data files can be quickly assessed by loading a single file in the main window and clicking through the sweeps. As long as you know what your voltage protocol looks like, it should be easy to identify which channel contains your true voltage data. In the event that your "Current" sweeps look like your voltage protocol, and vice versa, you can toggle the blue button at the top right of the main window to swap your channels. This should restore the expected presentation of current and voltage channels. 
 
 
@@ -155,29 +161,21 @@ To validate the data processing modules of this program, analyses were performed
 
 Both analyses used the same dataset of 12 patch-clamp recordings. However, WinWCP analyses used the original .wcp file, while this software used .abf conversions of the same files. File format conversions were performed in WinWCP. Each analysis used an analysis range of 150.1 ms - 649.2 ms, with the X-axis plotting Average Voltage and the Y-axis plotting Average Current. For current density analysis, the following Cslow values were used:
 
-    250514_001: 34.4
+| File ID     | Cslow |
+|-------------|-------|
+| 250514_001  | 34.4  |
+| 250514_002  | 14.5  |
+| 250514_003  | 20.5  |
+| 250514_004  | 16.3  |
+| 250514_005  | 18.4  |
+| 250514_006  | 17.3  |
+| 250514_007  | 14.4  |
+| 250514_008  | 14.1  |
+| 250514_009  | 18.4  |
+| 250514_010  | 21.0  |
+| 250514_011  | 22.2  |
+| 250514_012  | 23.2  |
 
-    250514_002: 14.5
-
-    250514_003: 20.5
-
-    250514_004: 16.3
-
-    250514_005: 18.4
-
-    250514_006: 17.3
-
-    250514_007: 14.4
-
-    250514_008: 14.1
-
-    250514_009: 18.4
-
-    250514_010: 21.0
-
-    250514_011: 22.2
-
-    250514_012: 23.2
 
 The input abf files are available in the file repository. In the case of the WinWCP-analyzed files, current density calculations were performed in Graphpad Prism. The comparison found excellent agreement between both analysis methods. Each recording contained 11 sweeps, thus 132 data points were compared. The maximum discrepancy in the analyzed current values was 0.049 pA, a negligible difference in the context of typical patch-clamp recordings which often range from tens to hundreds or even thousands of pA. The distinction is likely due to floating point precision differences when the .wcp file is converted to .abf. WinWCP may also use interpolation in its analysis process depending on the analysis range used. Regardless, this distinction does not present a concern unless currents are being analyzed on a sub-pA basis. Similarly, the distinction in the measured voltage was 0.01147 mV, an insignificant difference unless experiments require sub-mV precision. These results are summarized as follows:
 
@@ -209,7 +207,7 @@ The time course data contains two analysis ranges per sweep, thus the Dual Analy
 
 ### Swapped Channels
 
-Not all input files have the same channel definitions. To navigate this variable, the program contains a channel swap toggle that enables the user to control which data channel contains voltage information and which contains current. It is assumed that the user can visually recognize whether or not their channel identifications are accurate. The outputs of PatchBatch-analyzed files with such a swapped copnfiguration were compared against WinWCP outputs for the same analysis of the same files. The equipment that produced these data files is used in experiments that measure currents on the order of microamps, as opposed to picoamps, and thus the validation uses a different current magnitude than the other validation methods. The deviation between PatchBatch and WinWCP is larger in absolute magnitude than in the other analysis modes. It also appears to follow a more coherent pattern, increasing along a somewhat definable curve as the measured current increases. However, with a maximum deviation of 0.000454 microamps, this deviation should not present any concerns.
+Not all input files have the same channel definitions. To navigate this variable, the program contains a channel swap toggle that enables the user to control which data channel contains voltage information and which contains current. It is assumed that the user can visually recognize whether or not their channel identifications are accurate. The outputs of PatchBatch-analyzed files with such a swapped copnfiguration were compared against WinWCP outputs for the same analysis of the same files. The equipment that produced these data files is used in experiments that measure currents on the order of microamps, as opposed to picoamps, and thus the validation uses a different current magnitude than the other validation methods. The deviation between PatchBatch and WinWCP is larger in absolute magnitude than in the other analysis modes. It also appears to follow a more coherent pattern, increasing along a somewhat definable curve as the measured current increases. However, with a maximum deviation of 0.000454 microamps, this should not present any concerns.
 
 
 <img src="images/swapped_current_comparison.png" alt="swapped_comparison" width="450"/>
