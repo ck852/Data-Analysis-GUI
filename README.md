@@ -1,5 +1,7 @@
 # PatchBatch - Electrophysiology Data Analysis Tool
 
+## **Installation** 
+
 ## Option 1: Download Executable
 1. Go to [Releases](https://github.com/ck852/patchbatch/releases)
     
