@@ -827,10 +827,9 @@ class MainWindow(QMainWindow):
             )
             return
         
-        # Get current range values from control panel for default range
-        range_values = self.control_panel.get_range_values()
-        default_start = range_values.get("range1_start", 0)
-        default_end = range_values.get("range1_end", 100)
+        # Use simple, fixed defaults instead of control panel values
+        default_start = 0      # Simple integer default
+        default_end = 50       # Simple integer default
         
         # Open the background subtraction dialog
         dialog = BackgroundSubtractionDialog(

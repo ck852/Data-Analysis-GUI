@@ -40,7 +40,7 @@ class BackgroundSubtractionDialog(QDialog):
     
     def __init__(self, dataset: ElectrophysiologyDataset, sweep_index: str, 
                  channel_definitions: ChannelDefinitions, 
-                 default_start: float = 0, default_end: float = 100,
+                 default_start: float = 0, default_end: float = 50,
                  parent=None):
         """
         Initialize the background subtraction dialog with centralized styling.
@@ -80,9 +80,9 @@ class BackgroundSubtractionDialog(QDialog):
             return
             
         # Validate and set default ranges
-        max_time = self.time_ms[-1] if len(self.time_ms) > 0 else 1000
-        self.default_start = max(0, min(default_start, max_time * 0.9))
-        self.default_end = max(self.default_start + 10, min(default_end, max_time))
+        self.default_start = float(default_start)
+        self.default_end = float(default_end) 
+        self.max_time = self.time_ms[-1] if len(self.time_ms) > 0 else 10000
         
         self._init_ui()
         self._connect_signals()
@@ -110,7 +110,7 @@ class BackgroundSubtractionDialog(QDialog):
         self.start_spinbox.setDecimals(1)
         self.start_spinbox.setSuffix(" ms")
         self.start_spinbox.setMinimum(0)
-        self.start_spinbox.setMaximum(self.time_ms[-1] if len(self.time_ms) > 0 else 10000)
+        self.start_spinbox.setMaximum(self.max_time)
         self.start_spinbox.setValue(self.default_start)
         self.start_spinbox.setMinimumWidth(120)
         
@@ -118,7 +118,7 @@ class BackgroundSubtractionDialog(QDialog):
         self.end_spinbox.setDecimals(1)
         self.end_spinbox.setSuffix(" ms")
         self.end_spinbox.setMinimum(0)
-        self.end_spinbox.setMaximum(self.time_ms[-1] if len(self.time_ms) > 0 else 10000)
+        self.end_spinbox.setMaximum(self.max_time)
         self.end_spinbox.setValue(self.default_end)
         self.end_spinbox.setMinimumWidth(120)
         
@@ -288,16 +288,7 @@ class BackgroundSubtractionDialog(QDialog):
                 logger.info(f"Background subtraction applied: range [{start_time}, {end_time}] ms "
                            f"to {result.processed_sweeps}/{result.total_sweeps} sweeps")
                 
-                success_message = (
-                    f"Background subtraction applied successfully!\n\n"
-                    f"Range: {start_time:.1f} - {end_time:.1f} ms\n"
-                    f"Processed: {result.processed_sweeps}/{result.total_sweeps} sweeps"
-                )
                 
-                if result.failed_sweeps:
-                    success_message += f"\n\nWarning: {len(result.failed_sweeps)} sweeps failed to process"
-                
-                QMessageBox.information(self, "Success", success_message)
                 self.accept()
             else:
                 error_message = f"Background subtraction failed: {result.error_message}"
