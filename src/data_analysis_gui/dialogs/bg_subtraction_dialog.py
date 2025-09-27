@@ -1,6 +1,6 @@
 """
 Background Subtraction Dialog for PatchBatch Electrophysiology Data Analysis Tool
-Refactored to use centralized plot_style.py functions for consistency and maintainability.
+Refactored to use BackgroundSubtractionService for business logic separation.
 
 Author: Charles Kissell, Northeastern University
 License: MIT (see LICENSE file for details)
@@ -26,6 +26,7 @@ from data_analysis_gui.widgets.custom_inputs import SelectAllSpinBox
 from data_analysis_gui.core.dataset import ElectrophysiologyDataset
 from data_analysis_gui.core.channel_definitions import ChannelDefinitions
 from data_analysis_gui.core.data_extractor import DataExtractor
+from data_analysis_gui.services.bg_subtraction_service import BackgroundSubtractionService
 from data_analysis_gui.config.logging import get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +35,7 @@ logger = get_logger(__name__)
 class BackgroundSubtractionDialog(QDialog):
     """
     Dialog for defining background range and applying background subtraction.
-    Refactored to use centralized plot_style.py functions for consistency.
+    Uses BackgroundSubtractionService for business logic separation.
     """
     
     def __init__(self, dataset: ElectrophysiologyDataset, sweep_index: str, 
@@ -227,7 +228,7 @@ class BackgroundSubtractionDialog(QDialog):
         
     def _validate_range(self):
         """
-        Validate the background range.
+        Validate the background range using the service validation.
         
         Returns:
             bool: True if range is valid, False otherwise
@@ -235,19 +236,17 @@ class BackgroundSubtractionDialog(QDialog):
         start_time = self.start_spinbox.value()
         end_time = self.end_spinbox.value()
         
-        if start_time >= end_time:
-            QMessageBox.warning(self, "Invalid Range", 
-                              "Background start time must be less than end time.")
+        # Use the service's validation method
+        is_valid, error_message = BackgroundSubtractionService.validate_background_range(
+            self.dataset, start_time, end_time
+        )
+        
+        if not is_valid:
+            QMessageBox.warning(self, "Invalid Range", error_message)
             return False
             
+        # Additional check specific to the dialog - ensure range contains data points
         if len(self.time_ms) > 0:
-            if start_time < self.time_ms[0] or end_time > self.time_ms[-1]:
-                QMessageBox.warning(self, "Invalid Range", 
-                                  f"Background range must be within the sweep time bounds "
-                                  f"({self.time_ms[0]:.1f} - {self.time_ms[-1]:.1f} ms).")
-                return False
-                
-            # Check if range contains data points
             mask = (self.time_ms >= start_time) & (self.time_ms <= end_time)
             if not np.any(mask):
                 QMessageBox.warning(self, "Invalid Range", 
@@ -257,7 +256,7 @@ class BackgroundSubtractionDialog(QDialog):
         return True
         
     def _apply_background_subtraction(self):
-        """Apply background subtraction to the entire dataset."""
+        """Apply background subtraction using the BackgroundSubtractionService."""
         if not self._validate_range():
             return
             
@@ -280,86 +279,38 @@ class BackgroundSubtractionDialog(QDialog):
             if reply != QMessageBox.StandardButton.Yes:
                 return
             
-            # Apply background subtraction to all sweeps
-            processed_count = self._perform_background_subtraction(start_time, end_time)
-            
-            logger.info(f"Background subtraction applied: range [{start_time}, {end_time}] ms "
-                       f"to {processed_count} sweeps")
-            
-            QMessageBox.information(
-                self, "Success", 
-                f"Background subtraction applied to {processed_count} sweeps.\n"
-                f"Range: {start_time:.1f} - {end_time:.1f} ms"
+            # Apply background subtraction using the service
+            result = BackgroundSubtractionService.apply_background_subtraction(
+                self.dataset, self.channel_definitions, start_time, end_time
             )
             
-            self.accept()
-            
+            if result.success:
+                logger.info(f"Background subtraction applied: range [{start_time}, {end_time}] ms "
+                           f"to {result.processed_sweeps}/{result.total_sweeps} sweeps")
+                
+                success_message = (
+                    f"Background subtraction applied successfully!\n\n"
+                    f"Range: {start_time:.1f} - {end_time:.1f} ms\n"
+                    f"Processed: {result.processed_sweeps}/{result.total_sweeps} sweeps"
+                )
+                
+                if result.failed_sweeps:
+                    success_message += f"\n\nWarning: {len(result.failed_sweeps)} sweeps failed to process"
+                
+                QMessageBox.information(self, "Success", success_message)
+                self.accept()
+            else:
+                error_message = f"Background subtraction failed: {result.error_message}"
+                if result.failed_sweeps:
+                    error_message += f"\n\nFailed sweeps: {result.failed_sweeps}"
+                    
+                logger.error(error_message)
+                QMessageBox.critical(self, "Error", error_message)
+                
         except Exception as e:
-            logger.error(f"Background subtraction failed: {e}")
-            QMessageBox.critical(self, "Error", f"Background subtraction failed: {str(e)}")
-            
-    def _perform_background_subtraction(self, start_time: float, end_time: float) -> int:
-        """
-        Perform background subtraction on all sweeps in the dataset.
-        
-        Args:
-            start_time: Start time of background range (ms)
-            end_time: End time of background range (ms)
-            
-        Returns:
-            int: Number of sweeps successfully processed
-        """
-        current_channel = self.channel_definitions.get_current_channel()
-        processed_count = 0
-        
-        # Convert sweep indices to a list to avoid dictionary size changes during iteration
-        sweep_indices = list(self.dataset.sweeps())
-        
-        for sweep_idx in sweep_indices:
-            try:
-                # Extract sweep data
-                sweep_data = self.data_extractor.extract_sweep_data(self.dataset, sweep_idx)
-                time_ms = sweep_data["time_ms"]
-                current = sweep_data["current"]
-                
-                # Find background range indices
-                mask = (time_ms >= start_time) & (time_ms <= end_time)
-                if not np.any(mask):
-                    logger.warning(f"No data in background range for sweep {sweep_idx}")
-                    continue
-                    
-                # Calculate background average
-                background_current = current[mask]
-                background_avg = np.mean(background_current)
-                
-                # Subtract background from all current values
-                corrected_current = current - background_avg
-                
-                # Get original sweep data to preserve structure
-                original_sweep = self.dataset.get_sweep(sweep_idx)
-                if original_sweep is None:
-                    logger.warning(f"Could not retrieve original sweep {sweep_idx}")
-                    continue
-                    
-                time_orig, data_matrix_orig = original_sweep
-                
-                # Create new data matrix with corrected current
-                data_matrix_new = data_matrix_orig.copy()
-                data_matrix_new[:, current_channel] = corrected_current
-                
-                # Update the sweep in the dataset
-                self.dataset.add_sweep(sweep_idx, time_orig, data_matrix_new)
-                
-                processed_count += 1
-                logger.debug(f"Applied background subtraction to sweep {sweep_idx}: "
-                           f"avg = {background_avg:.3f} pA")
-                
-            except Exception as e:
-                logger.error(f"Failed to process sweep {sweep_idx}: {e}")
-                # Continue with other sweeps rather than failing entirely
-                continue
-                
-        if processed_count == 0:
-            raise Exception("No sweeps were successfully processed")
-            
-        return processed_count
+            logger.error(f"Unexpected error during background subtraction: {e}")
+            QMessageBox.critical(
+                self, "Unexpected Error", 
+                f"An unexpected error occurred: {str(e)}\n\n"
+                f"Please check the logs for more details."
+            )

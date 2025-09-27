@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QLabel,
     QComboBox,
+    QDialog
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QKeySequence, QAction
@@ -73,9 +74,11 @@ from data_analysis_gui.widgets.channel_toggle import ChannelToggleSwitch
 # Dialog imports
 from data_analysis_gui.dialogs.analysis_plot_dialog import AnalysisPlotDialog
 from data_analysis_gui.dialogs.batch_dialog import BatchAnalysisDialog
+from data_analysis_gui.dialogs.bg_subtraction_dialog import BackgroundSubtractionDialog
 
 # Service imports
 from data_analysis_gui.gui_services import FileDialogService
+from data_analysis_gui.services.bg_subtraction_service import BackgroundSubtractionService
 
 logger = get_logger(__name__)
 
@@ -192,6 +195,21 @@ class MainWindow(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready")
+        
+        # Add background subtraction indicator to status bar (initially hidden)
+        self.bg_subtraction_indicator = QLabel("Background Subtracted")
+        self.bg_subtraction_indicator.setStyleSheet("""
+            QLabel {
+                background-color: #4A90E2;
+                color: white;
+                padding: 2px 8px;
+                border-radius: 3px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+        """)
+        self.bg_subtraction_indicator.setVisible(False)
+        self.status_bar.addPermanentWidget(self.bg_subtraction_indicator)
 
         # Connect signals
         self._connect_signals()
@@ -226,9 +244,15 @@ class MainWindow(QMainWindow):
         self.swap_action = QAction("&Swap Channels", self)
         self.swap_action.setShortcut("Ctrl+Shift+S")
         self.swap_action.triggered.connect(self._swap_channels)
-        # Always enabled - no dependency on file loading
         self.swap_action.setEnabled(True)
         analysis_menu.addAction(self.swap_action)
+        
+        # Add background subtraction action
+        self.bg_subtraction_action = QAction("&Background Subtraction...", self)
+        self.bg_subtraction_action.setShortcut("Ctrl+G")
+        self.bg_subtraction_action.triggered.connect(self._background_subtraction)
+        self.bg_subtraction_action.setEnabled(True)
+        analysis_menu.addAction(self.bg_subtraction_action)
 
         self.batch_action = QAction("&Batch Analyze...", self)
         self.batch_action.setShortcut("Ctrl+B")
@@ -438,6 +462,9 @@ class MainWindow(QMainWindow):
         Updates file labels, sweep count, revalidates ranges, synchronizes channel swap state,
         and populates the sweep selection combo box.
         """
+        # Hide background subtraction indicator when new file is loaded
+        self._hide_background_indicator()
+        
         # Update file labels with proper theme styling
         self.file_label.setText(f"File: {file_info.name}")
         style_label(self.file_label, "normal")  # Switch from muted to normal
@@ -776,6 +803,75 @@ class MainWindow(QMainWindow):
             vals.get("range2_start"),
             vals.get("range2_end"),
         )
+
+    def _background_subtraction(self):
+        """
+        Open the background subtraction dialog for the current dataset.
+        """
+        # Check if data is loaded
+        if not self.controller.has_data():
+            QMessageBox.warning(
+                self, 
+                "No Data", 
+                "Please load a data file before applying background subtraction."
+            )
+            return
+        
+        # Get current sweep from combo box
+        current_sweep = self.sweep_combo.currentText()
+        if not current_sweep:
+            QMessageBox.warning(
+                self,
+                "No Sweep",
+                "No sweep is currently selected."
+            )
+            return
+        
+        # Get current range values from control panel for default range
+        range_values = self.control_panel.get_range_values()
+        default_start = range_values.get("range1_start", 0)
+        default_end = range_values.get("range1_end", 100)
+        
+        # Open the background subtraction dialog
+        dialog = BackgroundSubtractionDialog(
+            dataset=self.controller.current_dataset,
+            sweep_index=current_sweep,
+            channel_definitions=self.channel_definitions,
+            default_start=default_start,
+            default_end=default_end,
+            parent=self
+        )
+        
+        # If dialog is accepted, apply background subtraction
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._on_background_subtraction_applied()
+
+    def _on_background_subtraction_applied(self):
+        """
+        Handle successful background subtraction.
+        Shows visual indicator and refreshes the current plot.
+        """
+        # Show the background subtraction indicator
+        self.bg_subtraction_indicator.setVisible(True)
+        
+        # Update status message
+        self.status_bar.showMessage("Background subtraction applied successfully", 5000)
+        
+        # Refresh the current plot to show modified data
+        self._update_plot()
+        
+        # Auto-save settings after background subtraction
+        self._auto_save_settings()
+        
+        logger.info("Background subtraction applied and plot updated")
+
+    def _hide_background_indicator(self):
+        """
+        Hide the background subtraction indicator.
+        Called when a new file is loaded or when resetting the view.
+        """
+        self.bg_subtraction_indicator.setVisible(False)
+        logger.debug("Background subtraction indicator hidden")
 
     def _auto_save_settings(self):
         """

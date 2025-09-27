@@ -40,6 +40,7 @@ data_analysis_gui/
 |   |-- __init__.py
 |   |-- analysis_manager.py
 |   |-- batch_processor.py
+|   |-- bg_subtraction_service.py
 |   |-- current_density_service.py
 |   |-- data_manager.py
 |   `-- plot_service.py
